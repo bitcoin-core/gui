@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>740</width>
-    <height>430</height>
+    <width>777</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,7 +36,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <widget class="QWidget" name="tab_info">
       <attribute name="title">
@@ -484,7 +484,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../bitcoin.qrc">
+            <iconset>
              <normaloff>:/icons/fontsmaller</normaloff>:/icons/fontsmaller</iconset>
            </property>
            <property name="iconSize">
@@ -516,7 +516,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../bitcoin.qrc">
+            <iconset>
              <normaloff>:/icons/fontbigger</normaloff>:/icons/fontbigger</iconset>
            </property>
            <property name="iconSize">
@@ -551,7 +551,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../bitcoin.qrc">
+            <iconset>
              <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
            </property>
            <property name="shortcut">
@@ -606,7 +606,7 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset resource="../bitcoin.qrc">
+            <iconset>
              <normaloff>:/icons/prompticon</normaloff>
              <disabledoff>:/icons/prompticon</disabledoff>:/icons/prompticon</iconset>
            </property>
@@ -891,6 +891,112 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_mempool">
+      <property name="minimumSize">
+       <size>
+        <width>747</width>
+        <height>0</height>
+       </size>
+      </property>
+      <attribute name="title">
+       <string>Mempool</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QSplitter" name="mempool_splitter">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="lineWidth">
+          <number>0</number>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="childrenCollapsible">
+          <bool>false</bool>
+         </property>
+         <widget class="QWidget" name="verticalLayoutWidget">
+          <layout class="QVBoxLayout" name="QVBOX1">
+           <property name="leftMargin">
+            <number>10</number>
+           </property>
+           <property name="topMargin">
+            <number>10</number>
+           </property>
+           <property name="rightMargin">
+            <number>10</number>
+           </property>
+           <property name="bottomMargin">
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="MempoolStats" name="mempool_graph" native="true">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="verticalLayoutWidget2">
+          <layout class="QVBoxLayout" name="QVBOX2">
+           <property name="leftMargin">
+            <number>10</number>
+           </property>
+           <property name="topMargin">
+            <number>10</number>
+           </property>
+           <property name="rightMargin">
+            <number>10</number>
+           </property>
+           <property name="bottomMargin">
+            <number>10</number>
+           </property>
+           <item>
+            <widget class="QWidget" name="widget_2" native="true">
+             <widget class="QLabel" name="label">
+              <property name="geometry">
+               <rect>
+                <x>140</x>
+                <y>170</y>
+                <width>71</width>
+                <height>16</height>
+               </rect>
+              </property>
+              <property name="text">
+               <string>Detail Stub</string>
+              </property>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_peers">
       <attribute name="title">
        <string>&amp;Peers</string>
@@ -1060,8 +1166,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>300</width>
-                <height>426</height>
+                <width>274</width>
+                <height>616</height>
                </rect>
               </property>
               <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">
@@ -1658,9 +1764,13 @@
     <slot>clear()</slot>
    </slots>
   </customwidget>
+  <customwidget>
+   <class>MempoolStats</class>
+   <extends>QWidget</extends>
+   <header>qt/mempoolstats.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
- <resources>
-  <include location="../bitcoin.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -174,6 +174,58 @@ public:
     int64_t getTotalBytesSent() override { return m_context->connman ? m_context->connman->GetTotalBytesSent() : 0; }
     size_t getMempoolSize() override { return m_context->mempool ? m_context->mempool->size() : 0; }
     size_t getMempoolDynamicUsage() override { return m_context->mempool ? m_context->mempool->DynamicMemoryUsage() : 0; }
+    interfaces::mempool_feehistogram getMempoolFeeHistogram() override {
+         /* TODO: define log scale formular for dynamically creating the
+          * feelimits but with the property of not constantly changing
+          * (and thus screw up client implementations) */
+         static const std::vector<CAmount> feelimits{1, 2, 3, 4, 5, 6, 7, 8, 10,
+          12, 14, 17, 20, 25, 30, 40, 50, 60, 70, 80, 100,
+          120, 140, 170, 200, 250, 300, 400, 500, 600, 700, 800, 1000,
+          1200, 1400, 1700, 2000, 2500, 3000, 4000, 5000, 6000, 7000, 8000, 10000};
+
+         /* keep histogram per...
+          * ... cumulated tx sizes
+          * ... txns (count)
+          * ... cumulated fees */
+         std::vector<uint64_t> sizes(feelimits.size(), 0);
+         std::vector<uint64_t> count(feelimits.size(), 0);
+         std::vector<uint64_t> fees(feelimits.size(), 0);
+
+         {
+             LOCK(m_context->mempool->cs);
+             for (const CTxMemPoolEntry& e : m_context->mempool->mapTx) {
+                 int size = (int)e.GetTxSize();
+                 CAmount fee = e.GetFee();
+                 uint64_t asize = e.GetSizeWithAncestors();
+                 CAmount afees = e.GetModFeesWithAncestors();
+                 uint64_t dsize = e.GetSizeWithDescendants();
+                 CAmount dfees = e.GetModFeesWithDescendants();
+
+                 CAmount fpb = fee / size; //fee per byte
+                 CAmount afpb = afees / asize; //fee per byte including ancestors
+                 CAmount dfpb = dfees / dsize; //fee per byte including descendants
+                 CAmount tfpb = (afees + dfees - fee) / (asize + dsize - size);
+                 CAmount feeperbyte = std::max(std::min(dfpb, tfpb), std::min(fpb, afpb));
+
+                 // distribute feerates into feelimits
+                 for (size_t i = 0; i < feelimits.size(); i++) {
+                     if (feeperbyte >= feelimits[i] && (i == feelimits.size() - 1 || feeperbyte < feelimits[i + 1])) {
+                         sizes[i] += size;
+                         count[i]++;
+                         fees[i] += fee;
+                         break;
+                     }
+                 }
+             }
+         }
+         interfaces::mempool_feehistogram feeinfo;
+         for (size_t i = 0; i < feelimits.size(); i++) {
+             feeinfo.push_back({sizes[i], fees[i], count[i], feelimits[i], (i == feelimits.size() - 1 ? std::numeric_limits<int64_t>::max() : feelimits[i + 1])});
+         }
+
+         return feeinfo;
+     }
+
     bool getHeaderTip(int& height, int64_t& block_time) override
     {
         LOCK(::cs_main);

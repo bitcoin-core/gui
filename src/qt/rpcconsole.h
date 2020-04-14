@@ -7,6 +7,7 @@
 
 #include <qt/guiutil.h>
 #include <qt/peertablemodel.h>
+#include <qt/mempoolstats.h>
 
 #include <net.h>
 
@@ -62,11 +63,12 @@ public:
     enum class TabTypes {
         INFO,
         CONSOLE,
+        MEMPOOL,
         GRAPH,
         PEERS
     };
 
-    std::vector<TabTypes> tabs() const { return {TabTypes::INFO, TabTypes::CONSOLE, TabTypes::GRAPH, TabTypes::PEERS}; }
+    std::vector<TabTypes> tabs() const { return {TabTypes::INFO, TabTypes::CONSOLE, TabTypes::MEMPOOL, TabTypes::GRAPH, TabTypes::PEERS}; }
 
     QString tabTitle(TabTypes tab_type) const;
     QKeySequence tabShortcut(TabTypes tab_type) const;
