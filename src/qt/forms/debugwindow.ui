@@ -917,6 +917,44 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_mempool">
+      <property name="minimumSize">
+       <size>
+        <width>747</width>
+        <height>0</height>
+       </size>
+      </property>
+      <attribute name="title">
+       <string>Mempool</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_9" stretch="0">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="MempoolStats" name="mempool_graph" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_peers">
       <attribute name="title">
        <string>&amp;Peers</string>
@@ -1535,6 +1573,12 @@
    <slots>
     <slot>clear()</slot>
    </slots>
+  </customwidget>
+  <customwidget>
+   <class>MempoolStats</class>
+   <extends>QWidget</extends>
+   <header>qt/mempoolstats.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>

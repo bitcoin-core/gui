@@ -572,6 +572,7 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
     }
 
     ui->trafficGraph->setClientModel(model);
+    ui->mempool_graph->setClientModel(model);
     if (model && clientModel->getPeerTableModel() && clientModel->getBanTableModel()) {
         // Keep up to date with client
         setNumConnections(model->getNumConnections());

@@ -48,6 +48,24 @@ struct BlockAndHeaderTipInfo
     double verification_progress;
 };
 
+class mempool_feeinfo {
+public:
+    uint64_t total_size;
+    uint64_t total_fee;
+    uint64_t tx_count;
+    CAmount fee_from;
+    CAmount fee_to;
+
+    //TODO: remove
+    // added for storing and loading a mempool set during development to avoid waiting hours for collecting enought samples
+    SERIALIZE_METHODS(mempool_feeinfo, obj)
+    {
+        READWRITE(obj.total_size, obj.total_fee, obj.tx_count, obj.fee_from, obj.fee_to);
+    }
+};
+
+typedef std::vector<mempool_feeinfo> mempool_feehistogram;
+
 //! Top-level interface for a bitcoin node (bitcoind process).
 class Node
 {
@@ -120,6 +138,9 @@ public:
 
     //! Get mempool dynamic usage.
     virtual size_t getMempoolDynamicUsage() = 0;
+
+    //! Get mempool fee histogram
+    virtual mempool_feehistogram getMempoolFeeHistogram() = 0;
 
     //! Get header tip height and time.
     virtual bool getHeaderTip(int& height, int64_t& block_time) = 0;
