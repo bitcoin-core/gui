@@ -201,7 +201,10 @@ void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
     m_balances = balances;
     if (walletModel->wallet().isLegacy()) {
         if (walletModel->wallet().privateKeysDisabled()) {
+            ui->labelSpendable->setText(tr("OverviewPage", "Watch-only:"));
+            ui->labelSpendable->setVisible(true);
             ui->labelBalance->setText(BitcoinUnits::formatWithPrivacy(unit, balances.watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+            ui->labelBalance->setToolTip(tr("OverviewPage", "Your current balance in watch-only addresses"));
             ui->labelUnconfirmed->setText(BitcoinUnits::formatWithPrivacy(unit, balances.unconfirmed_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
             ui->labelImmature->setText(BitcoinUnits::formatWithPrivacy(unit, balances.immature_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
             ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.watch_only_balance + balances.unconfirmed_watch_only_balance + balances.immature_watch_only_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
