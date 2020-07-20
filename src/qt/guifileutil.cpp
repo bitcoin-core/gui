@@ -32,6 +32,21 @@
 #include <QProcess>
 #endif // Q_OS_MAC
 
+namespace {
+#ifdef Q_OS_LINUX
+std::string GetExecutablePathAsString()
+{
+    char exe_path[MAX_PATH + 1];
+    ssize_t r = readlink("/proc/self/exe", exe_path, MAX_PATH);
+    if (r == -1 || r == sizeof(exe_path)) {
+        r = 0;
+    }
+    exe_path[r] = '\0';
+    return exe_path;
+}
+#endif // Q_OS_LINUX
+} // namespace
+
 namespace GUIUtil {
 
 QString getDefaultDataDirectory()
@@ -266,11 +281,10 @@ bool SetStartOnSystemStartup(bool fAutoStart)
         fs::remove(GetAutostartFilePath());
     else
     {
-        char pszExePath[MAX_PATH+1];
-        ssize_t r = readlink("/proc/self/exe", pszExePath, sizeof(pszExePath) - 1);
-        if (r == -1)
+        const std::string exe_path = GetExecutablePathAsString();
+        if (exe_path.empty()) {
             return false;
-        pszExePath[r] = '\0';
+        }
 
         fs::create_directories(GetAutostartDir());
 
@@ -285,7 +299,7 @@ bool SetStartOnSystemStartup(bool fAutoStart)
             optionFile << "Name=Bitcoin\n";
         else
             optionFile << strprintf("Name=Bitcoin (%s)\n", chain);
-        optionFile << "Exec=" << pszExePath << strprintf(" -min -chain=%s\n", chain);
+        optionFile << strprintf("Exec=%s -min -chain=%s\n", exe_path, chain);
         optionFile << "Terminal=false\n";
         optionFile << "Hidden=false\n";
         optionFile.close();
