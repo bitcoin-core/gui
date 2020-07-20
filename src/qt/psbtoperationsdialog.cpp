@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <qt/psbtoperationsdialog.h>
+#include <qt/forms/ui_psbtoperationsdialog.h>
 
 #include <core_io.h>
 #include <interfaces/node.h>
@@ -10,7 +11,7 @@
 #include <node/psbt.h>
 #include <policy/policy.h>
 #include <qt/bitcoinunits.h>
-#include <qt/forms/ui_psbtoperationsdialog.h>
+#include <qt/guifileutil.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 #include <util/strencodings.h>

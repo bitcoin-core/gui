@@ -12,7 +12,7 @@
 #include <qt/forms/ui_intro.h>
 
 #include <qt/guiconstants.h>
-#include <qt/guiutil.h>
+#include <qt/guifileutil.h>
 #include <qt/optionsmodel.h>
 
 #include <interfaces/node.h>

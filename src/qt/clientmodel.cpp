@@ -6,7 +6,7 @@
 
 #include <qt/bantablemodel.h>
 #include <qt/guiconstants.h>
-#include <qt/guiutil.h>
+#include <qt/guifileutil.h>
 #include <qt/peertablemodel.h>
 
 #include <clientversion.h>

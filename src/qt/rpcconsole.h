@@ -5,7 +5,6 @@
 #ifndef BITCOIN_QT_RPCCONSOLE_H
 #define BITCOIN_QT_RPCCONSOLE_H
 
-#include <qt/guiutil.h>
 #include <qt/peertablemodel.h>
 
 #include <net.h>

@@ -10,7 +10,7 @@
 
 #include <qt/bitcoinunits.h>
 #include <qt/guiconstants.h>
-#include <qt/guiutil.h>
+#include <qt/guifileutil.h>
 
 #include <interfaces/node.h>
 #include <validation.h> // For DEFAULT_SCRIPTCHECK_THREADS

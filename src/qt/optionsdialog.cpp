@@ -11,6 +11,7 @@
 
 #include <qt/bitcoinunits.h>
 #include <qt/guiconstants.h>
+#include <qt/guifileutil.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 

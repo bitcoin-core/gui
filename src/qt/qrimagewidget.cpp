@@ -4,6 +4,7 @@
 
 #include <qt/qrimagewidget.h>
 
+#include <qt/guifileutil.h>
 #include <qt/guiutil.h>
 
 #include <QApplication>

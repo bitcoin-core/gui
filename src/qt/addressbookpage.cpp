@@ -12,6 +12,7 @@
 #include <qt/addresstablemodel.h>
 #include <qt/csvmodelwriter.h>
 #include <qt/editaddressdialog.h>
+#include <qt/guifileutil.h>
 #include <qt/guiutil.h>
 #include <qt/platformstyle.h>
 

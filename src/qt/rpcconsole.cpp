@@ -9,15 +9,17 @@
 #include <qt/rpcconsole.h>
 #include <qt/forms/ui_debugwindow.h>
 
-#include <qt/bantablemodel.h>
-#include <qt/clientmodel.h>
-#include <qt/platformstyle.h>
-#include <qt/walletmodel.h>
 #include <chainparams.h>
 #include <interfaces/node.h>
 #include <netbase.h>
-#include <rpc/server.h>
+#include <qt/bantablemodel.h>
+#include <qt/clientmodel.h>
+#include <qt/guifileutil.h>
+#include <qt/guiutil.h>
+#include <qt/platformstyle.h>
+#include <qt/walletmodel.h>
 #include <rpc/client.h>
+#include <rpc/server.h>
 #include <util/strencodings.h>
 #include <util/system.h>
 

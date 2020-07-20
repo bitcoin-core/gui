@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\src\qt\createwalletdialog.cpp" />
     <ClCompile Include="..\..\src\qt\csvmodelwriter.cpp" />
     <ClCompile Include="..\..\src\qt\editaddressdialog.cpp" />
+    <ClCompile Include="..\..\src\qt\guifileutil.cpp" />
     <ClCompile Include="..\..\src\qt\guiutil.cpp" />
     <ClCompile Include="..\..\src\qt\intro.cpp" />
     <ClCompile Include="..\..\src\qt\modaloverlay.cpp" />
