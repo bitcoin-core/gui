@@ -17,6 +17,7 @@
 #endif // WIN32
 
 #ifdef Q_OS_LINUX
+#include <cassert>
 #include <stdlib.h>
 #include <unistd.h>
 #endif // Q_OS_LINUX
@@ -25,6 +26,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QPixmap>
 #include <QRegExp>
 #include <QStandardPaths>
 #include <QString>
@@ -44,10 +46,87 @@ std::string GetExecutablePathAsString()
     exe_path[r] = '\0';
     return exe_path;
 }
+
+fs::path GetUserApplicationsDir()
+{
+    const char* home_dir = getenv("HOME");
+    if (!home_dir) return fs::path();
+    return fs::path(home_dir) / ".local" / "share" / "applications";
+}
+
+fs::path GetDesktopFilePath(std::string chain)
+{
+    const auto app_dir = GetUserApplicationsDir();
+    if (app_dir.empty()) return fs::path();
+    if (!chain.empty()) {
+        chain = "_" + chain;
+    }
+    return app_dir / strprintf("org.bitcoincore.BitcoinQt%s.desktop", chain);
+}
+
+fs::path GetUserIconsDir()
+{
+    const char* home_dir = getenv("HOME");
+    if (!home_dir) return fs::path();
+    return fs::path(home_dir) / ".local" / "share" / "icons";
+}
+
+fs::path GetIconPath(std::string chain)
+{
+    const auto icons_dir = GetUserIconsDir();
+    if (icons_dir.empty()) return fs::path();
+    if (!chain.empty()) {
+        chain = "-" + chain;
+    }
+    return icons_dir / strprintf("bitcoin%s.png", chain);
+}
 #endif // Q_OS_LINUX
 } // namespace
 
 namespace GUIUtil {
+
+#ifdef Q_OS_LINUX
+bool IntegrateWithDesktopEnvironment(QIcon icon)
+{
+    std::string chain = gArgs.GetChainName();
+    assert(chain == CBaseChainParams::MAIN || chain == CBaseChainParams::TESTNET);
+    if (chain == CBaseChainParams::MAIN) {
+        chain.clear();
+    }
+
+    const auto icon_path = GetIconPath(chain);
+    if (icon_path.empty() || !icon.pixmap(256).save(boostPathToQString(icon_path))) return false;
+    const auto exe_path = GetExecutablePathAsString();
+    if (exe_path.empty()) return false;
+    const auto desktop_file_path = GetDesktopFilePath(chain);
+    if (desktop_file_path.empty()) return false;
+    fsbridge::ofstream desktop_file(desktop_file_path, std::ios_base::out | std::ios_base::trunc);
+    if (!desktop_file.good()) return false;
+
+    desktop_file << "[Desktop Entry]\n";
+    desktop_file << "Type=Application\n";
+    desktop_file << "Version=1.1\n";
+    desktop_file << "GenericName=Bitcoin client\n";
+    desktop_file << "Comment=Bitcoin full node and wallet\n";
+    desktop_file << strprintf("Icon=%s\n", icon_path.stem().string());
+    desktop_file << strprintf("TryExec=%s\n", exe_path);
+    desktop_file << "Categories=Network;Office;Finance;\n";
+    if (chain.empty()) {
+        desktop_file << "Name=" PACKAGE_NAME "\n";
+        desktop_file << strprintf("Exec=%s %%u\n", exe_path);
+        desktop_file << "Actions=Testnet;\n";
+        desktop_file << "[Desktop Action Testnet]\n";
+        desktop_file << strprintf("Exec=%s -testnet\n", exe_path);
+        desktop_file << "Name=Testnet mode\n";
+    } else {
+        desktop_file << "Name=" PACKAGE_NAME " - Testnet\n";
+        desktop_file << strprintf("Exec=%s -testnet %%u\n", exe_path);
+    }
+
+    desktop_file.close();
+    return true;
+}
+#endif // Q_OS_LINUX
 
 QString getDefaultDataDirectory()
 {

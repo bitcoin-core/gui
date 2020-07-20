@@ -7,7 +7,9 @@
 
 #include <fs.h>
 
+#include <QIcon>
 #include <QString>
+#include <QtGlobal>
 
 QT_BEGIN_NAMESPACE
 class QWidget;
@@ -16,6 +18,11 @@ QT_END_NAMESPACE
 /** Filesystem utility functions used by the GUI.
  */
 namespace GUIUtil {
+
+#ifdef Q_OS_LINUX
+bool IntegrateWithDesktopEnvironment(QIcon icon);
+#endif // Q_OS_LINUX
+
 /**
  * Determine default data directory for operating system.
  */

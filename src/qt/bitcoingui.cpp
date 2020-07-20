@@ -8,6 +8,7 @@
 #include <qt/clientmodel.h>
 #include <qt/createwalletdialog.h>
 #include <qt/guiconstants.h>
+#include <qt/guifileutil.h>
 #include <qt/guiutil.h>
 #include <qt/modaloverlay.h>
 #include <qt/networkstyle.h>
@@ -479,6 +480,21 @@ void BitcoinGUI::createMenuBar()
         settings->addSeparator();
     }
     settings->addAction(optionsAction);
+#ifdef Q_OS_LINUX
+    if (gArgs.GetChainName() != CBaseChainParams::REGTEST) {
+        settings->addSeparator();
+        QAction* integrate_with_DE = settings->addAction(tr("&Integrate with desktop environment"));
+        connect(integrate_with_DE, &QAction::triggered, [this] {
+            if (GUIUtil::IntegrateWithDesktopEnvironment(m_network_style->getTrayAndWindowIcon())) {
+                QMessageBox::information(this, tr("Application registered"),
+                                         tr("Now you are able to launch " PACKAGE_NAME " from the desktop menu."));
+            } else {
+                QMessageBox::warning(this, tr("Application registration failed"),
+                                     tr("" PACKAGE_NAME " failed integration with your desktop environment."));
+            }
+        });
+    }
+#endif // Q_OS_LINUX
 
     QMenu* window_menu = appMenuBar->addMenu(tr("&Window"));
 
