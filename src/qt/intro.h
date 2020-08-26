@@ -11,6 +11,7 @@
 
 static const bool DEFAULT_CHOOSE_DATADIR = false;
 
+class ArgsManager;
 class FreespaceChecker;
 
 namespace interfaces {
@@ -30,8 +31,7 @@ class Intro : public QDialog
     Q_OBJECT
 
 public:
-    explicit Intro(QWidget *parent = nullptr,
-                   int64_t blockchain_size_gb = 0, int64_t chain_state_size_gb = 0);
+    explicit Intro(const ArgsManager& args, QWidget* parent = nullptr, int64_t blockchain_size_gb = 0, int64_t chain_state_size_gb = 0);
     ~Intro();
 
     QString getDataDirectory();
@@ -47,7 +47,7 @@ public:
      * @note do NOT call global GetDataDir() before calling this function, this
      * will cause the wrong path to be cached.
      */
-    static bool showIfNeeded(bool& did_show_intro, bool& prune);
+    static bool showIfNeeded(ArgsManager& args, bool& did_show_intro, bool& prune);
 
 Q_SIGNALS:
     void requestCheck();

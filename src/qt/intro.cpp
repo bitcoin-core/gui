@@ -110,22 +110,22 @@ void FreespaceChecker::check()
 
 namespace {
 //! Return pruning size that will be used if automatic pruning is enabled.
-int GetPruneTargetGB()
+int GetPruneTargetGB(const ArgsManager& args)
 {
-    int64_t prune_target_mib = gArgs.GetArg("-prune", 0);
+    int64_t prune_target_mib = args.GetArg("-prune", 0);
     // >1 means automatic pruning is enabled by config, 1 means manual pruning, 0 means no pruning.
     return prune_target_mib > 1 ? PruneMiBtoGB(prune_target_mib) : DEFAULT_PRUNE_TARGET_GB;
 }
 } // namespace
 
-Intro::Intro(QWidget *parent, int64_t blockchain_size_gb, int64_t chain_state_size_gb) :
-    QDialog(parent),
-    ui(new Ui::Intro),
-    thread(nullptr),
-    signalled(false),
-    m_blockchain_size_gb(blockchain_size_gb),
-    m_chain_state_size_gb(chain_state_size_gb),
-    m_prune_target_gb{GetPruneTargetGB()}
+Intro::Intro(const ArgsManager& args, QWidget* parent, int64_t blockchain_size_gb, int64_t chain_state_size_gb)
+    : QDialog(parent),
+      ui(new Ui::Intro),
+      thread(nullptr),
+      signalled(false),
+      m_blockchain_size_gb(blockchain_size_gb),
+      m_chain_state_size_gb(chain_state_size_gb),
+      m_prune_target_gb{GetPruneTargetGB(args)}
 {
     ui->setupUi(this);
     ui->welcomeLabel->setText(ui->welcomeLabel->text().arg(PACKAGE_NAME));
@@ -139,7 +139,7 @@ Intro::Intro(QWidget *parent, int64_t blockchain_size_gb, int64_t chain_state_si
     );
     ui->lblExplanation2->setText(ui->lblExplanation2->text().arg(PACKAGE_NAME));
 
-    if (gArgs.GetArg("-prune", 0) > 1) { // -prune=1 means enabled, above that it's a size in MiB
+    if (args.GetArg("-prune", 0) > 1) { // -prune=1 means enabled, above that it's a size in MiB
         ui->prune->setChecked(true);
         ui->prune->setEnabled(false);
     }
@@ -182,31 +182,34 @@ void Intro::setDataDirectory(const QString &dataDir)
     }
 }
 
-bool Intro::showIfNeeded(bool& did_show_intro, bool& prune)
+bool Intro::showIfNeeded(ArgsManager& args, bool& did_show_intro, bool& prune)
 {
     did_show_intro = false;
 
     QSettings settings;
     /* If data directory provided on command line, no need to look at settings
        or show a picking dialog */
-    if(!gArgs.GetArg("-datadir", "").empty())
+    if (!args.GetArg("-datadir", "").empty()) {
         return true;
+    }
     /* 1) Default data directory for operating system */
     QString dataDir = GUIUtil::getDefaultDataDirectory();
     /* 2) Allow QSettings to override default dir */
     dataDir = settings.value("strDataDir", dataDir).toString();
 
-    if(!fs::exists(GUIUtil::qstringToBoostPath(dataDir)) || gArgs.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) || settings.value("fReset", false).toBool() || gArgs.GetBoolArg("-resetguisettings", false))
-    {
+    if (!fs::exists(GUIUtil::qstringToBoostPath(dataDir)) ||
+        args.GetBoolArg("-choosedatadir", DEFAULT_CHOOSE_DATADIR) ||
+        settings.value("fReset", false).toBool() ||
+        args.GetBoolArg("-resetguisettings", false)) {
         /* Use selectParams here to guarantee Params() can be used by node interface */
         try {
-            SelectParams(gArgs.GetChainName());
+            SelectParams(args.GetChainName());
         } catch (const std::exception&) {
             return false;
         }
 
         /* If current default data directory does not exist, let the user choose one */
-        Intro intro(0, Params().AssumedBlockchainSize(), Params().AssumedChainStateSize());
+        Intro intro(args, nullptr, Params().AssumedBlockchainSize(), Params().AssumedChainStateSize());
         intro.setDataDirectory(dataDir);
         intro.setWindowIcon(QIcon(":icons/bitcoin"));
         did_show_intro = true;
@@ -242,8 +245,8 @@ bool Intro::showIfNeeded(bool& did_show_intro, bool& prune)
      * override -datadir in the bitcoin.conf file in the default data directory
      * (to be consistent with bitcoind behavior)
      */
-    if(dataDir != GUIUtil::getDefaultDataDirectory()) {
-        gArgs.SoftSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
+    if (dataDir != GUIUtil::getDefaultDataDirectory()) {
+        args.SoftSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
     }
     return true;
 }

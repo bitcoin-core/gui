@@ -34,6 +34,7 @@
 #include <node/ui_interface.h>
 #include <noui.h>
 #include <uint256.h>
+#include <util/check.h>
 #include <util/system.h>
 #include <util/threadnames.h>
 #include <util/translation.h>
@@ -469,6 +470,7 @@ int GuiMain(int argc, char* argv[])
     /// 2. Parse command-line options. We do this after qt in order to show an error if there are problems parsing these
     // Command-line options take precedence:
     SetupServerArgs(node_context);
+    ArgsManager& args = *Assert(node_context.args);
     SetupUIArgs(gArgs);
     std::string error;
     if (!gArgs.ParseParameters(argc, argv, error)) {
@@ -508,7 +510,7 @@ int GuiMain(int argc, char* argv[])
     bool did_show_intro = false;
     bool prune = false; // Intro dialog prune check box
     // Gracefully exit if the user cancels
-    if (!Intro::showIfNeeded(did_show_intro, prune)) return EXIT_SUCCESS;
+    if (!Intro::showIfNeeded(args, did_show_intro, prune)) return EXIT_SUCCESS;
 
     /// 6. Determine availability of data directory and parse bitcoin.conf
     /// - Do not call GetDataDir(true) before this step finishes
