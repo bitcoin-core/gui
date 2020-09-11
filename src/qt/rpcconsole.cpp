@@ -32,6 +32,7 @@
 #include <QKeyEvent>
 #include <QMenu>
 #include <QMessageBox>
+#include <QRegExp>
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
@@ -81,7 +82,7 @@ public:
     explicit RPCExecutor(interfaces::Node& node) : m_node(node) {}
 
 public Q_SLOTS:
-    void request(const QString &command, const WalletModel* wallet_model);
+    void request(QString command, const WalletModel* wallet_model);
 
 Q_SIGNALS:
     void reply(int category, const QString &command);
@@ -383,10 +384,13 @@ bool RPCConsole::RPCParseCommandLine(interfaces::Node* node, std::string &strRes
     }
 }
 
-void RPCExecutor::request(const QString &command, const WalletModel* wallet_model)
+void RPCExecutor::request(QString command, const WalletModel* wallet_model)
 {
     try
     {
+        command.replace(QRegExp("@best"), "getbestblockhash()");
+        command.replace(QRegExp("@([\\d]+)"), "getblockhash(\\1)");
+
         std::string result;
         std::string executableCommand = command.toStdString() + "\n";
 
@@ -410,7 +414,11 @@ void RPCExecutor::request(const QString &command, const WalletModel* wallet_mode
                 "   example:    getblock(getblockhash(0) 1)[tx]\n\n"
 
                 "Results without keys can be queried with an integer in brackets using the parenthesized syntax.\n"
-                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n")));
+                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n"
+
+                "Aliases for block hash can be used."
+                "   example:    getblockheader @best\n"
+                "               getblockheader @123\n\n")));
             return;
         }
         if (!RPCConsole::RPCExecuteCommandLine(m_node, result, executableCommand, nullptr, wallet_model)) {
