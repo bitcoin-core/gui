@@ -7,7 +7,7 @@
 #endif
 
 #include <qt/rpcconsole.h>
-#include <qt/forms/ui_debugwindow.h>
+#include <qt/forms/ui_nodewindow.h>
 
 #include <qt/bantablemodel.h>
 #include <qt/clientmodel.h>
