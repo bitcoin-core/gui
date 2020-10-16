@@ -201,9 +201,6 @@ private:
     /** Connect core signals to GUI client */
     void subscribeToCoreSignals();
 
-    /** Update UI with latest network info from model. */
-    void updateNetworkState();
-
     void updateHeadersSyncProgressLabel();
 
     /** Open the OptionsDialog on the specified tab index */
@@ -217,10 +214,8 @@ Q_SIGNALS:
     void setPrivacy(bool privacy);
 
 public Q_SLOTS:
-    /** Set number of connections shown in the UI */
-    void setNumConnections();
-    /** Set network state shown in the UI */
-    void setNetworkActive();
+    /** Update UI with latest network info from model. */
+    void updateNetworkState();
     /** Set number of blocks and last block date shown in the UI */
     void setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers, SynchronizationState sync_state);
 
