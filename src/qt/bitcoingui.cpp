@@ -77,6 +77,7 @@ const std::string BitcoinGUI::DEFAULT_UIPLATFORM =
 BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformStyle, const NetworkStyle *networkStyle, QWidget *parent) :
     QMainWindow(parent),
     m_node(node),
+    m_tor_icon{new GUIUtil::ClickableLabel()},
     trayIconMenu{new QMenu()},
     platformStyle(_platformStyle),
     m_network_style(networkStyle)
@@ -160,6 +161,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
         frameBlocksLayout->addWidget(labelWalletEncryptionIcon);
         frameBlocksLayout->addWidget(labelWalletHDStatusIcon);
     }
+    frameBlocksLayout->addWidget(m_tor_icon);
     frameBlocksLayout->addWidget(labelProxyIcon);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(connectionsControl);
@@ -200,6 +202,9 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
         m_node.setNetworkActive(!m_node.getNetworkActive());
     });
     connect(labelProxyIcon, &GUIUtil::ClickableLabel::clicked, [this] {
+        openOptionsDialogWithTab(OptionsDialog::TAB_NETWORK);
+    });
+    connect(m_tor_icon, &GUIUtil::ClickableLabel::clicked, [this] {
         openOptionsDialogWithTab(OptionsDialog::TAB_NETWORK);
     });
 
@@ -898,7 +903,8 @@ void BitcoinGUI::gotoLoadPSBT(bool from_clipboard)
 
 void BitcoinGUI::updateNetworkState()
 {
-    int count = m_node.peerCount();
+    const ConnCounts conn_counts = m_node.connectionCounts();
+    const int count = conn_counts.all;
     QString icon;
     switch(count)
     {
@@ -921,8 +927,15 @@ void BitcoinGUI::updateNetworkState()
     // Don't word-wrap this (fixed-width) tooltip
     tooltip = QString("<nobr>") + tooltip + QString("</nobr>");
     connectionsControl->setToolTip(tooltip);
-
     connectionsControl->setPixmap(platformStyle->SingleColorIcon(icon).pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+
+    if (conn_counts.onion_only) {
+        m_tor_icon->setPixmap(platformStyle->SingleColorIcon(":/icons/tor_connected").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
+        m_tor_icon->setToolTip(tr("All connections are <b>via Tor</b> only"));
+        m_tor_icon->show();
+    } else {
+        m_tor_icon->hide();
+    }
 }
 
 void BitcoinGUI::updateHeadersSyncProgressLabel()
