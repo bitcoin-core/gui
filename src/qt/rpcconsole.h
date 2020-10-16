@@ -103,10 +103,6 @@ public Q_SLOTS:
     /** Append the message to the message widget */
     void message(int category, const QString &msg) { message(category, msg, false); }
     void message(int category, const QString &message, bool html);
-    /** Set number of connections shown in the UI */
-    void setNumConnections();
-    /** Set network state shown in the UI */
-    void setNetworkActive();
     /** Set number of blocks and last block date shown in the UI */
     void setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers);
     /** Set size (number of transactions and memory usage) of the mempool in the UI */
@@ -129,6 +125,8 @@ public Q_SLOTS:
     void unbanSelectedNode();
     /** set which tab has the focus (is visible) */
     void setTabFocus(enum TabTypes tabType);
+    /** Update UI with latest network info from model. */
+    void updateNetworkState();
 
 Q_SIGNALS:
     // For RPC command executor
@@ -165,9 +163,6 @@ private:
     QCompleter *autoCompleter = nullptr;
     QThread thread;
     WalletModel* m_last_wallet_model{nullptr};
-
-    /** Update UI with latest network info from model. */
-    void updateNetworkState();
 
 private Q_SLOTS:
     void updateAlerts(const QString& warnings);

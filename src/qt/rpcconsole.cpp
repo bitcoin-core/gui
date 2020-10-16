@@ -574,14 +574,12 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
     ui->trafficGraph->setClientModel(model);
     if (model && clientModel->getPeerTableModel() && clientModel->getBanTableModel()) {
         // Keep up to date with client
-        setNumConnections();
-        connect(model, &ClientModel::numConnectionsChanged, this, &RPCConsole::setNumConnections);
+        updateNetworkState();
+        connect(model, &ClientModel::numConnectionsChanged, this, &RPCConsole::updateNetworkState);
+        connect(model, &ClientModel::networkActiveChanged, this, &RPCConsole::updateNetworkState);
 
         setNumBlocks(bestblock_height, QDateTime::fromTime_t(bestblock_date), verification_progress, false);
         connect(model, &ClientModel::numBlocksChanged, this, &RPCConsole::setNumBlocks);
-
-        updateNetworkState();
-        connect(model, &ClientModel::networkActiveChanged, this, &RPCConsole::setNetworkActive);
 
         interfaces::Node& node = clientModel->node();
         updateTrafficStats(node.getTotalBytesRecv(), node.getTotalBytesSent());
@@ -854,19 +852,6 @@ void RPCConsole::updateNetworkState()
     }
 
     ui->numberOfConnections->setText(connections);
-}
-
-void RPCConsole::setNumConnections()
-{
-    if (!clientModel)
-        return;
-
-    updateNetworkState();
-}
-
-void RPCConsole::setNetworkActive()
-{
-    updateNetworkState();
 }
 
 void RPCConsole::setNumBlocks(int count, const QDateTime& blockDate, double nVerificationProgress, bool headers)
