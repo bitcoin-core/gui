@@ -58,7 +58,6 @@ private:
         None,                       /**< Ignore informational notifications, and show a modal pop-up dialog for Critical notifications. */
         Freedesktop,                /**< Use DBus org.freedesktop.Notifications */
         QSystemTray,                /**< Use QSystemTrayIcon::showMessage() */
-        UserNotificationCenter      /**< Use the 10.8+ User Notification Center (Mac only) */
     };
     QString programName;
     Mode mode;
@@ -69,9 +68,6 @@ private:
     void notifyDBus(Class cls, const QString &title, const QString &text, const QIcon &icon, int millisTimeout);
 #endif
     void notifySystray(Class cls, const QString &title, const QString &text, int millisTimeout);
-#ifdef Q_OS_MAC
-    void notifyMacUserNotificationCenter(const QString &title, const QString &text);
-#endif
 };
 
 #endif // BITCOIN_QT_NOTIFICATOR_H
