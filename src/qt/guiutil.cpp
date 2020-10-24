@@ -51,6 +51,7 @@
 #include <QShortcut>
 #include <QSize>
 #include <QString>
+#include <QSystemTrayIcon>
 #include <QTextDocument> // for Qt::mightBeRichText
 #include <QThread>
 #include <QUrlQuery>
@@ -911,6 +912,10 @@ void LogQtInfo()
     for (const QScreen* s : QGuiApplication::screens()) {
         LogPrintf("Screen: %s %dx%d, pixel ratio=%.1f\n", s->name().toStdString(), s->size().width(), s->size().height(), s->devicePixelRatio());
     }
+
+    LogPrintf("System tray properties:\n");
+    LogPrintf(" is available: %s\n", QSystemTrayIcon::isSystemTrayAvailable() ? "yes" : "no");
+    LogPrintf(" supports balloon messages: %s\n", QSystemTrayIcon::supportsMessages() ? "yes" : "no");
 }
 
 void PopupMenu(QMenu* menu, const QPoint& point, QAction* at_action)
