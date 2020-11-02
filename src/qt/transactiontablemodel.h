@@ -10,6 +10,7 @@
 #include <QAbstractTableModel>
 #include <QStringList>
 
+#include <atomic>
 #include <memory>
 
 namespace interfaces {
@@ -81,7 +82,8 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
     QModelIndex index(int row, int column, const QModelIndex & parent = QModelIndex()) const override;
-    bool processingQueuedTransactions() const { return fProcessingQueuedTransactions; }
+    bool processingQueuedTransactions() const { return m_processing_queued_transactions.load(); }
+    void setProcessingQueuedTransactions(bool value) { m_processing_queued_transactions.store(value); }
 
 private:
     WalletModel *walletModel;
@@ -89,7 +91,7 @@ private:
     std::unique_ptr<interfaces::Handler> m_handler_show_progress;
     QStringList columns;
     TransactionTablePriv *priv;
-    bool fProcessingQueuedTransactions;
+    std::atomic<bool> m_processing_queued_transactions{false};
     const PlatformStyle *platformStyle;
 
     void subscribeToCoreSignals();
@@ -114,8 +116,6 @@ public Q_SLOTS:
     void updateDisplayUnit();
     /** Updates the column title to "Amount (DisplayUnit)" and emits headerDataChanged() signal for table headers to react. */
     void updateAmountColumnTitle();
-    /* Needed to update fProcessingQueuedTransactions through a QueuedConnection */
-    void setProcessingQueuedTransactions(bool value) { fProcessingQueuedTransactions = value; }
 
     friend class TransactionTablePriv;
 };
