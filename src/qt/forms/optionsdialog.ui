@@ -33,7 +33,7 @@
           <string>Automatically start %1 after logging in to the system.</string>
          </property>
          <property name="text">
-          <string>&amp;Start %1 on system login</string>
+          <string>Start &amp;%1 on system login</string>
          </property>
         </widget>
        </item>
@@ -58,7 +58,7 @@
            <string>Disables some advanced features but all blocks will still be fully validated. Reverting this setting requires re-downloading the entire blockchain. Actual disk usage may be somewhat higher.</string>
           </property>
           <property name="text">
-           <string>Prune &amp;block storage to</string>
+           <string>&amp;Prune block storage to:</string>
           </property>
          </widget>
         </item>
@@ -105,7 +105,7 @@
          <item>
           <widget class="QLabel" name="databaseCacheLabel">
            <property name="text">
-            <string>Size of &amp;database cache</string>
+            <string>&amp;Size of database cache:</string>
            </property>
            <property name="textFormat">
             <enum>Qt::PlainText</enum>
@@ -148,7 +148,7 @@
          <item>
           <widget class="QLabel" name="threadsScriptVerifLabel">
            <property name="text">
-            <string>Number of script &amp;verification threads</string>
+            <string>Number of script &amp;verification threads:</string>
            </property>
            <property name="textFormat">
             <enum>Qt::PlainText</enum>
@@ -212,7 +212,7 @@
              <string>Whether to show coin control features or not.</string>
             </property>
             <property name="text">
-             <string>Enable coin &amp;control features</string>
+             <string>&amp;Enable coin control features</string>
             </property>
            </widget>
           </item>
@@ -275,7 +275,7 @@
           <string>Connect to the Bitcoin network through a SOCKS5 proxy.</string>
          </property>
          <property name="text">
-          <string>&amp;Connect through SOCKS5 proxy (default proxy):</string>
+          <string>Connect through SOCKS&amp;5 proxy (default proxy):</string>
          </property>
         </widget>
        </item>
@@ -583,7 +583,7 @@
           <string>Show only a tray icon after minimizing the window.</string>
          </property>
          <property name="text">
-          <string>&amp;Minimize to the tray instead of the taskbar</string>
+          <string>Minimize to the &amp;tray instead of the taskbar</string>
          </property>
         </widget>
        </item>
