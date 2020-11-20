@@ -48,6 +48,8 @@ src/univalue/gen
 src/qt/*.moc
 src/qt/moc_*.cpp
 src/qt/forms/ui_*.h
+src/qt/forms/*.ui.autosave
+src/qt/*.o.tmp
 
 src/qt/test/moc*.cpp
 
@@ -56,6 +58,7 @@ src/qt/bitcoin-qt.creator
 src/qt/bitcoin-qt.creator.user
 src/qt/bitcoin-qt.files
 src/qt/bitcoin-qt.includes
+contrib/bitcoin-qt.pro.user
 
 .deps
 .dirstamp
@@ -98,6 +101,7 @@ background.tiff*
 
 # Qt Creator
 Makefile.am.user
+build-bitcoin-qt*
 
 # Unit-tests
 Makefile.test
