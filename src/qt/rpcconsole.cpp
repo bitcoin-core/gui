@@ -490,7 +490,21 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     m_node.rpcSetTimerInterfaceIfUnset(rpcTimerInterface);
 
     setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
-    updateDetailWidget();
+
+    // debugwindow.ui -> tab_peers -> splitter -> peersWidgetRightPanel -> scrollArea
+    ui->peersWidgetRightPanel->hide();
+
+    //detailWidgetRightPanel Header
+    //ui->peerNodeIDLabel->setText(tr("Node ID:"));
+    ui->peerNodeID->setText(tr(""));
+
+    //ui->peerNodeIPLabel->setText(tr("Node IP:"));
+    ui->peerNodeIP->setText(tr(""));
+
+    //ui->peerLocalIPLabel->setText(tr("Local IP:"));
+    ui->peerLocalIP->setText(tr(""));
+    //updateDetailWidget();
+
 
     consoleFontSize = settings.value(fontSizeSettingsKey, QFont().pointSize()).toInt();
     clear();
@@ -584,17 +598,27 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
 
         connect(model, &ClientModel::mempoolSizeChanged, this, &RPCConsole::setMempoolSize);
 
-        // set up peer table
+        // set up peerWidgetLeftPanel -> peerWidget
         ui->peerWidget->setModel(model->getPeerTableModel());
         ui->peerWidget->verticalHeader()->hide();
         ui->peerWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->peerWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         ui->peerWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
         ui->peerWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-        ui->peerWidget->setColumnWidth(PeerTableModel::Address, ADDRESS_COLUMN_WIDTH);
-        ui->peerWidget->setColumnWidth(PeerTableModel::Subversion, SUBVERSION_COLUMN_WIDTH);
+        // set peer table column widths
+        ui->peerWidget->setColumnWidth(PeerTableModel::NetNodeId, ID_COLUMN_WIDTH);
+        ui->peerWidget->setColumnWidth(PeerTableModel::Direction, DIRECTION_COLUMN_WIDTH);
+        ui->peerWidget->setColumnWidth(PeerTableModel::NodeService, NODE_SERVICE_COLUMN_WIDTH);
         ui->peerWidget->setColumnWidth(PeerTableModel::Ping, PING_COLUMN_WIDTH);
+        ui->peerWidget->setColumnWidth(PeerTableModel::Sent, SENT_COLUMN_WIDTH);
+        ui->peerWidget->setColumnWidth(PeerTableModel::Received, RECEIVED_COLUMN_WIDTH);
+        ui->peerWidget->setColumnWidth(PeerTableModel::Subversion, SUBVERSION_COLUMN_WIDTH); //User Agent
+        ui->peerWidget->setColumnWidth(PeerTableModel::Services, SERVICES_COLUMN_WIDTH);
+
+        ui->peerWidget->setColumnWidth(PeerTableModel::Bumper, 0);
         ui->peerWidget->horizontalHeader()->setStretchLastSection(true);
+        ui->peerWidget->horizontalScrollBar()->setStyleSheet("QScrollBar {height:0px;}");
+        ui->peerWidget->verticalScrollBar()->setStyleSheet("QScrollBar {width:0px;}");
 
         // create peer table context menu actions
         QAction* disconnectAction = new QAction(tr("&Disconnect"), this);
@@ -662,6 +686,8 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         ui->blocksDir->setText(model->blocksDir());
         ui->startupTime->setText(model->formatClientStartupTime());
         ui->networkName->setText(QString::fromStdString(Params().NetworkIDString()));
+        ui->scrollArea->horizontalScrollBar()->setStyleSheet("QScrollBar {height:0px;}");
+        ui->scrollArea->verticalScrollBar()->setStyleSheet("QScrollBar {width:0px;}");
 
         //Setup autocomplete and attach it
         QStringList wordList;
@@ -1085,17 +1111,22 @@ void RPCConsole::updateDetailWidget()
     auto selection_model = ui->peerWidget->selectionModel();
     if (selection_model) selected_rows = selection_model->selectedRows();
     if (!clientModel || !clientModel->getPeerTableModel() || selected_rows.size() != 1) {
-        ui->detailWidget->hide();
-        ui->peerHeading->setText(tr("Select a peer to view detailed information."));
+        ui->scrollArea->horizontalScrollBar()->setValue(0);
+        ui->scrollArea->verticalScrollBar()->setValue(0);
+        ui->peerWidget->horizontalScrollBar()->setValue(0);
         return;
     }
     const CNodeCombinedStats *stats = clientModel->getPeerTableModel()->getNodeStats(selected_rows.first().row());
     // update the detail ui with latest node information
-    QString peerAddrDetails(QString::fromStdString(stats->nodeStats.addrName) + " ");
-    peerAddrDetails += tr("(node id: %1)").arg(QString::number(stats->nodeStats.nodeid));
-    if (!stats->nodeStats.addrLocal.empty())
-        peerAddrDetails += "<br />" + tr("via %1").arg(QString::fromStdString(stats->nodeStats.addrLocal));
-    ui->peerHeading->setText(peerAddrDetails);
+    QString peerAddrDetails(QString::fromStdString(stats->nodeStats.addrName));
+    QString peerAddrLocal(QString::fromStdString(stats->nodeStats.addrLocal));
+    QString nodeID(QString::number(stats->nodeStats.nodeid));
+
+    //peersWidgetRightPanel Header
+    ui->peerNodeID->setText(nodeID);
+    ui->peerNodeIP->setText(peerAddrDetails);
+    ui->peerLocalIP->setText(peerAddrLocal);
+    //peersWidgetRightPanel Body
     ui->peerServices->setText(GUIUtil::formatServicesStr(stats->nodeStats.nServices));
     ui->peerLastSend->setText(stats->nodeStats.nLastSend ? GUIUtil::formatDurationStr(GetSystemTimeInSeconds() - stats->nodeStats.nLastSend) : tr("never"));
     ui->peerLastRecv->setText(stats->nodeStats.nLastRecv ? GUIUtil::formatDurationStr(GetSystemTimeInSeconds() - stats->nodeStats.nLastRecv) : tr("never"));
@@ -1105,7 +1136,7 @@ void RPCConsole::updateDetailWidget()
     ui->peerPingTime->setText(GUIUtil::formatPingTime(stats->nodeStats.m_ping_usec));
     ui->peerPingWait->setText(GUIUtil::formatPingTime(stats->nodeStats.m_ping_wait_usec));
     ui->peerMinPing->setText(GUIUtil::formatPingTime(stats->nodeStats.m_min_ping_usec));
-    ui->timeoffset->setText(GUIUtil::formatTimeOffset(stats->nodeStats.nTimeOffset));
+    ui->peerTimeoffset->setText(GUIUtil::formatTimeOffset(stats->nodeStats.nTimeOffset));
     ui->peerVersion->setText(QString::number(stats->nodeStats.nVersion));
     ui->peerSubversion->setText(QString::fromStdString(stats->nodeStats.cleanSubVer));
     ui->peerDirection->setText(stats->nodeStats.fInbound ? tr("Inbound") : tr("Outbound"));
@@ -1137,7 +1168,7 @@ void RPCConsole::updateDetailWidget()
             ui->peerCommonHeight->setText(tr("Unknown"));
     }
 
-    ui->detailWidget->show();
+    ui->peersWidgetRightPanel->show();
 }
 
 void RPCConsole::resizeEvent(QResizeEvent *event)
@@ -1248,6 +1279,8 @@ void RPCConsole::clearSelectedNode()
     ui->peerWidget->selectionModel()->clearSelection();
     cachedNodeids.clear();
     updateDetailWidget();
+    ui->peersWidgetRightPanel->hide();
+    ui->peerNodeID->setText(tr("Select a peer"));
 }
 
 void RPCConsole::showOrHideBanTableIfRequired()

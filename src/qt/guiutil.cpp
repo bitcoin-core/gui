@@ -768,23 +768,65 @@ QString formatDurationStr(int secs)
     return strList.join(" ");
 }
 
+void sortLocaleAware(QStringList &sList)
+{
+    std::sort(sList.begin(), sList.end(), [](const QString &s1, const QString &s2){
+        return s1.localeAwareCompare(s2) < 0;
+    });
+}
+
 QString formatServicesStr(quint64 mask)
 {
     QStringList strList;
 
     for (const auto& flag : serviceFlagsToStr(mask)) {
+        if (flag == "NETWORK_LIMITED"){
+        strList.append(QString::fromStdString("LIMITED"));
+        }
+        else
+        {
         strList.append(QString::fromStdString(flag));
+        }
+        sortLocaleAware(strList);
     }
 
     if (strList.size())
-        return strList.join(" & ");
+        return strList.join(" ");
     else
         return QObject::tr("None");
 }
 
+QString shortFormatServicesStr(quint64 mask)
+{
+    QStringList strList;
+
+    for (const auto& flag : serviceFlagsToStr(mask)) {
+        if (flag == "NETWORK"){
+        strList.append(QString::fromStdString("N"));
+        }
+        if (flag == "NETWORK_LIMITED"){
+        strList.append(QString::fromStdString("L"));//BLOCKS ONLY
+        }
+        if (flag == "BLOOM"){
+        strList.append(QString::fromStdString("B"));
+        }
+        if (flag == "WITNESS"){
+        strList.append(QString::fromStdString("W"));
+        }
+        if (flag == "UNKNOWN"){
+        strList.append(QString::fromStdString("U"));
+        }
+    }
+
+    if (strList.size())
+        return strList.join(" ");
+    else
+        return QObject::tr("");
+}
+
 QString formatPingTime(int64_t ping_usec)
 {
-    return (ping_usec == std::numeric_limits<int64_t>::max() || ping_usec == 0) ? QObject::tr("N/A") : QString(QObject::tr("%1 ms")).arg(QString::number((int)(ping_usec / 1000), 10));
+    return (ping_usec == std::numeric_limits<int64_t>::max() || ping_usec == 0) ? QObject::tr(/*silence*/"") : QString(QObject::tr("%1 ms")).arg(QString::number((int)(ping_usec / 1000), 10));
 }
 
 QString formatTimeOffset(int64_t nTimeOffset)

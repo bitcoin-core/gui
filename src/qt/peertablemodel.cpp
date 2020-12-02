@@ -27,16 +27,21 @@ bool NodeLessThan::operator()(const CNodeCombinedStats &left, const CNodeCombine
     {
     case PeerTableModel::NetNodeId:
         return pLeft->nodeid < pRight->nodeid;
-    case PeerTableModel::Address:
+    case PeerTableModel::NodeService:
         return pLeft->addrName.compare(pRight->addrName) < 0;
-    case PeerTableModel::Subversion:
-        return pLeft->cleanSubVer.compare(pRight->cleanSubVer) < 0;
+    case PeerTableModel::Direction:
+        return pLeft->fInbound < pRight->fInbound;
     case PeerTableModel::Ping:
         return pLeft->m_min_ping_usec < pRight->m_min_ping_usec;
     case PeerTableModel::Sent:
         return pLeft->nSendBytes < pRight->nSendBytes;
     case PeerTableModel::Received:
         return pLeft->nRecvBytes < pRight->nRecvBytes;
+    case PeerTableModel::Subversion:
+        return pLeft->cleanSubVer.compare(pRight->cleanSubVer) < 0;
+    case PeerTableModel::Services:
+        return pLeft->addrName.compare(pRight->addrName) < 0;
+        //return pLeft->nServices.compare(pRight->nServices) < 0;
     }
 
     return false;
@@ -48,8 +53,8 @@ class PeerTablePriv
 public:
     /** Local cache of peer information */
     QList<CNodeCombinedStats> cachedNodeStats;
-    /** Column to sort nodes by (default to unsorted) */
-    int sortColumn{-1};
+    /** Column to sort nodes by (default to NetNodeId) */
+    int sortColumn{0};
     /** Order (ascending or descending) to sort nodes by */
     Qt::SortOrder sortOrder;
     /** Index of rows by node ID */
@@ -104,7 +109,7 @@ PeerTableModel::PeerTableModel(interfaces::Node& node, QObject* parent) :
     m_node(node),
     timer(nullptr)
 {
-    columns << tr("NodeId") << tr("Node/Service") << tr("Ping") << tr("Sent") << tr("Received") << tr("User Agent");
+    columns << tr("ID ") << tr("I/O") << tr("Node:Service") << tr("Ping") << tr("Sent") << tr("Received") << tr("User Agent") << tr("Services") << tr(/*BUMPER*/"");
     priv.reset(new PeerTablePriv());
 
     // set up timer for auto refresh
@@ -155,17 +160,20 @@ QVariant PeerTableModel::data(const QModelIndex &index, int role) const
         {
         case NetNodeId:
             return (qint64)rec->nodeStats.nodeid;
-        case Address:
-            // prepend to peer address down-arrow symbol for inbound connection and up-arrow for outbound connection
-            return QString(rec->nodeStats.fInbound ? "↓ " : "↑ ") + QString::fromStdString(rec->nodeStats.addrName);
-        case Subversion:
-            return QString::fromStdString(rec->nodeStats.cleanSubVer);
+        case Direction:
+            return QString(rec->nodeStats.fInbound ? "    ↓" : "↑"); //spaces for table column
+        case NodeService:
+            return QString::fromStdString(rec->nodeStats.addrName);
         case Ping:
             return GUIUtil::formatPingTime(rec->nodeStats.m_min_ping_usec);
         case Sent:
             return GUIUtil::formatBytes(rec->nodeStats.nSendBytes);
         case Received:
             return GUIUtil::formatBytes(rec->nodeStats.nRecvBytes);
+        case Subversion:
+            return QString::fromStdString(rec->nodeStats.cleanSubVer);
+        case Services:
+            return GUIUtil::shortFormatServicesStr(rec->nodeStats.nServices);
         }
     } else if (role == Qt::TextAlignmentRole) {
         switch (index.column()) {

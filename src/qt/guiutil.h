@@ -227,8 +227,14 @@ namespace GUIUtil
     /* Convert seconds into a QString with days, hours, mins, secs */
     QString formatDurationStr(int secs);
 
+    /* Sort a QStringList */
+    void sortLocaleAware(QStringList &sList);
+
     /* Format CNodeStats.nServices bitmask into a user-readable string */
     QString formatServicesStr(quint64 mask);
+
+    /* Format CNodeStats.nServices bitmask into an abbreviated user-readable string */
+    QString shortFormatServicesStr(quint64 mask);
 
     /* Format a CNodeStats.m_ping_usec into a user-readable string or display N/A, if 0*/
     QString formatPingTime(int64_t ping_usec);

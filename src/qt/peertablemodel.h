@@ -58,12 +58,15 @@ public:
     void stopAutoRefresh();
 
     enum ColumnIndex {
-        NetNodeId = 0,
-        Address = 1,
-        Ping = 2,
-        Sent = 3,
-        Received = 4,
-        Subversion = 5
+        NetNodeId   = 0,
+        Direction   = 1,
+        NodeService = 2,
+        Ping        = 3,
+        Sent        = 4,
+        Received    = 5,
+        Subversion  = 6,
+        Services    = 7,
+        Bumper      = 8
     };
 
     /** @name Methods overridden from QAbstractTableModel
