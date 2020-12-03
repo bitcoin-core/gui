@@ -8,7 +8,9 @@
 
 #include <clientversion.h>
 #include <fs.h>
+#include <optional.h>
 #include <streams.h>
+#include <support/allocators/secure.h>
 #include <util/memory.h>
 
 #include <atomic>
@@ -17,8 +19,6 @@
 
 struct bilingual_str;
 
-/** Given a wallet directory path or legacy file path, return path to main data file in the wallet database. */
-fs::path WalletDataFilePath(const fs::path& wallet_path);
 void SplitWalletPath(const fs::path& wallet_path, fs::path& env_directory, std::string& database_filename);
 
 /** RAII class that provides access to a WalletDatabase */
@@ -109,7 +109,7 @@ public:
     virtual ~WalletDatabase() {};
 
     /** Open the database if it is not already opened. */
-    virtual void Open(const char* mode) = 0;
+    virtual void Open() = 0;
 
     //! Counts the number of active database users to be sure that the database is not closed while someone is using it
     std::atomic<int> m_refcount{0};
@@ -141,18 +141,18 @@ public:
 
     virtual void ReloadDbEnv() = 0;
 
+    /** Return path to main database file for logs and error messages. */
+    virtual std::string Filename() = 0;
+
+    virtual std::string Format() = 0;
+
     std::atomic<unsigned int> nUpdateCounter;
     unsigned int nLastSeen;
     unsigned int nLastFlushed;
     int64_t nLastWalletUpdate;
 
-    /** Verifies the environment and database file */
-    virtual bool Verify(bilingual_str& error) = 0;
-
-    std::string m_file_path;
-
     /** Make a DatabaseBatch connected to this database */
-    virtual std::unique_ptr<DatabaseBatch> MakeBatch(const char* mode = "r+", bool flush_on_close = true) = 0;
+    virtual std::unique_ptr<DatabaseBatch> MakeBatch(bool flush_on_close = true) = 0;
 };
 
 /** RAII class that provides access to a DummyDatabase. Never fails. */
@@ -181,7 +181,7 @@ public:
 class DummyDatabase : public WalletDatabase
 {
 public:
-    void Open(const char* mode) override {};
+    void Open() override {};
     void AddRef() override {}
     void RemoveRef() override {}
     bool Rewrite(const char* pszSkip=nullptr) override { return true; }
@@ -191,8 +191,38 @@ public:
     bool PeriodicFlush() override { return true; }
     void IncrementUpdateCounter() override { ++nUpdateCounter; }
     void ReloadDbEnv() override {}
-    bool Verify(bilingual_str& errorStr) override { return true; }
-    std::unique_ptr<DatabaseBatch> MakeBatch(const char* mode = "r+", bool flush_on_close = true) override { return MakeUnique<DummyBatch>(); }
+    std::string Filename() override { return "dummy"; }
+    std::string Format() override { return "dummy"; }
+    std::unique_ptr<DatabaseBatch> MakeBatch(bool flush_on_close = true) override { return MakeUnique<DummyBatch>(); }
 };
+
+enum class DatabaseFormat {
+    BERKELEY,
+    SQLITE,
+};
+
+struct DatabaseOptions {
+    bool require_existing = false;
+    bool require_create = false;
+    Optional<DatabaseFormat> require_format;
+    uint64_t create_flags = 0;
+    SecureString create_passphrase;
+    bool verify = true;
+};
+
+enum class DatabaseStatus {
+    SUCCESS,
+    FAILED_BAD_PATH,
+    FAILED_BAD_FORMAT,
+    FAILED_ALREADY_LOADED,
+    FAILED_ALREADY_EXISTS,
+    FAILED_NOT_FOUND,
+    FAILED_CREATE,
+    FAILED_LOAD,
+    FAILED_VERIFY,
+    FAILED_ENCRYPT,
+};
+
+std::unique_ptr<WalletDatabase> MakeDatabase(const fs::path& path, const DatabaseOptions& options, DatabaseStatus& status, bilingual_str& error);
 
 #endif // BITCOIN_WALLET_DB_H

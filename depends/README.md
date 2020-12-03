@@ -25,7 +25,7 @@ Common `host-platform-triplets` for cross compilation are:
 - `i686-pc-linux-gnu` for Linux 32 bit
 - `x86_64-pc-linux-gnu` for x86 Linux
 - `x86_64-w64-mingw32` for Win64
-- `x86_64-apple-darwin16` for macOS
+- `x86_64-apple-darwin18` for macOS
 - `arm-linux-gnueabihf` for Linux ARM 32 bit
 - `aarch64-linux-gnu` for Linux ARM 64 bit
 - `powerpc64-linux-gnu` for Linux POWER 64-bit (big endian)
@@ -99,8 +99,16 @@ The following can be set when running make: `make FOO=bar`
 <dd>Don't download/build/cache packages needed for enabling zeromq</dd>
 <dt>NO_WALLET</dt>
 <dd>Don't download/build/cache libs needed to enable the wallet</dd>
+<dt>NO_BDB</dt>
+<dd>Don't download/build/cache BerkeleyDB</dd>
+<dt>NO_SQLITE</dt>
+<dd>Don't download/build/cache SQLite</dd>
 <dt>NO_UPNP</dt>
 <dd>Don't download/build/cache packages needed for enabling upnp</dd>
+<dt>ALLOW_HOST_PACKAGES</dt>
+<dd>Packages that are missed in dependencies (due to `NO_*` option or
+build script logic) are searched for among the host system packages using
+`pkg-config`. It allows building with packages of other (newer) versions</dd>
 <dt>MULTIPROCESS</dt>
 <dd>build libmultiprocess (experimental, requires cmake)</dd>
 <dt>DEBUG</dt>

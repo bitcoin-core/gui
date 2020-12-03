@@ -14,6 +14,12 @@
 
 #include <tuple>
 
+/**
+ * A flag that is ORed into the protocol version to designate that a transaction
+ * should be (un)serialized without witness data.
+ * Make sure that this does not collide with any of the values in `version.h`
+ * or with `ADDRV2_FORMAT`.
+ */
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
@@ -393,8 +399,8 @@ template <typename Tx> static inline CTransactionRef MakeTransactionRef(Tx&& txI
 /** A generic txid reference (txid or wtxid). */
 class GenTxid
 {
-    const bool m_is_wtxid;
-    const uint256 m_hash;
+    bool m_is_wtxid;
+    uint256 m_hash;
 public:
     GenTxid(bool is_wtxid, const uint256& hash) : m_is_wtxid(is_wtxid), m_hash(hash) {}
     bool IsWtxid() const { return m_is_wtxid; }

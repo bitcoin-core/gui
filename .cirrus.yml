@@ -6,8 +6,9 @@ container:
   # Each project has 16 CPU in total, assign 2 to each container, so that 8 tasks run in parallel
   cpu: 2
   memory: 8G  # Set to 8GB to avoid OOM. https://cirrus-ci.org/guide/linux/#linux-containers
+  kvm: true  # Use kvm to avoid spurious CI failures in the default virtualization cluster, see https://github.com/bitcoin/bitcoin/issues/20093
 env:
-  PACKAGE_MANAGER_INSTALL : "apt-get update && apt-get install -y"
+  PACKAGE_MANAGER_INSTALL: "apt-get update && apt-get install -y"
   MAKEJOBS: "-j4"
   DANGER_RUN_CI_ON_HOST: "1"  # Containers will be discarded after the run, so there is no risk that the ci scripts modify the system
   TEST_RUNNER_PORT_MIN: "14000"  # Must be larger than 12321, which is used for the http cache. See https://cirrus-ci.org/guide/writing-tasks/#http-cache
@@ -18,6 +19,7 @@ env:
 
 # https://cirrus-ci.org/guide/tips-and-tricks/#sharing-configuration-between-tasks
 global_task_template: &GLOBAL_TASK_TEMPLATE
+  skip: $CIRRUS_REPO_FULL_NAME == "bitcoin-core/gui" && $CIRRUS_PR == ""  # No need to run on the read-only mirror, unless it is a PR. https://cirrus-ci.org/guide/writing-tasks/#conditional-task-execution
   ccache_cache:
     folder: "/tmp/ccache_dir"
   depends_built_cache:
@@ -27,6 +29,7 @@ global_task_template: &GLOBAL_TASK_TEMPLATE
   depends_releases_cache:
     folder: "/tmp/cirrus-ci-build/releases"
   merge_base_script:
+    - if [ "$CIRRUS_PR" = "" ]; then exit 0; fi
     - bash -c "$PACKAGE_MANAGER_INSTALL git"
     - git fetch $CIRRUS_REPO_CLONE_URL $CIRRUS_BASE_BRANCH
     - git config --global user.email "ci@ci.ci"
@@ -52,15 +55,59 @@ global_task_template: &GLOBAL_TASK_TEMPLATE
 #    - choco install python --version=3.7.7 -y
 
 task:
-  name: 'x86_64 Linux  [GOAL: install]  [focal]  [depends, sanitizers: thread (TSan), no gui]'
+  name: 'ARM [unit tests, no functional tests] [buster]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: debian:buster
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_arm.sh"
+
+task:
+  name: 'Win64 [unit tests, no gui tests, no boost::process, no functional tests] [bionic]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:bionic
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_win64.sh"
+
+task:
+  name: '32-bit + dash [gui] [CentOS 8]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: centos:8
+  env:
+    PACKAGE_MANAGER_INSTALL: "yum install -y"
+    FILE_ENV: "./ci/test/00_setup_env_i686_centos.sh"
+
+task:
+  name: '[previous releases, uses qt5 dev package and some depends packages] [unsigned char] [bionic]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:bionic
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_native_qt5.sh"
+
+task:
+  name: '[depends, sanitizers: thread (TSan), no gui] [focal]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:focal
+    cpu: 4  # Double CPU and increase Memory to avoid timeout
+    memory: 24G
+  env:
+    MAKEJOBS: "-j8"
+    FILE_ENV: "./ci/test/00_setup_env_native_tsan.sh"
+
+task:
+  name: '[depends, sanitizers: memory (MSan)] [focal]'
   << : *GLOBAL_TASK_TEMPLATE
   container:
     image: ubuntu:focal
   env:
-    FILE_ENV: "./ci/test/00_setup_env_native_tsan.sh"
+    FILE_ENV: "./ci/test/00_setup_env_native_msan.sh"
 
 task:
-  name: 'x86_64 Linux  [GOAL: install]  [focal]  [no depends, only system libs, sanitizers: address/leak (ASan + LSan) + undefined (UBSan) + integer]'
+  name: '[no depends, only system libs, sanitizers: address/leak (ASan + LSan) + undefined (UBSan) + integer] [focal]'
   << : *GLOBAL_TASK_TEMPLATE
   container:
     image: ubuntu:focal
@@ -68,9 +115,47 @@ task:
     FILE_ENV: "./ci/test/00_setup_env_native_asan.sh"
 
 task:
-  name: 'x86_64 Linux  [GOAL: install]  [focal]  [no depends, only system libs, fuzzers under valgrind]'
+  name: '[no depends, only system libs, sanitizers: fuzzer,address,undefined] [focal]'
   << : *GLOBAL_TASK_TEMPLATE
   container:
     image: ubuntu:focal
   env:
-    FILE_ENV: "./ci/test/00_setup_env_native_fuzz_with_valgrind.sh"
+    FILE_ENV: "./ci/test/00_setup_env_native_fuzz.sh"
+
+task:
+  name: '[multiprocess] [focal]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:focal
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_native_multiprocess.sh"
+
+task:
+  name: '[no wallet] [bionic]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:bionic
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_native_nowallet.sh"
+
+task:
+  name: 'macOS 10.14 [gui, no tests] [bionic]'
+  << : *GLOBAL_TASK_TEMPLATE
+  container:
+    image: ubuntu:bionic
+  env:
+    FILE_ENV: "./ci/test/00_setup_env_mac.sh"
+
+task:
+  name: 'macOS 10.15 native [gui] [no depends]'
+  macos_brew_addon_script:
+    - brew install boost libevent berkeley-db4 qt miniupnpc ccache zeromq qrencode sqlite libtool automake pkg-config gnu-getopt
+  << : *GLOBAL_TASK_TEMPLATE
+  osx_instance:
+    # Use latest image, but hardcode version to avoid silent upgrades (and breaks)
+    image: catalina-xcode-12.1  # https://cirrus-ci.org/guide/macOS
+  env:
+    DANGER_RUN_CI_ON_HOST: "true"
+    CI_USE_APT_INSTALL: "no"
+    PACKAGE_MANAGER_INSTALL: "echo"  # Nothing to do
+    FILE_ENV: "./ci/test/00_setup_env_mac_host.sh"

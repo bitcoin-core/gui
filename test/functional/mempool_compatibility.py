@@ -8,7 +8,7 @@ NOTE: The test is designed to prevent cases when compatibility is broken acciden
 In case we need to break mempool compatibility we can continue to use the test by just bumping the version number.
 
 Download node binaries:
-contrib/devtools/previous_release.py -b v0.19.1 v0.18.1 v0.17.1 v0.16.3 v0.15.2
+test/get_previous_releases.py -b v0.19.1 v0.18.1 v0.17.2 v0.16.3 v0.15.2
 
 Only v0.15.2 is required by this test. The rest is used in other backwards compatibility tests.
 """
@@ -21,6 +21,7 @@ from test_framework.test_framework import BitcoinTestFramework
 class MempoolCompatibilityTest(BitcoinTestFramework):
     def set_test_params(self):
         self.num_nodes = 2
+        self.wallet_names = [None, self.default_wallet_name]
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
@@ -28,7 +29,7 @@ class MempoolCompatibilityTest(BitcoinTestFramework):
 
     def setup_network(self):
         self.add_nodes(self.num_nodes, versions=[
-            150200, # oldest version supported by the test framework
+            190100,  # oldest version with getmempoolinfo.loaded (used to avoid intermittent issues)
             None,
         ])
         self.start_nodes()
@@ -70,6 +71,7 @@ class MempoolCompatibilityTest(BitcoinTestFramework):
         self.start_node(0, ['-nowallet'])
         assert old_tx_hash in old_node.getrawmempool()
         assert unbroadcasted_tx_hash in old_node.getrawmempool()
+
 
 if __name__ == "__main__":
     MempoolCompatibilityTest().main()

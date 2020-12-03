@@ -1,5 +1,5 @@
 ---
-name: "bitcoin-core-osx-0.21"
+name: "bitcoin-core-osx-22"
 enable_cache: true
 distro: "ubuntu"
 suites:
@@ -37,7 +37,7 @@ script: |
   set -e -o pipefail
 
   WRAP_DIR=$HOME/wrapped
-  HOSTS="x86_64-apple-darwin16"
+  HOSTS="x86_64-apple-darwin18"
   CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests GENISOIMAGE=$WRAP_DIR/genisoimage"
   FAKETIME_HOST_PROGS=""
   FAKETIME_PROGS="ar ranlib date dmg genisoimage"
@@ -111,7 +111,7 @@ script: |
 
   # Create the source tarball
   mkdir -p "$(dirname "$GIT_ARCHIVE")"
-  git archive --output="$GIT_ARCHIVE" HEAD
+  git archive --prefix="${DISTNAME}/" --output="$GIT_ARCHIVE" HEAD
 
   ORIGPATH="$PATH"
   # Extract the git archive into a dir for each host and build
@@ -121,7 +121,7 @@ script: |
     cd distsrc-${i}
     INSTALLPATH="${PWD}/installed/${DISTNAME}"
     mkdir -p ${INSTALLPATH}
-    tar -xf $GIT_ARCHIVE
+    tar --strip-components=1 -xf "${GIT_ARCHIVE}"
 
     ./autogen.sh
     CONFIG_SITE=${BASEPREFIX}/${i}/share/config.site ./configure --prefix=/ --disable-ccache --disable-maintainer-mode --disable-dependency-tracking ${CONFIGFLAGS}

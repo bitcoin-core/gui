@@ -22,7 +22,6 @@ from test_framework.util import (
     assert_equal,
     assert_is_hex_string,
     assert_raises_rpc_error,
-    connect_nodes,
     hex_str_to_bytes,
     try_rpc,
 )
@@ -61,14 +60,12 @@ class SegWitTest(BitcoinTestFramework):
             ],
             [
                 "-acceptnonstdtxn=1",
-                "-blockversion=4",
                 "-rpcserialversion=1",
                 "-segwitheight=432",
                 "-addresstype=legacy",
             ],
             [
                 "-acceptnonstdtxn=1",
-                "-blockversion=536870915",
                 "-segwitheight=432",
                 "-addresstype=legacy",
             ],
@@ -80,7 +77,7 @@ class SegWitTest(BitcoinTestFramework):
 
     def setup_network(self):
         super().setup_network()
-        connect_nodes(self.nodes[0], 2)
+        self.connect_nodes(0, 2)
         self.sync_all()
 
     def success_mine(self, node, txid, sign, redeem_script=""):

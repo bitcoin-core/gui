@@ -4,14 +4,16 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test the listsinceblock RPC."""
 
+from test_framework.address import key_to_p2wpkh
+from test_framework.key import ECKey
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.messages import BIP125_SEQUENCE_NUMBER
 from test_framework.util import (
     assert_array_result,
     assert_equal,
     assert_raises_rpc_error,
-    connect_nodes,
 )
+from test_framework.wallet_util import bytes_to_wif
 
 from decimal import Decimal
 
@@ -26,7 +28,7 @@ class ListSinceBlockTest(BitcoinTestFramework):
     def run_test(self):
         # All nodes are in IBD from genesis, so they'll need the miner (node2) to be an outbound connection, or have
         # only one connection. (See fPreferredDownload in net_processing)
-        connect_nodes(self.nodes[1], 2)
+        self.connect_nodes(1, 2)
         self.nodes[2].generate(101)
         self.sync_all()
 
@@ -182,14 +184,21 @@ class ListSinceBlockTest(BitcoinTestFramework):
 
         self.sync_all()
 
+        # share utxo between nodes[1] and nodes[2]
+        eckey = ECKey()
+        eckey.generate()
+        privkey = bytes_to_wif(eckey.get_bytes())
+        address = key_to_p2wpkh(eckey.get_pubkey().get_bytes())
+        self.nodes[2].sendtoaddress(address, 10)
+        self.nodes[2].generate(6)
+        self.sync_all()
+        self.nodes[2].importprivkey(privkey)
+        utxos = self.nodes[2].listunspent()
+        utxo = [u for u in utxos if u["address"] == address][0]
+        self.nodes[1].importprivkey(privkey)
+
         # Split network into two
         self.split_network()
-
-        # share utxo between nodes[1] and nodes[2]
-        utxos = self.nodes[2].listunspent()
-        utxo = utxos[0]
-        privkey = self.nodes[2].dumpprivkey(utxo['address'])
-        self.nodes[1].importprivkey(privkey)
 
         # send from nodes[1] using utxo to nodes[0]
         change = '%.8f' % (float(utxo['amount']) - 1.0003)

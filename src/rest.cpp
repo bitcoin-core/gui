@@ -102,7 +102,7 @@ static CTxMemPool* GetMemPool(const util::Ref& context, HTTPRequest* req)
         RESTERR(req, HTTP_NOT_FOUND, "Mempool disabled or instance not found");
         return nullptr;
     }
-    return node->mempool;
+    return node->mempool.get();
 }
 
 static RetFormat ParseDataFormat(std::string& param, const std::string& strReq)
@@ -303,7 +303,7 @@ static bool rest_block_notxdetails(const util::Ref& context, HTTPRequest* req, c
 }
 
 // A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
-UniValue getblockchaininfo(const JSONRPCRequest& request);
+RPCHelpMan getblockchaininfo();
 
 static bool rest_chaininfo(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
 {
@@ -316,7 +316,7 @@ static bool rest_chaininfo(const util::Ref& context, HTTPRequest* req, const std
     case RetFormat::JSON: {
         JSONRPCRequest jsonRequest(context);
         jsonRequest.params = UniValue(UniValue::VARR);
-        UniValue chainInfoObject = getblockchaininfo(jsonRequest);
+        UniValue chainInfoObject = getblockchaininfo().HandleRequest(jsonRequest);
         std::string strJSON = chainInfoObject.write() + "\n";
         req->WriteHeader("Content-Type", "application/json");
         req->WriteReply(HTTP_OK, strJSON);
@@ -393,7 +393,7 @@ static bool rest_tx(const util::Ref& context, HTTPRequest* req, const std::strin
     const NodeContext* const node = GetNodeContext(context, req);
     if (!node) return false;
     uint256 hashBlock = uint256();
-    const CTransactionRef tx = GetTransaction(/* block_index */ nullptr, node->mempool, hash, Params().GetConsensus(), hashBlock);
+    const CTransactionRef tx = GetTransaction(/* block_index */ nullptr, node->mempool.get(), hash, Params().GetConsensus(), hashBlock);
     if (!tx) {
         return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
     }

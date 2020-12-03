@@ -56,14 +56,13 @@ public:
     std::unordered_map<std::string, WalletDatabaseFileId> m_fileids;
     std::condition_variable_any m_db_in_use;
 
-    BerkeleyEnvironment(const fs::path& env_directory);
+    explicit BerkeleyEnvironment(const fs::path& env_directory);
     BerkeleyEnvironment();
     ~BerkeleyEnvironment();
     void Reset();
 
     bool IsMock() const { return fMockDb; }
     bool IsInitialized() const { return fDbEnvInit; }
-    bool IsDatabaseLoaded(const std::string& db_filename) const { return m_databases.find(db_filename) != m_databases.end(); }
     fs::path Directory() const { return strPath; }
 
     bool Open(bilingual_str& error);
@@ -87,8 +86,8 @@ public:
 /** Get BerkeleyEnvironment and database filename given a wallet path. */
 std::shared_ptr<BerkeleyEnvironment> GetWalletEnv(const fs::path& wallet_path, std::string& database_filename);
 
-/** Return whether a BDB wallet database is currently loaded. */
-bool IsBDBWalletLoaded(const fs::path& wallet_path);
+/** Check format of database file */
+bool IsBDBFile(const fs::path& path);
 
 class BerkeleyBatch;
 
@@ -110,9 +109,8 @@ public:
 
     ~BerkeleyDatabase() override;
 
-    /** Open the database if it is not already opened.
-     *  Dummy function, doesn't do anything right now, but is needed for class abstraction */
-    void Open(const char* mode) override;
+    /** Open the database if it is not already opened. */
+    void Open() override;
 
     /** Rewrite the entire database on disk, with the exception of key pszSkip if non-zero
      */
@@ -143,8 +141,12 @@ public:
     void ReloadDbEnv() override;
 
     /** Verifies the environment and database file */
-    bool Verify(bilingual_str& error) override;
+    bool Verify(bilingual_str& error);
 
+    /** Return path to main database filename */
+    std::string Filename() override { return (env->Directory() / strFile).string(); }
+
+    std::string Format() override { return "bdb"; }
     /**
      * Pointer to shared database environment.
      *
@@ -162,7 +164,7 @@ public:
     std::string strFile;
 
     /** Make a BerkeleyBatch connected to this database */
-    std::unique_ptr<DatabaseBatch> MakeBatch(const char* mode = "r+", bool flush_on_close = true) override;
+    std::unique_ptr<DatabaseBatch> MakeBatch(bool flush_on_close = true) override;
 };
 
 /** RAII class that provides access to a Berkeley database */
@@ -205,7 +207,7 @@ protected:
     BerkeleyDatabase& m_database;
 
 public:
-    explicit BerkeleyBatch(BerkeleyDatabase& database, const char* pszMode = "r+", bool fFlushOnCloseIn=true);
+    explicit BerkeleyBatch(BerkeleyDatabase& database, const bool fReadOnly, bool fFlushOnCloseIn=true);
     ~BerkeleyBatch() override;
 
     BerkeleyBatch(const BerkeleyBatch&) = delete;
@@ -223,5 +225,11 @@ public:
 };
 
 std::string BerkeleyDatabaseVersion();
+
+//! Check if Berkeley database exists at specified path.
+bool ExistsBerkeleyDatabase(const fs::path& path);
+
+//! Return object giving access to Berkeley database at specified path.
+std::unique_ptr<BerkeleyDatabase> MakeBerkeleyDatabase(const fs::path& path, const DatabaseOptions& options, DatabaseStatus& status, bilingual_str& error);
 
 #endif // BITCOIN_WALLET_BDB_H

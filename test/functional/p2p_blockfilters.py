@@ -18,13 +18,10 @@ from test_framework.messages import (
     ser_uint256,
     uint256_from_str,
 )
-from test_framework.mininode import P2PInterface
+from test_framework.p2p import P2PInterface
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
-    connect_nodes,
-    disconnect_nodes,
-    wait_until,
 )
 
 class CFiltersClient(P2PInterface):
@@ -62,14 +59,14 @@ class CompactFiltersTest(BitcoinTestFramework):
         self.sync_blocks(timeout=600)
 
         # Stale blocks by disconnecting nodes 0 & 1, mining, then reconnecting
-        disconnect_nodes(self.nodes[0], 1)
+        self.disconnect_nodes(0, 1)
 
         self.nodes[0].generate(1)
-        wait_until(lambda: self.nodes[0].getblockcount() == 1000)
+        self.wait_until(lambda: self.nodes[0].getblockcount() == 1000)
         stale_block_hash = self.nodes[0].getblockhash(1000)
 
         self.nodes[1].generate(1001)
-        wait_until(lambda: self.nodes[1].getblockcount() == 2000)
+        self.wait_until(lambda: self.nodes[1].getblockcount() == 2000)
 
         # Check that nodes have signalled NODE_COMPACT_FILTERS correctly.
         assert node0.nServices & NODE_COMPACT_FILTERS != 0
@@ -91,7 +88,7 @@ class CompactFiltersTest(BitcoinTestFramework):
         assert_equal(len(response.headers), 1)
 
         self.log.info("Reorg node 0 to a new chain.")
-        connect_nodes(self.nodes[0], 1)
+        self.connect_nodes(0, 1)
         self.sync_blocks(timeout=600)
 
         main_block_hash = self.nodes[0].getblockhash(1000)

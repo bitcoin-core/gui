@@ -13,6 +13,13 @@
 #include <util/bip32.h>
 #include <util/system.h>
 #include <util/time.h>
+#include <util/translation.h>
+#ifdef USE_BDB
+#include <wallet/bdb.h>
+#endif
+#ifdef USE_SQLITE
+#include <wallet/sqlite.h>
+#endif
 #include <wallet/wallet.h>
 
 #include <atomic>
@@ -263,13 +270,17 @@ public:
 
 static bool
 ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
-             CWalletScanState &wss, std::string& strType, std::string& strErr) EXCLUSIVE_LOCKS_REQUIRED(pwallet->cs_wallet)
+             CWalletScanState &wss, std::string& strType, std::string& strErr, const KeyFilterFn& filter_fn = nullptr) EXCLUSIVE_LOCKS_REQUIRED(pwallet->cs_wallet)
 {
     try {
         // Unserialize
         // Taking advantage of the fact that pair serialization
         // is just the two items serialized one after the other
         ssKey >> strType;
+        // If we have a filter, check if this matches the filter
+        if (filter_fn && !filter_fn(strType)) {
+            return true;
+        }
         if (strType == DBKeys::NAME) {
             std::string strAddress;
             ssKey >> strAddress;
@@ -353,7 +364,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             {
                 ssValue >> hash;
             }
-            catch (...) {}
+            catch (const std::ios_base::failure&) {}
 
             bool fSkipCheck = false;
 
@@ -668,11 +679,11 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
     return true;
 }
 
-bool ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue, std::string& strType, std::string& strErr)
+bool ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue, std::string& strType, std::string& strErr, const KeyFilterFn& filter_fn)
 {
     CWalletScanState dummy_wss;
     LOCK(pwallet->cs_wallet);
-    return ReadKeyValue(pwallet, ssKey, ssValue, dummy_wss, strType, strErr);
+    return ReadKeyValue(pwallet, ssKey, ssValue, dummy_wss, strType, strErr, filter_fn);
 }
 
 bool WalletBatch::IsKeyType(const std::string& strType)
@@ -926,23 +937,6 @@ DBErrors WalletBatch::ZapSelectTx(std::vector<uint256>& vTxHashIn, std::vector<u
     return DBErrors::LOAD_OK;
 }
 
-DBErrors WalletBatch::ZapWalletTx(std::list<CWalletTx>& vWtx)
-{
-    // build list of wallet TXs
-    std::vector<uint256> vTxHash;
-    DBErrors err = FindWalletTx(vTxHash, vWtx);
-    if (err != DBErrors::LOAD_OK)
-        return err;
-
-    // erase each wallet TX
-    for (const uint256& hash : vTxHash) {
-        if (!EraseTx(hash))
-            return DBErrors::CORRUPT;
-    }
-
-    return DBErrors::LOAD_OK;
-}
-
 void MaybeCompactWalletDB()
 {
     static std::atomic<bool> fOneThread(false);
@@ -951,7 +945,7 @@ void MaybeCompactWalletDB()
     }
 
     for (const std::shared_ptr<CWallet>& pwallet : GetWallets()) {
-        WalletDatabase& dbh = pwallet->GetDBHandle();
+        WalletDatabase& dbh = pwallet->GetDatabase();
 
         unsigned int nUpdateCounter = dbh.nUpdateCounter;
 
@@ -1006,16 +1000,87 @@ bool WalletBatch::TxnAbort()
     return m_batch->TxnAbort();
 }
 
-bool IsWalletLoaded(const fs::path& wallet_path)
+std::unique_ptr<WalletDatabase> MakeDatabase(const fs::path& path, const DatabaseOptions& options, DatabaseStatus& status, bilingual_str& error)
 {
-    return IsBDBWalletLoaded(wallet_path);
-}
+    bool exists;
+    try {
+        exists = fs::symlink_status(path).type() != fs::file_not_found;
+    } catch (const fs::filesystem_error& e) {
+        error = Untranslated(strprintf("Failed to access database path '%s': %s", path.string(), fsbridge::get_filesystem_error_message(e)));
+        status = DatabaseStatus::FAILED_BAD_PATH;
+        return nullptr;
+    }
 
-/** Return object for accessing database at specified path. */
-std::unique_ptr<WalletDatabase> CreateWalletDatabase(const fs::path& path)
-{
-    std::string filename;
-    return MakeUnique<BerkeleyDatabase>(GetWalletEnv(path, filename), std::move(filename));
+    Optional<DatabaseFormat> format;
+    if (exists) {
+#ifdef USE_BDB
+        if (ExistsBerkeleyDatabase(path)) {
+            format = DatabaseFormat::BERKELEY;
+        }
+#endif
+#ifdef USE_SQLITE
+        if (ExistsSQLiteDatabase(path)) {
+            if (format) {
+                error = Untranslated(strprintf("Failed to load database path '%s'. Data is in ambiguous format.", path.string()));
+                status = DatabaseStatus::FAILED_BAD_FORMAT;
+                return nullptr;
+            }
+            format = DatabaseFormat::SQLITE;
+        }
+#endif
+    } else if (options.require_existing) {
+        error = Untranslated(strprintf("Failed to load database path '%s'. Path does not exist.", path.string()));
+        status = DatabaseStatus::FAILED_NOT_FOUND;
+        return nullptr;
+    }
+
+    if (!format && options.require_existing) {
+        error = Untranslated(strprintf("Failed to load database path '%s'. Data is not in recognized format.", path.string()));
+        status = DatabaseStatus::FAILED_BAD_FORMAT;
+        return nullptr;
+    }
+
+    if (format && options.require_create) {
+        error = Untranslated(strprintf("Failed to create database path '%s'. Database already exists.", path.string()));
+        status = DatabaseStatus::FAILED_ALREADY_EXISTS;
+        return nullptr;
+    }
+
+    // A db already exists so format is set, but options also specifies the format, so make sure they agree
+    if (format && options.require_format && format != options.require_format) {
+        error = Untranslated(strprintf("Failed to load database path '%s'. Data is not in required format.", path.string()));
+        status = DatabaseStatus::FAILED_BAD_FORMAT;
+        return nullptr;
+    }
+
+    // Format is not set when a db doesn't already exist, so use the format specified by the options if it is set.
+    if (!format && options.require_format) format = options.require_format;
+
+    // If the format is not specified or detected, choose the default format based on what is available. We prefer BDB over SQLite for now.
+    if (!format) {
+#ifdef USE_SQLITE
+        format = DatabaseFormat::SQLITE;
+#endif
+#ifdef USE_BDB
+        format = DatabaseFormat::BERKELEY;
+#endif
+    }
+
+    if (format == DatabaseFormat::SQLITE) {
+#ifdef USE_SQLITE
+        return MakeSQLiteDatabase(path, options, status, error);
+#endif
+        error = Untranslated(strprintf("Failed to open database path '%s'. Build does not support SQLite database format.", path.string()));
+        status = DatabaseStatus::FAILED_BAD_FORMAT;
+        return nullptr;
+    }
+
+#ifdef USE_BDB
+    return MakeBerkeleyDatabase(path, options, status, error);
+#endif
+    error = Untranslated(strprintf("Failed to open database path '%s'. Build does not support Berkeley DB database format.", path.string()));
+    status = DatabaseStatus::FAILED_BAD_FORMAT;
+    return nullptr;
 }
 
 /** Return object for accessing dummy database with no read/write capabilities. */
@@ -1027,5 +1092,9 @@ std::unique_ptr<WalletDatabase> CreateDummyWalletDatabase()
 /** Return object for accessing temporary in-memory database. */
 std::unique_ptr<WalletDatabase> CreateMockWalletDatabase()
 {
+#ifdef USE_BDB
     return MakeUnique<BerkeleyDatabase>(std::make_shared<BerkeleyEnvironment>(), "");
+#elif USE_SQLITE
+    return MakeUnique<SQLiteDatabase>("", "", true);
+#endif
 }
