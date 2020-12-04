@@ -7,7 +7,8 @@ This document provides guidelines for contributing icons to Bitcoin Core.
 Both an icon source file, in Scalable Vector Graphics (SVG) format, and an optimized production file, in Portable Network Graphics (PNG) format, are required for 
 each icon.
 
-SVGs are used as source files due to being able to scale to any size whilst retaining image quality, but are not used in production due to limited support by 
+#### SVG Source File
+SVGs are used as source files because they can scale while retaining image quality, but are not used in production due to limited application support.
 In the event that different-sized production (PNG) icons are required, they can be generated from the associated SVG source file in a vector-based tool such as:
 Inkspace, Adobe Illustrator, Figma, Sketch, or Adobe XD.
 
