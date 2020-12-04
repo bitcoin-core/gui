@@ -36,7 +36,7 @@ Production (PNG) files must be optimized before their inclusion in Bitcoin Core.
 
 - Open source tool [ImageOptim](https://imageoptim.com/api).
 - Open source tool [Trimage](https://trimage.org/).
-- (Advanced) Run them through Bitcoin Cores [optimize-png.py](https://github.com/bitcoin-core/bitcoin-maintainer-tools/blob/master/optimise-pngs.py) script.
+- (Advanced) Run them through Bitcoin Core's [optimize-png.py](https://github.com/bitcoin-core/bitcoin-maintainer-tools/blob/master/optimise-pngs.py) script.
 
 
 
