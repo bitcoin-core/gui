@@ -18,7 +18,7 @@ such as JPEG.
 
 
 ### Icon Grid
-Bitcoin Core uses an 8-point grid system for its icons which utilises size increments of 8px to visually orientate elements within a grid. Majority of screen sizes are divisible by 8 which makes fitting elements easier using an 8-point grid system. This makes things more efficient for designers and maintains consistency across applications. 
+Bitcoin Core uses an 8-point grid system for its icons which utilizes size increments of 8px to visually orientate elements within a grid. The majority of screen sizes are divisible by 8 which makes fitting elements easier using an 8-point grid system. This makes things more efficient for designers and maintains consistency across applications. 
 
 
 ### Icon Style
