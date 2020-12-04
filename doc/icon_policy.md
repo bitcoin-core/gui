@@ -8,7 +8,7 @@ Both an icon source file, in Scalable Vector Graphics (SVG) format, and an optim
 each icon.
 
 SVGs are used as source files due to being able to scale to any size whilst retaining image quality, but are not used in production due to limited support by 
-applications. If different sized production (PNG) icons are required they can be generated from the associated scaled SVG source file in a vector based tool like 
+In the event that different-sized production (PNG) icons are required, they can be generated from the associated SVG source file in a vector-based tool such as:
 Inkspace, Adobe Illustrator, Figma, Sketch, or Adobe XD.
 
 PNGs are used in production due to their wide support in applications, support of transparent backgrounds and better image quality than competing file types 
