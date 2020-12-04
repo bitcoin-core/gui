@@ -32,7 +32,7 @@ Icon style should adhere to the following principles to maintain consistency and
 
 
 ### Optimizing Production Files (PNG): 
-Production (PNG) files are to be optmized before being added to Bitcoin Core. Optimizing PNG files removes various color profiles, ancillary (alla) and text chunks resulting in a reduction in size of the image file losslessly (without a lowered image quality). Any `zopflipng` / `pngcrush` based PNG optimizers can be used, below are some examples:
+Production (PNG) files must be optimized before their inclusion in Bitcoin Core. PNG optimization removes various unnecessary color profiles, ancillary (alla), and text chunks resulting in a lossless reduction of the file's size. Any `zopflipng` / `pngcrush` based PNG optimizer can be used. Below are some examples:
 
 - Open source tool [ImageOptim](https://imageoptim.com/api).
 - Open source tool [Trimage](https://trimage.org/).
