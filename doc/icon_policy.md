@@ -48,7 +48,7 @@ Icons are to be added to Bitcoin Core, via a pull request (PR), under these circ
 
 If a new icon is designed for an upcoming or active PR, the designer of the icon should [open an issue](https://github.com/bitcoin-core/gui/issues/new/choose) to get feedback on the design and to make sure it is consistent with Bitcoin Core's iconography.
 
-If a new feature is being added to the Bitcoin Core GUI that requires a new icon the developer should [open an issue](https://github.com/bitcoin-core/gui/issues/new/choose) requesting an icon to be designed. 
+If a new feature which requires a new icon is being added to the Bitcoin Core GUI, the developer should [open an issue](https://github.com/bitcoin-core/gui/issues/new/choose) requesting the new icon be designed. 
 
 Icons, both SVG and PNG, are not to be added to Bitcoin Core prior to a production use case.
 
