@@ -41,7 +41,7 @@ Production (PNG) files must be optimized before their inclusion in Bitcoin Core.
 
 
 ## Contributing
-Icons should only be added to the Bitcoin Core repo via a pull request (PR) in two situations:
+Icons are to be added to Bitcoin Core, via a pull request (PR), under these circumstances:
 
 - An icon used in production is being replaced with a new icon.
 - A feature is being added to the Bitcoin Core GUI that requires the addition of a new icon.
