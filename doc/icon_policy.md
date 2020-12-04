@@ -24,7 +24,7 @@ Bitcoin Core uses an 8-point grid system for its icons which utilizes size incre
 ### Icon Style
 Icon style should adhere to the following principles to maintain consistency and clarity:
 
-- Icons should be minimal with little to no fine details. This is to make sure icons look good at any scale.  
+- To ensure icons look good at any scale, a minimalistic design should be used.  
 - Icons size should be 32x32px. Different sized icons sizes may be necessary in some circumstances. If 32x32px is too small for the required icon placement, then the icon should be scaled up or down whilst sticking to the 8-point grid system.
 - Shapes should be consistent and avoid organic elements that do not scale well.
 - Colors should be consistent with other icons used in Bitcoin Core. 
