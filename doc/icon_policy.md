@@ -4,7 +4,7 @@ This document provides guidelines for contributing icons to Bitcoin Core.
 
 
 ## Preparing Icons
-Both an icon source file, in Scalable Vector Graphics (SVG) format, and an optimised production file, in Portable Network Graphics (PNG) format, are required for 
+Both an icon source file, in Scalable Vector Graphics (SVG) format, and an optimized production file, in Portable Network Graphics (PNG) format, are required for 
 each icon.
 
 SVGs are used as source files due to being able to scale to any size whilst retaining image quality, but are not used in production due to limited support by 
