@@ -55,5 +55,5 @@ When opening a PR that adds an icon source (SVG) files should be added to `src/q
 
 
 ## Attribution 
-Icon additions should have the appropriate attribution to the author, the licence used for the icon and any comments relevant to the icon included in the 
+Icon additions must include appropriate attribution to the author, license information, and any comments relevant to the icon documented under the
 [contrib/debian/copyright](https://github.com/bitcoin-core/gui/blob/master/contrib/debian/copyright) file.
