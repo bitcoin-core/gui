@@ -52,7 +52,7 @@ If a new feature is being added to the Bitcoin Core GUI that requires a new icon
 
 Icons (both SVG and PNG) should not be added to the Bitcoin Core repo if they are not yet used in production.
 
-When opening a PR that adds an icon source (SVG) files should be added to `src/qt/res/src` at 32x32px and optimized production (PNG) files should be added to `src/qt/res/icons` at 32x32px. 
+When opening a PR that intends to add an icon, a SVG source file must be included under `src/qt/res/src`, and a optimized production file (PNG) must be included under `src/qt/res/icons`. Both source and production files should be 32x32px in size.
 
 
 
