@@ -46,7 +46,10 @@ class HelpTest(BitcoinTestFramework):
         self.nodes[0].start(extra_args=['-version'])
         # Node should exit immediately and output version to stdout.
         output, _ = self.get_node_output(ret_code_expected=0)
-        assert b'version' in output
+        assert b'experimental software' in output
+        assert b'MIT software license' in output
+        assert b'COPYING' in output
+        assert b'Copyright (C) 2009-' in output
         self.log.info("Version text received: {} (...)".format(output[0:60]))
 
         # Test that arguments not in the help results in an error
