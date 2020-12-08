@@ -36,7 +36,7 @@ userClosed(false)
 
     m_animation.setTargetObject(this);
     m_animation.setPropertyName("pos");
-    m_animation.setDuration(300 /* ms */);
+    m_animation.setDuration(250 /* ms */);
     m_animation.setEasingCurve(QEasingCurve::OutQuad);
 }
 
