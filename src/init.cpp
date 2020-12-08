@@ -591,23 +591,28 @@ void SetupServerArgs(NodeContext& node)
     argsman.AddHiddenArgs(hidden_args);
 }
 
+std::string VersionInfo()
+{
+    return FormatVersion();//from clientversion.cpp
+}
+
+std::string CopyrightInfo()
+{
+    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i ").translated, 2009, COPYRIGHT_YEAR));
+}
+
+std::string AboutMessageInfo()
+{
+    const std::string SOURCE_CODE_URL = "<https://github.com/bitcoin/bitcoin>";
+    return strprintf(_("Please contribute if you find %s useful." "\n"
+                       "Visit %s for further information.").translated, PACKAGE_NAME, "<" PACKAGE_URL ">") + "\n" +
+           strprintf(_("The source code is available at: %s").translated, SOURCE_CODE_URL);
+}
+
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";
-
-    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i").translated, 2009, COPYRIGHT_YEAR) + " ") + "\n" +
-           "\n" +
-           strprintf(_("Please contribute if you find %s useful. "
-                       "Visit %s for further information about the software.").translated,
-               PACKAGE_NAME, "<" PACKAGE_URL ">") +
-           "\n" +
-           strprintf(_("The source code is available from %s.").translated,
-               URL_SOURCE_CODE) +
-           "\n" +
-           "\n" +
-           _("This is experimental software.").translated + "\n" +
-           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s").translated, "COPYING", "<https://opensource.org/licenses/MIT>") +
-           "\n";
+    const std::string LICENSE_URL = "<https://github.com/bitcoin/bitcoin/blob/master/COPYING>";
+    return strprintf(_("\nThis is experimental software.\nDistributed under the MIT software license:\n%s").translated, LICENSE_URL);
 }
 
 static bool fHaveGenesis = false;
@@ -881,7 +886,7 @@ void InitLogging(const ArgsManager& args)
 
     fLogIPs = args.GetBoolArg("-logips", DEFAULT_LOGIPS);
 
-    std::string version_string = FormatFullVersion();
+    std::string version_string = FormatVersion();
 #ifdef DEBUG
     version_string += " (debug build)";
 #else

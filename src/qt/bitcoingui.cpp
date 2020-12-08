@@ -846,6 +846,7 @@ void BitcoinGUI::showDebugWindowActivateConsole()
 void BitcoinGUI::showHelpMessageClicked()
 {
     helpMessageDialog->show();
+    helpMessageDialog->raise();//bring to top if obscured
 }
 
 #ifdef ENABLE_WALLET

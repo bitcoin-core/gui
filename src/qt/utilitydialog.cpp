@@ -33,28 +33,43 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
     ui(new Ui::HelpMessageDialog)
 {
     ui->setupUi(this);
-
-    QString version = QString{PACKAGE_NAME} + " " + tr("version") + " " + QString::fromStdString(FormatFullVersion());
-
-    if (about)
-    {
-        setWindowTitle(tr("About %1").arg(PACKAGE_NAME));
+    this->resize(500,0);//force view height to stretch
+    ui->aboutMessage->resize(0,0);//force label to stretch
+    QString version = QString{PACKAGE_NAME} + " " + QString::fromStdString(FormatFullVersion());
 
         std::string licenseInfo = LicenseInfo();
-        /// HTML-format the license message from the core
+        std::string copyrightInfo = CopyrightInfo();
+        // HTML-format aboutMessage elements
+        QString versionInfoHTML = QString::fromStdString(FormatVersion());
+        QString copyrightInfoHTML = QString::fromStdString(CopyrightInfo());
+        QString aboutMessageInfoHTML = QString::fromStdString(AboutMessageInfo());
         QString licenseInfoHTML = QString::fromStdString(LicenseInfo());
         // Make URLs clickable
         QRegExp uri("<(.*)>", Qt::CaseSensitive, QRegExp::RegExp2);
         uri.setMinimal(true); // use non-greedy matching
+        aboutMessageInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
         licenseInfoHTML.replace(uri, "<a href=\"\\1\">\\1</a>");
         // Replace newlines with HTML breaks
+        copyrightInfoHTML.replace("\n", "<br>");
+        aboutMessageInfoHTML.replace("\n", "<br>");
         licenseInfoHTML.replace("\n", "<br>");
 
+        ui->copyrightInfo->setTextFormat(Qt::RichText);
         ui->aboutMessage->setTextFormat(Qt::RichText);
-        ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        text = version + "\n" + QString::fromStdString(FormatParagraph(licenseInfo));
-        ui->aboutMessage->setText(version + "<br><br>" + licenseInfoHTML);
+        ui->licenseInfo->setTextFormat(Qt::RichText);
+        ui->versionInfo->setTextFormat(Qt::RichText);
         ui->aboutMessage->setWordWrap(true);
+        ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        ui->copyrightInfo->setText(copyrightInfoHTML); //about bottom left corner
+        ui->aboutMessage->setText(aboutMessageInfoHTML); //aboutMessage body
+        ui->licenseInfo->setText(licenseInfoHTML);
+        ui->versionInfo->setText(versionInfoHTML);
+        //bitcoin-qt -version output
+        text = QString::fromStdString(FormatParagraph(PACKAGE_NAME " " + FormatFullVersion() + "\n" + LicenseInfo() + "\n"+ CopyrightInfo())) + "\n";
+
+    if (about)
+    {
+        setWindowTitle(tr("About %1").arg(PACKAGE_NAME));
         ui->helpMessage->setVisible(false);
     } else {
         setWindowTitle(tr("Command-line options"));
@@ -67,7 +82,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
 
         std::string strUsage = gArgs.GetHelpMessage();
         QString coreOptions = QString::fromStdString(strUsage);
-        text = version + "\n\n" + header + "\n" + coreOptions;
+        //bitcoin-qt -h output
+        text = "\n" + header + "\n" + coreOptions;
 
         QTextTableFormat tf;
         tf.setBorderStyle(QTextFrameFormat::BorderStyle_None);
@@ -102,7 +118,6 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
 
         ui->helpMessage->moveCursor(QTextCursor::Start);
         ui->scrollArea->setVisible(false);
-        ui->aboutLogo->setVisible(false);
     }
 
     GUIUtil::handleCloseWindowShortcut(this);
@@ -134,7 +149,6 @@ void HelpMessageDialog::on_okButton_accepted()
 {
     close();
 }
-
 
 /** "Shutdown" window */
 ShutdownWindow::ShutdownWindow(QWidget *parent, Qt::WindowFlags f):

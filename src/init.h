@@ -68,7 +68,10 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
  */
 void SetupServerArgs(NodeContext& node);
 
-/** Returns licensing information (for -version) */
+/** Returns information (for -version) */
+std::string VersionInfo();
+std::string CopyrightInfo();
+std::string AboutMessageInfo();
 std::string LicenseInfo();
 
 #endif // BITCOIN_INIT_H

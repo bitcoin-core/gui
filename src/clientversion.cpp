@@ -47,6 +47,11 @@ static std::string FormatVersion(int nVersion)
     return strprintf("%d.%d.%d", nVersion / 10000, (nVersion / 100) % 100, nVersion % 100);
 }
 
+std::string FormatVersion()
+{
+    return BUILD_DESC "-" BUILD_GIT_COMMIT;
+}
+
 std::string FormatFullVersion()
 {
     return CLIENT_BUILD;
