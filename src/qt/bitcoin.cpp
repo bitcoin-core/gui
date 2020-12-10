@@ -13,6 +13,7 @@
 #include <interfaces/handler.h>
 #include <interfaces/init.h>
 #include <interfaces/node.h>
+#include <node/context.h>
 #include <node/interface_ui.h>
 #include <noui.h>
 #include <qt/bitcoingui.h>
@@ -679,7 +680,7 @@ int GuiMain(int argc, char* argv[])
     if (intro) {
         // Store intro dialog settings other than datadir (network specific)
         app.InitPruneSetting(intro->getPruneMiB());
-        intro.reset();
+        gArgs.ForceSetArg("-assumevalid", intro->getAssumeValid().toStdString());
     }
 
     int rv = EXIT_SUCCESS;
@@ -690,6 +691,12 @@ int GuiMain(int argc, char* argv[])
         // This is acceptable because this function only contains steps that are quick to execute,
         // so the GUI thread won't be held up.
         if (app.baseInitialize()) {
+            if (intro) {
+                // Store intro dialog settings other than datadir (network specific)
+                app.node().context()->chain->updateRwSetting("assumevalid", intro->getAssumeValid().toStdString());
+                // We can release the Intro widget now
+                intro.reset();
+            }
             app.requestInitialize();
 #if defined(Q_OS_WIN)
             WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("%1 didn't yet exit safely…").arg(PACKAGE_NAME), (HWND)app.getMainWinId());
