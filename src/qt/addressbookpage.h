@@ -41,7 +41,7 @@ public:
     explicit AddressBookPage(const PlatformStyle *platformStyle, Mode mode, Tabs tab, QWidget *parent = nullptr);
     ~AddressBookPage();
 
-    void setModel(AddressTableModel *model);
+    void setModel(AddressTableModel *model, bool p2pkh_only=false);
     const QString &getReturnValue() const { return returnValue; }
 
 public Q_SLOTS:

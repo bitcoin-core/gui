@@ -23,11 +23,13 @@
 class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
 {
     const QString m_type;
+    const bool m_p2pkh_only;
 
 public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
+    AddressBookSortFilterProxyModel(const QString& type, const bool p2pkh_only, QObject* parent)
         : QSortFilterProxyModel(parent)
         , m_type(type)
+        , m_p2pkh_only(p2pkh_only)
     {
         setDynamicSortFilter(true);
         setFilterCaseSensitivity(Qt::CaseInsensitive);
@@ -41,6 +43,9 @@ protected:
         auto label = model->index(row, AddressTableModel::Label, parent);
 
         if (model->data(label, AddressTableModel::TypeRole).toString() != m_type) {
+            return false;
+        }
+        if (m_p2pkh_only && !model->data(label, AddressTableModel::IsP2PKHRole).toBool()) {
             return false;
         }
 
@@ -145,14 +150,14 @@ AddressBookPage::~AddressBookPage()
     delete ui;
 }
 
-void AddressBookPage::setModel(AddressTableModel *_model)
+void AddressBookPage::setModel(AddressTableModel *_model, const bool p2pkh_only)
 {
     this->model = _model;
     if(!_model)
         return;
 
     auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel = new AddressBookSortFilterProxyModel(type, p2pkh_only, this);
     proxyModel->setSourceModel(_model);
 
     connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
