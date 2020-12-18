@@ -91,7 +91,6 @@ void SignVerifyMessageDialog::on_addressBookButton_SM_clicked()
 {
     if (model && model->getAddressTableModel())
     {
-        model->refresh(/* pk_hash_only */ true);
         AddressBookPage dlg(platformStyle, AddressBookPage::ForSelection, AddressBookPage::ReceivingTab, this);
         dlg.setModel(model->getAddressTableModel(), /* p2pkh_only= */ true);
         if (dlg.exec())

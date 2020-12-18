@@ -154,8 +154,6 @@ public:
 
     AddressTableModel* getAddressTableModel() const { return addressTableModel; }
 
-    void refresh(bool pk_hash_only = false);
-
     uint256 getLastBlockProcessed() const;
 
 private:
