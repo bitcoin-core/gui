@@ -34,7 +34,8 @@ public:
     };
 
     enum RoleIndex {
-        TypeRole = Qt::UserRole /**< Type of address (#Send or #Receive) */
+        TypeRole = Qt::UserRole,  /**< Type of address (#Send or #Receive) */
+        IsP2PKHRole,              /**< Boolean, true iff address is P2PKH */
     };
 
     /** Return status of edit/insert operation */
@@ -97,7 +98,7 @@ private:
 public Q_SLOTS:
     /* Update address list from core.
      */
-    void updateEntry(const QString &address, const QString &label, bool isMine, const QString &purpose, int status);
+    void updateEntry(const QString &address, const QString &label, bool isMine, const QString &purpose, int status, bool is_p2pkh);
 
     friend class AddressTablePriv;
 };

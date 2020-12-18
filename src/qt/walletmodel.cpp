@@ -29,6 +29,7 @@
 #include <wallet/wallet.h> // for CRecipient
 
 #include <stdint.h>
+#include <typeinfo>
 
 #include <QDebug>
 #include <QMessageBox>
@@ -126,10 +127,10 @@ void WalletModel::updateTransaction()
 }
 
 void WalletModel::updateAddressBook(const QString &address, const QString &label,
-        bool isMine, const QString &purpose, int status)
+        bool isMine, const QString &purpose, int status, const bool is_p2pkh)
 {
     if(addressTableModel)
-        addressTableModel->updateEntry(address, label, isMine, purpose, status);
+        addressTableModel->updateEntry(address, label, isMine, purpose, status, is_p2pkh);
 }
 
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)
@@ -360,6 +361,7 @@ static void NotifyAddressBookChanged(WalletModel *walletmodel,
     QString strAddress = QString::fromStdString(EncodeDestination(address));
     QString strLabel = QString::fromStdString(label);
     QString strPurpose = QString::fromStdString(purpose);
+    bool is_p2pkh = address.type() == typeid(PKHash);
 
     qDebug() << "NotifyAddressBookChanged: " + strAddress + " " + strLabel + " isMine=" + QString::number(isMine) + " purpose=" + strPurpose + " status=" + QString::number(status);
     bool invoked = QMetaObject::invokeMethod(walletmodel, "updateAddressBook", Qt::QueuedConnection,
@@ -367,7 +369,8 @@ static void NotifyAddressBookChanged(WalletModel *walletmodel,
                               Q_ARG(QString, strLabel),
                               Q_ARG(bool, isMine),
                               Q_ARG(QString, strPurpose),
-                              Q_ARG(int, status));
+                              Q_ARG(int, status),
+                              Q_ARG(bool, is_p2pkh));
     assert(invoked);
 }
 
