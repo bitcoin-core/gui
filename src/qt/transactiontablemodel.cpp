@@ -523,7 +523,8 @@ QVariant TransactionTableModel::data(const QModelIndex &index, int role) const
 {
     if(!index.isValid())
         return QVariant();
-    TransactionRecord *rec = static_cast<TransactionRecord*>(index.internalPointer());
+
+    TransactionRecord* rec{priv->index(walletModel->wallet(), walletModel->getLastBlockProcessed(), index.row())};
 
     switch(role)
     {
@@ -688,17 +689,6 @@ QVariant TransactionTableModel::headerData(int section, Qt::Orientation orientat
         }
     }
     return QVariant();
-}
-
-QModelIndex TransactionTableModel::index(int row, int column, const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-    TransactionRecord* data = priv->index(walletModel->wallet(), walletModel->getLastBlockProcessed(), row);
-    if(data)
-    {
-        return createIndex(row, column, data);
-    }
-    return QModelIndex();
 }
 
 void TransactionTableModel::updateDisplayUnit()

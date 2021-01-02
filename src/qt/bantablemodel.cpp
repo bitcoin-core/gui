@@ -117,7 +117,7 @@ QVariant BanTableModel::data(const QModelIndex &index, int role) const
     if(!index.isValid())
         return QVariant();
 
-    CCombinedBan *rec = static_cast<CCombinedBan*>(index.internalPointer());
+    const CCombinedBan* rec{priv->index(index.row())};
 
     if (role == Qt::DisplayRole) {
         switch(index.column())
@@ -152,16 +152,6 @@ Qt::ItemFlags BanTableModel::flags(const QModelIndex &index) const
 
     Qt::ItemFlags retval = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
     return retval;
-}
-
-QModelIndex BanTableModel::index(int row, int column, const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-    CCombinedBan *data = priv->index(row);
-
-    if (data)
-        return createIndex(row, column, data);
-    return QModelIndex();
 }
 
 void BanTableModel::refresh()

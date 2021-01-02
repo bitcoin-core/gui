@@ -127,13 +127,6 @@ QString RecentRequestsTableModel::getAmountTitle()
     return (this->walletModel->getOptionsModel() != nullptr) ? tr("Requested") + " ("+BitcoinUnits::shortName(this->walletModel->getOptionsModel()->getDisplayUnit()) + ")" : "";
 }
 
-QModelIndex RecentRequestsTableModel::index(int row, int column, const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-
-    return createIndex(row, column);
-}
-
 bool RecentRequestsTableModel::removeRows(int row, int count, const QModelIndex &parent)
 {
     Q_UNUSED(parent);

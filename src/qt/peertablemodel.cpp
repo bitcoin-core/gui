@@ -153,7 +153,7 @@ QVariant PeerTableModel::data(const QModelIndex &index, int role) const
     if(!index.isValid())
         return QVariant();
 
-    CNodeCombinedStats *rec = static_cast<CNodeCombinedStats*>(index.internalPointer());
+    CNodeCombinedStats* rec{priv->index(index.row())};
 
     if (role == Qt::DisplayRole) {
         switch(index.column())
@@ -213,16 +213,6 @@ Qt::ItemFlags PeerTableModel::flags(const QModelIndex &index) const
 
     Qt::ItemFlags retval = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
     return retval;
-}
-
-QModelIndex PeerTableModel::index(int row, int column, const QModelIndex &parent) const
-{
-    Q_UNUSED(parent);
-    CNodeCombinedStats *data = priv->index(row);
-
-    if (data)
-        return createIndex(row, column, data);
-    return QModelIndex();
 }
 
 void PeerTableModel::refresh()
