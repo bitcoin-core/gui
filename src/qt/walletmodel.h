@@ -154,8 +154,6 @@ public:
 
     AddressTableModel* getAddressTableModel() const { return addressTableModel; }
 
-    void refresh(bool pk_hash_only = false);
-
     uint256 getLastBlockProcessed() const;
 
 private:
@@ -232,7 +230,7 @@ public Q_SLOTS:
     /* New transaction, or transaction changed status */
     void updateTransaction();
     /* New, updated or removed address book entry */
-    void updateAddressBook(const QString &address, const QString &label, bool isMine, const QString &purpose, int status);
+    void updateAddressBook(const QString &address, const QString &label, bool isMine, const QString &purpose, int status, bool is_p2pkh);
     /* Watch-only added */
     void updateWatchOnlyFlag(bool fHaveWatchonly);
     /* Current, immature or unconfirmed balance might have changed - emit 'balanceChanged' if so */
