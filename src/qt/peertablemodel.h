@@ -64,7 +64,8 @@ public:
         Ping = 3,
         Sent = 4,
         Received = 5,
-        Subversion = 6
+        Subversion = 6,
+        Bumper = 7
     };
 
     enum {
@@ -87,7 +88,7 @@ public Q_SLOTS:
 
 private:
     interfaces::Node& m_node;
-    const QStringList columns{tr("Peer Id"), tr("Address"), tr("Network"), tr("Ping"), tr("Sent"), tr("Received"), tr("User Agent")};
+    const QStringList columns{tr("Peer Id"), tr("Address"), tr("Network"), tr("Ping"), tr("Sent"), tr("Received"), tr("User Agent"), tr(/*BUMPER*/"")};
     std::unique_ptr<PeerTablePriv> priv;
     QTimer *timer;
 };
