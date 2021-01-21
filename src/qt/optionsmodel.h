@@ -6,12 +6,13 @@
 #define BITCOIN_QT_OPTIONSMODEL_H
 
 #include <amount.h>
-#include <cstdint>
+#include <qt/bitcoinunits.h>
 #include <qt/guiconstants.h>
 
 #include <QAbstractListModel>
 
 #include <assert.h>
+#include <cstdint>
 
 namespace interfaces {
 class Node;
@@ -83,7 +84,7 @@ public:
     bool getShowTrayIcon() const { return m_show_tray_icon; }
     bool getMinimizeToTray() const { return fMinimizeToTray; }
     bool getMinimizeOnClose() const { return fMinimizeOnClose; }
-    int getDisplayUnit() const { return nDisplayUnit; }
+    int getDisplayUnit() const { return static_cast<int>(m_display_bitcoin_unit); }
     QString getThirdPartyTxUrls() const { return strThirdPartyTxUrls; }
     bool getUseEmbeddedMonospacedFont() const { return m_use_embedded_monospaced_font; }
     bool getCoinControlFeatures() const { return fCoinControlFeatures; }
@@ -107,7 +108,7 @@ private:
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
     QString language;
-    int nDisplayUnit;
+    BitcoinUnit m_display_bitcoin_unit;
     QString strThirdPartyTxUrls;
     bool m_use_embedded_monospaced_font;
     bool fCoinControlFeatures;
