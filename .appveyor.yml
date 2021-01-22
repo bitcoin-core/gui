@@ -1,4 +1,4 @@
-version: '{branch}.{build}.23'
+version: '{branch}.{build}.234'
 skip_tags: true
 image: Visual Studio 2019
 configuration: Release
