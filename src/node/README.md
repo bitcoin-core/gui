@@ -19,4 +19,4 @@ The [`src/node/`](./) directory is a new directory introduced in
 [#14978](https://github.com/bitcoin/bitcoin/pull/14978) and at the moment is
 sparsely populated. Eventually more substantial files like
 [`src/validation.cpp`](../validation.cpp) and
-[`src/txmempool.cpp`](../txmempool.cpp) might be moved there.
+[`src/txmempool.cpp`](../txmempool.cpp) may be moved there.
