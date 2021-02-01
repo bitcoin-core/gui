@@ -118,7 +118,7 @@
              <widget class="QLabel" name="labelWatchPending">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -144,7 +144,7 @@
              <widget class="QLabel" name="labelUnconfirmed">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -170,7 +170,7 @@
              <widget class="QLabel" name="labelWatchImmature">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -229,7 +229,7 @@
              <widget class="QLabel" name="labelImmature">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -275,7 +275,7 @@
              <widget class="QLabel" name="labelTotal">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -301,7 +301,7 @@
              <widget class="QLabel" name="labelWatchTotal">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -344,7 +344,7 @@
              <widget class="QLabel" name="labelBalance">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
@@ -370,7 +370,7 @@
              <widget class="QLabel" name="labelWatchAvailable">
               <property name="font">
                <font>
-                <family>Monospace</family>
+                <family>Courier New</family>
                 <weight>75</weight>
                 <bold>true</bold>
                </font>
