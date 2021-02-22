@@ -741,10 +741,19 @@ case $host in
 esac
 
 AC_ARG_ENABLE([font-override],
-  [AS_HELP_STRING([--disable-font-override],
-  [override monospace font with embedded Roboto Mono (default is yes)])],
+  [AS_HELP_STRING([--enable-font-override],
+  [override monospace font with embedded Roboto Mono (default is yes for macOS/Windows)])],
   [font_override=$enableval],
-  [font_override=yes])
+  [
+    case $TARGET_OS in
+      darwin|windows)
+        font_override=yes
+        ;;
+      *)
+        font_override=no
+        ;;
+    esac
+  ])
 if test "x$font_override" = "xembedded"; then
   dnl Accept as an alternative to 'yes' in case of future override with other fonts
   font_override=yes
