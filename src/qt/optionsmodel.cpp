@@ -164,10 +164,14 @@ void OptionsModel::Init(bool resetSettings)
 
     language = settings.value("language").toString();
 
+#if EMBED_MONOSPACE_FONT
     if (!settings.contains("UseEmbeddedMonospacedFont")) {
         settings.setValue("UseEmbeddedMonospacedFont", "true");
     }
     m_use_embedded_monospaced_font = settings.value("UseEmbeddedMonospacedFont").toBool();
+#else
+    m_use_embedded_monospaced_font = false;
+#endif
     Q_EMIT useEmbeddedMonospacedFontChanged(m_use_embedded_monospaced_font);
 }
 
@@ -462,9 +466,11 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             }
             break;
         case UseEmbeddedMonospacedFont:
+#if EMBED_MONOSPACE_FONT
             m_use_embedded_monospaced_font = value.toBool();
             settings.setValue("UseEmbeddedMonospacedFont", m_use_embedded_monospaced_font);
             Q_EMIT useEmbeddedMonospacedFontChanged(m_use_embedded_monospaced_font);
+#endif
             break;
         case CoinControlFeatures:
             fCoinControlFeatures = value.toBool();

@@ -144,6 +144,7 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
         ui->minimizeToTray->setEnabled(false);
     }
 
+#if EMBED_MONOSPACE_FONT
     QFont embedded_font{GUIUtil::fixedPitchFont(true)};
     ui->embeddedFont_radioButton->setText(ui->embeddedFont_radioButton->text().arg(QFontInfo(embedded_font).family()));
     embedded_font.setWeight(QFont::Bold);
@@ -157,6 +158,9 @@ OptionsDialog::OptionsDialog(QWidget *parent, bool enableWallet) :
     ui->systemFont_label_9->setFont(system_font);
     // Checking the embeddedFont_radioButton automatically unchecks the systemFont_radioButton.
     ui->systemFont_radioButton->setChecked(true);
+#else
+    ui->font_groupBox->setVisible(false);
+#endif
 
     GUIUtil::handleCloseWindowShortcut(this);
 }
@@ -260,7 +264,9 @@ void OptionsDialog::setMapper()
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
     mapper->addMapping(ui->thirdPartyTxUrls, OptionsModel::ThirdPartyTxUrls);
+#if EMBED_MONOSPACE_FONT
     mapper->addMapping(ui->embeddedFont_radioButton, OptionsModel::UseEmbeddedMonospacedFont);
+#endif
 }
 
 void OptionsDialog::setOkButtonState(bool fState)

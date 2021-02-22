@@ -476,7 +476,9 @@ int GuiMain(int argc, char* argv[])
 #endif
 
     BitcoinApplication app;
+#if EMBED_MONOSPACE_FONT
     QFontDatabase::addApplicationFont(":/fonts/monospace");
+#endif
 
     /// 2. Parse command-line options. We do this after qt in order to show an error if there are problems parsing these
     // Command-line options take precedence:
