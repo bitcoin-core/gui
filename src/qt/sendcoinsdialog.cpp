@@ -415,7 +415,6 @@ void SendCoinsDialog::on_sendButton_clicked()
         msgBox.setDefaultButton(QMessageBox::Discard);
         switch (msgBox.exec()) {
         case QMessageBox::Save: {
-            QString selectedFilter;
             QString fileNameSuggestion = "";
             bool first = true;
             for (const SendCoinsRecipient &rcp : m_current_transaction->getRecipients()) {
@@ -430,7 +429,7 @@ void SendCoinsDialog::on_sendButton_clicked()
             fileNameSuggestion.append(".psbt");
             QString filename = GUIUtil::getSaveFileName(this,
                 tr("Save Transaction Data"), fileNameSuggestion,
-                tr("Partially Signed Transaction (Binary) (*.psbt)"), &selectedFilter);
+                tr("Partially Signed Transaction (Binary) (*.psbt)"));
             if (filename.isEmpty()) {
                 return;
             }

@@ -266,8 +266,7 @@ QString getDefaultDataDirectory()
 }
 
 QString getSaveFileName(QWidget *parent, const QString &caption, const QString &dir,
-    const QString &filter,
-    QString *selectedSuffixOut)
+    const QString &filter)
 {
     QString selectedFilter;
     QString myDir;
@@ -303,11 +302,6 @@ QString getSaveFileName(QWidget *parent, const QString &caption, const QString &
         }
     }
 
-    /* Return selected suffix if asked to */
-    if(selectedSuffixOut)
-    {
-        *selectedSuffixOut = selectedSuffix;
-    }
     return result;
 }
 

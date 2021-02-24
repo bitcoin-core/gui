@@ -124,7 +124,6 @@ void PSBTOperationsDialog::saveTransaction() {
     CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
     ssTx << m_transaction_data;
 
-    QString selected_filter;
     QString filename_suggestion = "";
     bool first = true;
     for (const CTxOut& out : m_transaction_data.tx->vout) {
@@ -141,7 +140,7 @@ void PSBTOperationsDialog::saveTransaction() {
     filename_suggestion.append(".psbt");
     QString filename = GUIUtil::getSaveFileName(this,
         tr("Save Transaction Data"), filename_suggestion,
-        tr("Partially Signed Transaction (Binary) (*.psbt)"), &selected_filter);
+        tr("Partially Signed Transaction (Binary) (*.psbt)"));
     if (filename.isEmpty()) {
         return;
     }

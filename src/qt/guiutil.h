@@ -106,12 +106,9 @@ namespace GUIUtil
       @param[in] caption Window caption (or empty, for default)
       @param[in] dir     Starting directory (or empty, to default to documents directory)
       @param[in] filter  Filter specification such as "Comma Separated Files (*.csv)"
-      @param[out] selectedSuffixOut  Pointer to return the suffix (file type) that was selected (or 0).
-                  Can be useful when choosing the save file format based on suffix.
      */
     QString getSaveFileName(QWidget *parent, const QString &caption, const QString &dir,
-        const QString &filter,
-        QString *selectedSuffixOut);
+        const QString &filter);
 
     /** Get open filename, convenience wrapper for QFileDialog::getOpenFileName.
 
