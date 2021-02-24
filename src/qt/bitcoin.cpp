@@ -510,7 +510,12 @@ int GuiMain(int argc, char* argv[])
     // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
     // but before showing splash screen.
     if (HelpRequested(gArgs) || gArgs.IsArgSet("-version")) {
-        HelpMessageDialog help(nullptr, gArgs.IsArgSet("-version"));
+#ifdef ENABLE_WALLET
+        const bool wallet_enabled{WalletModel::isWalletEnabled()};
+#else
+        constexpr bool wallet_enabled{false};
+#endif // ENABLE_WALLET
+        HelpMessageDialog help(nullptr, gArgs.IsArgSet("-version"), wallet_enabled);
         help.showOrPrint();
         return EXIT_SUCCESS;
     }

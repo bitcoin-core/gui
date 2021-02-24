@@ -22,7 +22,7 @@ class HelpMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit HelpMessageDialog(QWidget *parent, bool about);
+    explicit HelpMessageDialog(QWidget* parent, bool about, bool wallet_enabled = false);
     ~HelpMessageDialog();
 
     void printToConsole();
