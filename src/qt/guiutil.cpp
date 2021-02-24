@@ -306,10 +306,8 @@ QString getSaveFileName(QWidget *parent, const QString &caption, const QString &
 }
 
 QString getOpenFileName(QWidget *parent, const QString &caption, const QString &dir,
-    const QString &filter,
-    QString *selectedSuffixOut)
+    const QString &filter)
 {
-    QString selectedFilter;
     QString myDir;
     if(dir.isEmpty()) // Default to user documents location
     {
@@ -320,19 +318,8 @@ QString getOpenFileName(QWidget *parent, const QString &caption, const QString &
         myDir = dir;
     }
     /* Directly convert path to native OS path separators */
-    QString result = QDir::toNativeSeparators(QFileDialog::getOpenFileName(parent, caption, myDir, filter, &selectedFilter));
+    QString result = QDir::toNativeSeparators(QFileDialog::getOpenFileName(parent, caption, myDir, filter));
 
-    if(selectedSuffixOut)
-    {
-        /* Extract first suffix from filter pattern "Description (*.foo)" or "Description (*.foo *.bar ...) */
-        QRegExp filter_re(".* \\(\\*\\.(.*)[ \\)]");
-        QString selectedSuffix;
-        if(filter_re.exactMatch(selectedFilter))
-        {
-            selectedSuffix = filter_re.cap(1);
-        }
-        *selectedSuffixOut = selectedSuffix;
-    }
     return result;
 }
 

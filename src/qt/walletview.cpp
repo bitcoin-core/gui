@@ -220,7 +220,7 @@ void WalletView::gotoLoadPSBT(bool from_clipboard)
     } else {
         QString filename = GUIUtil::getOpenFileName(this,
             tr("Load Transaction Data"), QString(),
-            tr("Partially Signed Transaction (*.psbt)"), nullptr);
+            tr("Partially Signed Transaction (*.psbt)"));
         if (filename.isEmpty()) return;
         if (GetFileSize(filename.toLocal8Bit().data(), MAX_FILE_SIZE_PSBT) == MAX_FILE_SIZE_PSBT) {
             Q_EMIT message(tr("Error"), tr("PSBT file must be smaller than 100 MiB"), CClientUIInterface::MSG_ERROR);
