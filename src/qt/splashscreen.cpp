@@ -30,23 +30,24 @@
 SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     : QWidget(), curAlignment(0)
 {
-    // set reference point, paddings
-    int paddingRight            = 50;
-    int paddingTop              = 50;
-    int titleVersionVSpace      = 17;
-    int titleCopyrightVSpace    = 40;
 
     float fontFactor            = 1.0;
     float devicePixelRatio      = 1.0;
+
+    // set reference point, paddings
     devicePixelRatio = static_cast<QGuiApplication*>(QCoreApplication::instance())->devicePixelRatio();
+    int paddingRight            = 180*devicePixelRatio - 100;
+    int paddingTop              = 180*devicePixelRatio + 0;
 
     // define text to place
-    QString titleText       = PACKAGE_NAME;
-    QString versionText     = QString("Version %1").arg(QString::fromStdString(FormatFullVersion()));
-    QString copyrightText   = QString::fromUtf8(CopyrightHolders(strprintf("\xc2\xA9 %u-%u ", 2009, COPYRIGHT_YEAR)).c_str());
-    QString titleAddText    = networkStyle->getTitleAddText();
+    QString titleText           = PACKAGE_NAME;
+    QString packageNameSubStr   = titleText.mid(0,7);
+    QString splashText          = QString("Connecting to the %1 network").arg(packageNameSubStr);
+    QString versionText         = QString("%1").arg(QString::fromStdString(FormatFullVersion()));
+    QString copyrightText       = QString::fromUtf8(CopyrightHolders(strprintf("\xc2\xA9 %u-%u ", 2009, COPYRIGHT_YEAR)).c_str());
+    QString titleAddText        = networkStyle->getTitleAddText();
 
-    QString font            = QApplication::font().toString();
+    QString font                = QApplication::font().toString();
 
     // create a bitmap according to device pixelratio
     QSize splashSize(480*devicePixelRatio,320*devicePixelRatio);
@@ -66,7 +67,8 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     pixPaint.fillRect(rGradient, gradient);
 
     // draw the bitcoin icon, expected size of PNG: 1024x1024
-    QRect rectIcon(QPoint(-150,-122), QSize(430,430));
+    int const icon_side = 120;
+    QRect rectIcon(QPoint((splashSize.width() - icon_side)/2,(splashSize.height() - icon_side)/8), QSize(icon_side,icon_side));
 
     const QSize requiredSize(1024,1024);
     QPixmap icon(networkStyle->getAppIcon().pixmap(requiredSize));
@@ -76,34 +78,35 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     // check font size and drawing with
     pixPaint.setFont(QFont(font, 33*fontFactor));
     QFontMetrics fm = pixPaint.fontMetrics();
-    int titleTextWidth = GUIUtil::TextWidth(fm, titleText);
+    int titleTextWidth = GUIUtil::TextWidth(fm, splashText);
     if (titleTextWidth > 176) {
-        fontFactor = fontFactor * 176 / titleTextWidth;
+        fontFactor = 1.0 * (fontFactor * 176 ) / titleTextWidth;
     }
 
-    pixPaint.setFont(QFont(font, 33*fontFactor));
+    pixPaint.setFont(QFont(font, 60*fontFactor));
     fm = pixPaint.fontMetrics();
-    titleTextWidth  = GUIUtil::TextWidth(fm, titleText);
-    pixPaint.drawText(pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight,paddingTop,titleText);
+    titleTextWidth  = GUIUtil::TextWidth(fm, splashText);
+    pixPaint.drawText(pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight, paddingTop, splashText);
 
-    pixPaint.setFont(QFont(font, 15*fontFactor));
+    pixPaint.setFont(QFont(font, 1*fontFactor));
+
+    // draw copyright stuff
+    pixPaint.setFont(QFont(font, 1*fontFactor));
+    const int x = 10;
+    const int y = pixmap.height() - 30;
+    QRect copyrightRect(x, y, pixmap.width() - x, pixmap.height() - y);
+    pixPaint.drawText(copyrightRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, copyrightText);
+    int copyrightTextWidth  = GUIUtil::TextWidth(fm, copyrightText);
 
     // if the version string is too long, reduce size
     fm = pixPaint.fontMetrics();
     int versionTextWidth  = GUIUtil::TextWidth(fm, versionText);
-    if(versionTextWidth > titleTextWidth+paddingRight-10) {
-        pixPaint.setFont(QFont(font, 10*fontFactor));
-        titleVersionVSpace -= 5;
-    }
-    pixPaint.drawText(pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight+2,paddingTop+titleVersionVSpace,versionText);
+    if(versionTextWidth > pixmap.width() - copyrightTextWidth) {
+        pixPaint.setFont(QFont(font, 1*fontFactor));
+        //titleVersionVSpace -= 5;
+    QRect versionRect(pixmap.width() - versionTextWidth - 5, y, pixmap.width() + versionTextWidth, pixmap.height() - y);
+    pixPaint.drawText(versionRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, versionText);
 
-    // draw copyright stuff
-    {
-        pixPaint.setFont(QFont(font, 10*fontFactor));
-        const int x = pixmap.width()/devicePixelRatio-titleTextWidth-paddingRight;
-        const int y = paddingTop+titleCopyrightVSpace;
-        QRect copyrightRect(x, y, pixmap.width() - x - paddingRight, pixmap.height() - y);
-        pixPaint.drawText(copyrightRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, copyrightText);
     }
 
     // draw additional text if special network
@@ -119,7 +122,7 @@ SplashScreen::SplashScreen(const NetworkStyle* networkStyle)
     pixPaint.end();
 
     // Set window title
-    setWindowTitle(titleText + " " + titleAddText);
+    setWindowTitle(titleText);
 
     // Resize window and move to center of desktop, disallow resizing
     QRect r(QPoint(), QSize(pixmap.size().width()/devicePixelRatio,pixmap.size().height()/devicePixelRatio));
@@ -176,17 +179,16 @@ static void InitMessage(SplashScreen *splash, const std::string &message)
     bool invoked = QMetaObject::invokeMethod(splash, "showMessage",
         Qt::QueuedConnection,
         Q_ARG(QString, QString::fromStdString(message)),
-        Q_ARG(int, Qt::AlignBottom|Qt::AlignHCenter),
+        Q_ARG(int, Qt::AlignBottom|Qt::AlignLeft),
         Q_ARG(QColor, QColor(55,55,55)));
     assert(invoked);
 }
 
 static void ShowProgress(SplashScreen *splash, const std::string &title, int nProgress, bool resume_possible)
 {
-    InitMessage(splash, title + std::string("\n") +
+    InitMessage(splash, title + std::string("\n") + strprintf("\n%d %d ", nProgress, "%") +
             (resume_possible ? _("(press q to shutdown and continue later)").translated
-                                : _("press q to shutdown").translated) +
-            strprintf("\n%d", nProgress) + "%");
+                                : _("press q to shutdown").translated));
 }
 
 void SplashScreen::subscribeToCoreSignals()
@@ -230,9 +232,13 @@ void SplashScreen::showMessage(const QString &message, int alignment, const QCol
 void SplashScreen::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
+    painter.setPen(QColor(100,100,100));
     painter.drawPixmap(0, 0, pixmap);
-    QRect r = rect().adjusted(5, 5, -5, -5);
-    painter.setPen(curColor);
+    QFontMetrics fm = painter.fontMetrics();
+    int curMessageWidth = GUIUtil::TextWidth(fm, curMessage);
+    QRect r = rect().adjusted(0, 0, -0, -0);
+    r.moveTo((pixmap.width()/2 - curMessageWidth/2) ,-100);
+    //painter.setPen(curColor);
     painter.drawText(r, curAlignment, curMessage);
 }
 
