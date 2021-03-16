@@ -36,6 +36,11 @@ struct WalletContext;
 struct bilingual_str;
 typedef uint8_t isminefilter;
 
+enum class WalletBackupFormat {
+    Raw,   // Literal db copy
+    DbDump,  // DumpWallet plaintext low-level db dump
+};
+
 namespace interfaces {
 
 class Handler;
@@ -77,7 +82,7 @@ public:
     virtual void abortRescan() = 0;
 
     //! Back up wallet.
-    virtual bool backupWallet(const std::string& filename) = 0;
+    virtual bool backupWallet(const std::string& filename, const WalletBackupFormat format, bilingual_str& error) = 0;
 
     //! Get wallet name.
     virtual std::string getWalletName() = 0;
