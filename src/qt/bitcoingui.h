@@ -319,6 +319,9 @@ public Q_SLOTS:
     void showProgress(const QString &title, int nProgress);
 
     void showModalOverlay();
+
+    /** Hide all windows and tray icon. */
+    void hideAll();
 };
 
 class UnitDisplayStatusBarControl : public QLabel
