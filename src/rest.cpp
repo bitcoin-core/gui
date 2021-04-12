@@ -18,10 +18,11 @@
 #include <sync.h>
 #include <txmempool.h>
 #include <util/check.h>
-#include <util/ref.h>
-#include <util/strencodings.h>
+#include <util/system.h>
 #include <validation.h>
 #include <version.h>
+
+#include <any>
 
 #include <boost/algorithm/string.hpp>
 
@@ -74,10 +75,10 @@ static bool RESTERR(HTTPRequest* req, enum HTTPStatusCode status, std::string me
  *                  context is not found.
  * @returns         Pointer to the node context or nullptr if not found.
  */
-static NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* req)
+static NodeContext* GetNodeContext(const std::any& context, HTTPRequest* req)
 {
-    NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
-    if (!node) {
+    auto node_context = util::AnyPtr<NodeContext>(context);
+    if (!node_context) {
         RESTERR(req, HTTP_INTERNAL_SERVER_ERROR,
                 strprintf("%s:%d (%s)\n"
                           "Internal bug detected: Node context not found!\n"
@@ -85,7 +86,7 @@ static NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* req)
                           __FILE__, __LINE__, __func__, PACKAGE_BUGREPORT));
         return nullptr;
     }
-    return node;
+    return node_context;
 }
 
 /**
@@ -95,14 +96,14 @@ static NodeContext* GetNodeContext(const util::Ref& context, HTTPRequest* req)
  *                 context mempool is not found.
  * @returns        Pointer to the mempool or nullptr if no mempool found.
  */
-static CTxMemPool* GetMemPool(const util::Ref& context, HTTPRequest* req)
+static CTxMemPool* GetMemPool(const std::any& context, HTTPRequest* req)
 {
-    NodeContext* node = context.Has<NodeContext>() ? &context.Get<NodeContext>() : nullptr;
-    if (!node || !node->mempool) {
+    auto node_context = util::AnyPtr<NodeContext>(context);
+    if (!node_context || !node_context->mempool) {
         RESTERR(req, HTTP_NOT_FOUND, "Mempool disabled or instance not found");
         return nullptr;
     }
-    return node->mempool.get();
+    return node_context->mempool.get();
 }
 
 static RetFormat ParseDataFormat(std::string& param, const std::string& strReq)
@@ -117,9 +118,10 @@ static RetFormat ParseDataFormat(std::string& param, const std::string& strReq)
     param = strReq.substr(0, pos);
     const std::string suff(strReq, pos + 1);
 
-    for (unsigned int i = 0; i < ARRAYLEN(rf_names); i++)
-        if (suff == rf_names[i].name)
-            return rf_names[i].rf;
+    for (const auto& rf_name : rf_names) {
+        if (suff == rf_name.name)
+            return rf_name.rf;
+    }
 
     /* If no suffix is found, return original string.  */
     param = strReq;
@@ -129,12 +131,13 @@ static RetFormat ParseDataFormat(std::string& param, const std::string& strReq)
 static std::string AvailableDataFormatsString()
 {
     std::string formats;
-    for (unsigned int i = 0; i < ARRAYLEN(rf_names); i++)
-        if (strlen(rf_names[i].name) > 0) {
+    for (const auto& rf_name : rf_names) {
+        if (strlen(rf_name.name) > 0) {
             formats.append(".");
-            formats.append(rf_names[i].name);
+            formats.append(rf_name.name);
             formats.append(", ");
         }
+    }
 
     if (formats.length() > 0)
         return formats.substr(0, formats.length() - 2);
@@ -150,7 +153,7 @@ static bool CheckWarmup(HTTPRequest* req)
     return true;
 }
 
-static bool rest_headers(const util::Ref& context,
+static bool rest_headers(const std::any& context,
                          HTTPRequest* req,
                          const std::string& strURIPart)
 {
@@ -179,7 +182,7 @@ static bool rest_headers(const util::Ref& context,
     {
         LOCK(cs_main);
         tip = ::ChainActive().Tip();
-        const CBlockIndex* pindex = LookupBlockIndex(hash);
+        const CBlockIndex* pindex = g_chainman.m_blockman.LookupBlockIndex(hash);
         while (pindex != nullptr && ::ChainActive().Contains(pindex)) {
             headers.push_back(pindex);
             if (headers.size() == (unsigned long)count)
@@ -247,7 +250,7 @@ static bool rest_block(HTTPRequest* req,
     {
         LOCK(cs_main);
         tip = ::ChainActive().Tip();
-        pblockindex = LookupBlockIndex(hash);
+        pblockindex = g_chainman.m_blockman.LookupBlockIndex(hash);
         if (!pblockindex) {
             return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
         }
@@ -292,12 +295,12 @@ static bool rest_block(HTTPRequest* req,
     }
 }
 
-static bool rest_block_extended(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_block_extended(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     return rest_block(req, strURIPart, true);
 }
 
-static bool rest_block_notxdetails(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_block_notxdetails(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     return rest_block(req, strURIPart, false);
 }
@@ -305,7 +308,7 @@ static bool rest_block_notxdetails(const util::Ref& context, HTTPRequest* req, c
 // A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
 RPCHelpMan getblockchaininfo();
 
-static bool rest_chaininfo(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_chaininfo(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
@@ -314,7 +317,8 @@ static bool rest_chaininfo(const util::Ref& context, HTTPRequest* req, const std
 
     switch (rf) {
     case RetFormat::JSON: {
-        JSONRPCRequest jsonRequest(context);
+        JSONRPCRequest jsonRequest;
+        jsonRequest.context = context;
         jsonRequest.params = UniValue(UniValue::VARR);
         UniValue chainInfoObject = getblockchaininfo().HandleRequest(jsonRequest);
         std::string strJSON = chainInfoObject.write() + "\n";
@@ -328,7 +332,7 @@ static bool rest_chaininfo(const util::Ref& context, HTTPRequest* req, const std
     }
 }
 
-static bool rest_mempool_info(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_mempool_info(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
@@ -352,7 +356,7 @@ static bool rest_mempool_info(const util::Ref& context, HTTPRequest* req, const 
     }
 }
 
-static bool rest_mempool_contents(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_mempool_contents(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req)) return false;
     const CTxMemPool* mempool = GetMemPool(context, req);
@@ -375,7 +379,7 @@ static bool rest_mempool_contents(const util::Ref& context, HTTPRequest* req, co
     }
 }
 
-static bool rest_tx(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_tx(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
@@ -434,7 +438,7 @@ static bool rest_tx(const util::Ref& context, HTTPRequest* req, const std::strin
     }
 }
 
-static bool rest_getutxos(const util::Ref& context, HTTPRequest* req, const std::string& strURIPart)
+static bool rest_getutxos(const std::any& context, HTTPRequest* req, const std::string& strURIPart)
 {
     if (!CheckWarmup(req))
         return false;
@@ -620,7 +624,7 @@ static bool rest_getutxos(const util::Ref& context, HTTPRequest* req, const std:
     }
 }
 
-static bool rest_blockhash_by_height(const util::Ref& context, HTTPRequest* req,
+static bool rest_blockhash_by_height(const std::any& context, HTTPRequest* req,
                        const std::string& str_uri_part)
 {
     if (!CheckWarmup(req)) return false;
@@ -668,7 +672,7 @@ static bool rest_blockhash_by_height(const util::Ref& context, HTTPRequest* req,
 
 static const struct {
     const char* prefix;
-    bool (*handler)(const util::Ref& context, HTTPRequest* req, const std::string& strReq);
+    bool (*handler)(const std::any& context, HTTPRequest* req, const std::string& strReq);
 } uri_prefixes[] = {
       {"/rest/tx/", rest_tx},
       {"/rest/block/notxdetails/", rest_block_notxdetails},
@@ -681,10 +685,10 @@ static const struct {
       {"/rest/blockhashbyheight/", rest_blockhash_by_height},
 };
 
-void StartREST(const util::Ref& context)
+void StartREST(const std::any& context)
 {
     for (const auto& up : uri_prefixes) {
-        auto handler = [&context, up](HTTPRequest* req, const std::string& prefix) { return up.handler(context, req, prefix); };
+        auto handler = [context, up](HTTPRequest* req, const std::string& prefix) { return up.handler(context, req, prefix); };
         RegisterHTTPHandler(up.prefix, false, handler);
     }
 }
@@ -695,6 +699,7 @@ void InterruptREST()
 
 void StopREST()
 {
-    for (unsigned int i = 0; i < ARRAYLEN(uri_prefixes); i++)
-        UnregisterHTTPHandler(uri_prefixes[i].prefix, false);
+    for (const auto& up : uri_prefixes) {
+        UnregisterHTTPHandler(up.prefix, false);
+    }
 }

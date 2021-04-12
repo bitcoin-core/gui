@@ -3,6 +3,7 @@
              (gnu packages autotools)
              (gnu packages base)
              (gnu packages bash)
+             (gnu packages bison)
              (gnu packages cdrom)
              (gnu packages check)
              (gnu packages cmake)
@@ -115,7 +116,8 @@ http://www.linuxfromscratch.org/hlfs/view/development/chapter05/gcc-pass1.html"
        `(("binutils" ,xbinutils)
          ("libc" ,xlibc)
          ("libc:static" ,xlibc "static")
-         ("gcc" ,xgcc)))
+         ("gcc" ,xgcc)
+         ("gcc-lib" ,xgcc "lib")))
       (synopsis (string-append "Complete GCC tool chain for " target))
       (description (string-append "This package provides a complete GCC tool
 chain for " target " development."))
@@ -124,9 +126,9 @@ chain for " target " development."))
 
 (define* (make-bitcoin-cross-toolchain target
                                   #:key
-                                  (base-gcc-for-libc gcc-5)
-                                  (base-kernel-headers linux-libre-headers-4.19)
-                                  (base-libc glibc-2.27)
+                                  (base-gcc-for-libc gcc-7)
+                                  (base-kernel-headers linux-libre-headers-5.4)
+                                  (base-libc glibc)  ; glibc 2.31
                                   (base-gcc (make-gcc-rpath-link gcc-9)))
   "Convenience wrapper around MAKE-CROSS-TOOLCHAIN with default values
 desirable for building Bitcoin Core release binaries."
@@ -159,7 +161,8 @@ desirable for building Bitcoin Core release binaries."
       (propagated-inputs
        `(("binutils" ,xbinutils)
          ("libc" ,pthreads-xlibc)
-         ("gcc" ,pthreads-xgcc)))
+         ("gcc" ,pthreads-xgcc)
+         ("gcc-lib" ,pthreads-xgcc "lib")))
       (synopsis (string-append "Complete GCC tool chain for " target))
       (description (string-append "This package provides a complete GCC tool
 chain for " target " development."))
@@ -211,30 +214,30 @@ chain for " target " development."))
         gzip
         xz
         zlib
+        (list zlib "static")
         ;; Build tools
         gnu-make
         libtool
         autoconf
         automake
         pkg-config
+        bison
         ;; Scripting
         perl
-        python-3.7
+        python-3
         ;; Git
         git
         ;; Native gcc 7 toolchain
-        gcc-toolchain-7)
+        gcc-toolchain-7
+        (list gcc-toolchain-7 "static"))
   (let ((target (getenv "HOST")))
     (cond ((string-suffix? "-mingw32" target)
            ;; Windows
            (list zip
                  (make-mingw-pthreads-cross-toolchain "x86_64-w64-mingw32")
                  (make-nsis-with-sde-support nsis-x86_64)))
-          ((string-contains target "riscv64-linux-")
-           (list (make-bitcoin-cross-toolchain "riscv64-linux-gnu"
-                                               #:base-gcc-for-libc gcc-7)))
           ((string-contains target "-linux-")
            (list (make-bitcoin-cross-toolchain target)))
           ((string-contains target "darwin")
-           (list clang-8 libcap binutils imagemagick libtiff librsvg font-tuffy cmake-3.15.5 xorriso))
+           (list clang-toolchain-8 binutils imagemagick libtiff librsvg font-tuffy cmake xorriso))
           (else '())))))

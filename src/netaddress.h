@@ -36,7 +36,7 @@ static constexpr int ADDRV2_FORMAT = 0x20000000;
  * @note An address may belong to more than one network, for example `10.0.0.1`
  * belongs to both `NET_UNROUTABLE` and `NET_IPV4`.
  * Keep these sequential starting from 0 and `NET_MAX` as the last entry.
- * We have loops like `for (int i = 0; i < NET_MAX; i++)` that expect to iterate
+ * We have loops like `for (int i = 0; i < NET_MAX; ++i)` that expect to iterate
  * over all enum values and also `GetExtNetwork()` "extends" this enum by
  * introducing standalone constants starting from `NET_MAX`.
  */
@@ -151,7 +151,16 @@ class CNetAddr
 
         bool SetInternal(const std::string& name);
 
-        bool SetSpecial(const std::string &strName); // for Tor addresses
+        /**
+         * Parse a Tor or I2P address and set this object to it.
+         * @param[in] addr Address to parse, for example
+         * pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion or
+         * ukeu3k5oycgaauneqgtnvselmt4yemvoilkln7jpvamvfx7dnkdq.b32.i2p.
+         * @returns Whether the operation was successful.
+         * @see CNetAddr::IsTor(), CNetAddr::IsI2P()
+         */
+        bool SetSpecial(const std::string& addr);
+
         bool IsBindAny() const; // INADDR_ANY equivalent
         bool IsIPv4() const;    // IPv4 mapped address (::FFFF:0:0/96, 0.0.0.0/0)
         bool IsIPv6() const;    // IPv6 address (not mapped IPv4, not Tor)
@@ -248,6 +257,25 @@ class CNetAddr
         friend class CSubNet;
 
     private:
+        /**
+         * Parse a Tor address and set this object to it.
+         * @param[in] addr Address to parse, must be a valid C string, for example
+         * pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion or
+         * 6hzph5hv6337r6p2.onion.
+         * @returns Whether the operation was successful.
+         * @see CNetAddr::IsTor()
+         */
+        bool SetTor(const std::string& addr);
+
+        /**
+         * Parse an I2P address and set this object to it.
+         * @param[in] addr Address to parse, must be a valid C string, for example
+         * ukeu3k5oycgaauneqgtnvselmt4yemvoilkln7jpvamvfx7dnkdq.b32.i2p.
+         * @returns Whether the operation was successful.
+         * @see CNetAddr::IsI2P()
+         */
+        bool SetI2P(const std::string& addr);
+
         /**
          * BIP155 network ids recognized by this software.
          */

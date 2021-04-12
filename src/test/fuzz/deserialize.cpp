@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2020 The Bitcoin Core developers
+// Copyright (c) 2009-2021 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -15,7 +15,6 @@
 #include <net.h>
 #include <netbase.h>
 #include <node/utxo_snapshot.h>
-#include <optional.h>
 #include <primitives/block.h>
 #include <protocol.h>
 #include <psbt.h>
@@ -26,11 +25,10 @@
 #include <version.h>
 
 #include <exception>
+#include <optional>
 #include <stdexcept>
 #include <stdint.h>
 #include <unistd.h>
-
-#include <vector>
 
 #include <test/fuzz/fuzz.h>
 
@@ -71,7 +69,7 @@ T Deserialize(CDataStream ds)
 }
 
 template <typename T>
-void DeserializeFromFuzzingInput(const std::vector<uint8_t>& buffer, T& obj, const Optional<int> protocol_version = nullopt)
+void DeserializeFromFuzzingInput(FuzzBufferType buffer, T& obj, const std::optional<int> protocol_version = std::nullopt)
 {
     CDataStream ds(buffer, SER_NETWORK, INIT_PROTO_VERSION);
     if (protocol_version) {

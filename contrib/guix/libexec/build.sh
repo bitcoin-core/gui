@@ -3,6 +3,16 @@ export LC_ALL=C
 set -e -o pipefail
 export TZ=UTC
 
+# Although Guix _does_ set umask when building its own packages (in our case,
+# this is all packages in manifest.scm), it does not set it for `guix
+# environment`. It does make sense for at least `guix environment --container`
+# to set umask, so if that change gets merged upstream and we bump the
+# time-machine to a commit which includes the aforementioned change, we can
+# remove this line.
+#
+# This line should be placed before any commands which creates files.
+umask 0022
+
 if [ -n "$V" ]; then
     # Print both unexpanded (-v) and expanded (-x) forms of commands as they are
     # read from this file.
@@ -14,9 +24,11 @@ fi
 # Check that required environment variables are set
 cat << EOF
 Required environment variables as seen inside the container:
+    DIST_ARCHIVE_BASE: ${DIST_ARCHIVE_BASE:?not set}
+    DISTNAME: ${DISTNAME:?not set}
     HOST: ${HOST:?not set}
     SOURCE_DATE_EPOCH: ${SOURCE_DATE_EPOCH:?not set}
-    MAX_JOBS: ${MAX_JOBS:?not set}
+    JOBS: ${JOBS:?not set}
     DISTSRC: ${DISTSRC:?not set}
     OUTDIR: ${OUTDIR:?not set}
 EOF
@@ -42,21 +54,36 @@ store_path() {
 # Set environment variables to point the NATIVE toolchain to the right
 # includes/libs
 NATIVE_GCC="$(store_path gcc-toolchain)"
-export LIBRARY_PATH="${NATIVE_GCC}/lib:${NATIVE_GCC}/lib64"
-export CPATH="${NATIVE_GCC}/include"
+NATIVE_GCC_STATIC="$(store_path gcc-toolchain static)"
+
+unset LIBRARY_PATH
+unset CPATH
+unset C_INCLUDE_PATH
+unset CPLUS_INCLUDE_PATH
+unset OBJC_INCLUDE_PATH
+unset OBJCPLUS_INCLUDE_PATH
+
+export LIBRARY_PATH="${NATIVE_GCC}/lib:${NATIVE_GCC}/lib64:${NATIVE_GCC_STATIC}/lib:${NATIVE_GCC_STATIC}/lib64"
+export C_INCLUDE_PATH="${NATIVE_GCC}/include"
+export CPLUS_INCLUDE_PATH="${NATIVE_GCC}/include/c++:${NATIVE_GCC}/include"
+export OBJC_INCLUDE_PATH="${NATIVE_GCC}/include"
+export OBJCPLUS_INCLUDE_PATH="${NATIVE_GCC}/include/c++:${NATIVE_GCC}/include"
+
+prepend_to_search_env_var() {
+    export "${1}=${2}${!1:+:}${!1}"
+}
+
 case "$HOST" in
     *darwin*)
-        # When targeting darwin, some native tools built by depends require
-        # native packages not incorporated in depends
-        #
-        # libcap       required by native_cdrkit/wodim
-        # zlib, bzip2  required by native_cdrkit/genisoimage
-        for native_pkg in libcap zlib bzip2; do
-            native_pkg_store_path=$(store_path "$native_pkg")
-            export LIBRARY_PATH="${native_pkg_store_path}/lib:${LIBRARY_PATH}"
-            export CPATH="${native_pkg_store_path}/include:${CPATH}"
-        done
-        ;;
+        # When targeting darwin, zlib is required by native_libdmg-hfsplus.
+        zlib_store_path=$(store_path "zlib")
+        zlib_static_store_path=$(store_path "zlib" static)
+
+        prepend_to_search_env_var LIBRARY_PATH "${zlib_static_store_path}/lib:${zlib_store_path}/lib"
+        prepend_to_search_env_var C_INCLUDE_PATH "${zlib_store_path}/include"
+        prepend_to_search_env_var CPLUS_INCLUDE_PATH "${zlib_store_path}/include"
+        prepend_to_search_env_var OBJC_INCLUDE_PATH "${zlib_store_path}/include"
+        prepend_to_search_env_var OBJCPLUS_INCLUDE_PATH "${zlib_store_path}/include"
 esac
 
 # Set environment variables to point the CROSS toolchain to the right
@@ -66,7 +93,8 @@ case "$HOST" in
         # Determine output paths to use in CROSS_* environment variables
         CROSS_GLIBC="$(store_path "mingw-w64-x86_64-winpthreads")"
         CROSS_GCC="$(store_path "gcc-cross-${HOST}")"
-        CROSS_GCC_LIBS=( "${CROSS_GCC}/lib/gcc/${HOST}"/* ) # This expands to an array of directories...
+        CROSS_GCC_LIB_STORE="$(store_path "gcc-cross-${HOST}" lib)"
+        CROSS_GCC_LIBS=( "${CROSS_GCC_LIB_STORE}/lib/gcc/${HOST}"/* ) # This expands to an array of directories...
         CROSS_GCC_LIB="${CROSS_GCC_LIBS[0]}" # ...we just want the first one (there should only be one)
 
         # The search path ordering is generally:
@@ -75,7 +103,7 @@ case "$HOST" in
         #    2. kernel-header-related search paths (not applicable to mingw-w64 hosts)
         export CROSS_C_INCLUDE_PATH="${CROSS_GCC_LIB}/include:${CROSS_GCC_LIB}/include-fixed:${CROSS_GLIBC}/include"
         export CROSS_CPLUS_INCLUDE_PATH="${CROSS_GCC}/include/c++:${CROSS_GCC}/include/c++/${HOST}:${CROSS_GCC}/include/c++/backward:${CROSS_C_INCLUDE_PATH}"
-        export CROSS_LIBRARY_PATH="${CROSS_GCC}/lib:${CROSS_GCC}/${HOST}/lib:${CROSS_GCC_LIB}:${CROSS_GLIBC}/lib"
+        export CROSS_LIBRARY_PATH="${CROSS_GCC_LIB_STORE}/lib:${CROSS_GCC}/${HOST}/lib:${CROSS_GCC_LIB}:${CROSS_GLIBC}/lib"
         ;;
     *darwin*)
         # The CROSS toolchain for darwin uses the SDK and ignores environment variables.
@@ -86,12 +114,13 @@ case "$HOST" in
         CROSS_GLIBC_STATIC="$(store_path "glibc-cross-${HOST}" static)"
         CROSS_KERNEL="$(store_path "linux-libre-headers-cross-${HOST}")"
         CROSS_GCC="$(store_path "gcc-cross-${HOST}")"
-        CROSS_GCC_LIBS=( "${CROSS_GCC}/lib/gcc/${HOST}"/* ) # This expands to an array of directories...
+        CROSS_GCC_LIB_STORE="$(store_path "gcc-cross-${HOST}" lib)"
+        CROSS_GCC_LIBS=( "${CROSS_GCC_LIB_STORE}/lib/gcc/${HOST}"/* ) # This expands to an array of directories...
         CROSS_GCC_LIB="${CROSS_GCC_LIBS[0]}" # ...we just want the first one (there should only be one)
 
         export CROSS_C_INCLUDE_PATH="${CROSS_GCC_LIB}/include:${CROSS_GCC_LIB}/include-fixed:${CROSS_GLIBC}/include:${CROSS_KERNEL}/include"
         export CROSS_CPLUS_INCLUDE_PATH="${CROSS_GCC}/include/c++:${CROSS_GCC}/include/c++/${HOST}:${CROSS_GCC}/include/c++/backward:${CROSS_C_INCLUDE_PATH}"
-        export CROSS_LIBRARY_PATH="${CROSS_GCC}/lib:${CROSS_GCC}/${HOST}/lib:${CROSS_GCC_LIB}:${CROSS_GLIBC}/lib:${CROSS_GLIBC_STATIC}/lib"
+        export CROSS_LIBRARY_PATH="${CROSS_GCC_LIB_STORE}/lib:${CROSS_GCC}/${HOST}/lib:${CROSS_GCC_LIB}:${CROSS_GLIBC}/lib:${CROSS_GLIBC_STATIC}/lib"
         ;;
     *)
         exit 1 ;;
@@ -132,12 +161,14 @@ case "$HOST" in
     *linux*)
         glibc_dynamic_linker=$(
             case "$HOST" in
-                i686-linux-gnu)      echo /lib/ld-linux.so.2 ;;
-                x86_64-linux-gnu)    echo /lib64/ld-linux-x86-64.so.2 ;;
-                arm-linux-gnueabihf) echo /lib/ld-linux-armhf.so.3 ;;
-                aarch64-linux-gnu)   echo /lib/ld-linux-aarch64.so.1 ;;
-                riscv64-linux-gnu)   echo /lib/ld-linux-riscv64-lp64d.so.1 ;;
-                *)                   exit 1 ;;
+                i686-linux-gnu)        echo /lib/ld-linux.so.2 ;;
+                x86_64-linux-gnu)      echo /lib64/ld-linux-x86-64.so.2 ;;
+                arm-linux-gnueabihf)   echo /lib/ld-linux-armhf.so.3 ;;
+                aarch64-linux-gnu)     echo /lib/ld-linux-aarch64.so.1 ;;
+                riscv64-linux-gnu)     echo /lib/ld-linux-riscv64-lp64d.so.1 ;;
+                powerpc64-linux-gnu)   echo /lib/ld64.so.1;;
+                powerpc64le-linux-gnu) echo /lib/ld64.so.2;;
+                *)                     exit 1 ;;
             esac
         )
         ;;
@@ -164,9 +195,11 @@ esac
 ####################
 
 # Build the depends tree, overriding variables that assume multilib gcc
-make -C depends --jobs="$MAX_JOBS" HOST="$HOST" \
+make -C depends --jobs="$JOBS" HOST="$HOST" \
                                    ${V:+V=1} \
                                    ${SOURCES_PATH+SOURCES_PATH="$SOURCES_PATH"} \
+                                   ${BASE_CACHE+BASE_CACHE="$BASE_CACHE"} \
+                                   ${SDK_PATH+SDK_PATH="$SDK_PATH"} \
                                    i686_linux_CC=i686-linux-gnu-gcc \
                                    i686_linux_CXX=i686-linux-gnu-g++ \
                                    i686_linux_AR=i686-linux-gnu-ar \
@@ -187,11 +220,7 @@ make -C depends --jobs="$MAX_JOBS" HOST="$HOST" \
 # Source Tarball Building #
 ###########################
 
-# Define DISTNAME variable.
-# shellcheck source=contrib/gitian-descriptors/assign_DISTNAME
-source contrib/gitian-descriptors/assign_DISTNAME
-
-GIT_ARCHIVE="${OUTDIR}/src/${DISTNAME}.tar.gz"
+GIT_ARCHIVE="${DIST_ARCHIVE_BASE}/${DISTNAME}.tar.gz"
 
 # Create the source tarball if not already there
 if [ ! -e "$GIT_ARCHIVE" ]; then
@@ -204,7 +233,7 @@ fi
 ###########################
 
 # CONFIGFLAGS
-CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests"
+CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests --disable-fuzz-binary"
 case "$HOST" in
     *linux*) CONFIGFLAGS+=" --enable-glibc-back-compat" ;;
 esac
@@ -224,6 +253,10 @@ HOST_CXXFLAGS="$HOST_CFLAGS"
 case "$HOST" in
     *linux*)  HOST_LDFLAGS="-Wl,--as-needed -Wl,--dynamic-linker=$glibc_dynamic_linker -static-libstdc++ -Wl,-O2" ;;
     *mingw*)  HOST_LDFLAGS="-Wl,--no-insert-timestamp" ;;
+esac
+
+case "$HOST" in
+    powerpc64-linux-*) HOST_LDFLAGS="${HOST_LDFLAGS} -Wl,-z,noexecstack" ;;
 esac
 
 # Make $HOST-specific native binaries from depends available in $PATH
@@ -252,7 +285,7 @@ mkdir -p "$DISTSRC"
     sed -i.old 's/-lstdc++ //g' config.status libtool src/univalue/config.status src/univalue/libtool
 
     # Build Bitcoin Core
-    make --jobs="$MAX_JOBS" ${V:+V=1}
+    make --jobs="$JOBS" ${V:+V=1}
 
     # Perform basic ELF security checks on a series of executables.
     make -C src --jobs=1 check-security ${V:+V=1}
@@ -260,6 +293,7 @@ mkdir -p "$DISTSRC"
     # version symbols for Linux distro back-compatibility.
     make -C src --jobs=1 check-symbols  ${V:+V=1}
 
+    mkdir -p ${OUTDIR}
     # Make the os-specific installers
     case "$HOST" in
         *mingw*)
@@ -291,9 +325,6 @@ mkdir -p "$DISTSRC"
                 osx_volname \
                 contrib/macdeploy/detached-sig-{apply,create}.sh \
                 "${BASEPREFIX}/${HOST}"/native/bin/dmg
-            for util in codesign_allocate pagestuff; do
-                cp --no-target-directory {"${BASEPREFIX}/${HOST}/native/bin/${HOST}-","unsigned-app-${HOST}/"}"$util"
-            done
             mv --target-directory="unsigned-app-${HOST}" dist
             (
                 cd "unsigned-app-${HOST}"
@@ -329,7 +360,7 @@ mkdir -p "$DISTSRC"
                 {
                     find "${DISTNAME}/bin" -type f -executable -print0
                     find "${DISTNAME}/lib" -type f -print0
-                } | xargs -0 -n1 -P"$MAX_JOBS" -I{} "${DISTSRC}/contrib/devtools/split-debug.sh" {} {} {}.dbg
+                } | xargs -0 -n1 -P"$JOBS" -I{} "${DISTSRC}/contrib/devtools/split-debug.sh" {} {} {}.dbg
                 ;;
         esac
 
@@ -379,21 +410,21 @@ mkdir -p "$DISTSRC"
                     || ( rm -f "${OUTDIR}/${DISTNAME}-${HOST//x86_64-apple-darwin18/osx64}.tar.gz" && exit 1 )
                 ;;
         esac
-    )
-)
+    )  # $DISTSRC/installed
 
-case "$HOST" in
-    *mingw*)
-        cp -rf --target-directory=. contrib/windeploy
-        (
-            cd ./windeploy
-            mkdir unsigned
-            cp --target-directory=unsigned/ "${OUTDIR}/${DISTNAME}-win64-setup-unsigned.exe"
-            find . -print0 \
-                | sort --zero-terminated \
-                | tar --create --no-recursion --mode='u+rw,go+r-w,a+X' --null --files-from=- \
-                | gzip -9n > "${OUTDIR}/${DISTNAME}-win-unsigned.tar.gz" \
-                || ( rm -f "${OUTDIR}/${DISTNAME}-win-unsigned.tar.gz" && exit 1 )
-        )
-        ;;
-esac
+    case "$HOST" in
+        *mingw*)
+            cp -rf --target-directory=. contrib/windeploy
+            (
+                cd ./windeploy
+                mkdir -p unsigned
+                cp --target-directory=unsigned/ "${OUTDIR}/${DISTNAME}-win64-setup-unsigned.exe"
+                find . -print0 \
+                    | sort --zero-terminated \
+                    | tar --create --no-recursion --mode='u+rw,go+r-w,a+X' --null --files-from=- \
+                    | gzip -9n > "${OUTDIR}/${DISTNAME}-win-unsigned.tar.gz" \
+                    || ( rm -f "${OUTDIR}/${DISTNAME}-win-unsigned.tar.gz" && exit 1 )
+            )
+            ;;
+    esac
+)  # $DISTSRC

@@ -25,6 +25,7 @@ from test_framework.util import (
     assert_raises_rpc_error,
     p2p_port,
 )
+from test_framework.wallet import MiniWallet
 
 
 def assert_net_servicesnames(servicesflag, servicenames):
@@ -48,6 +49,9 @@ class NetTest(BitcoinTestFramework):
         self.supports_cli = False
 
     def run_test(self):
+        # We need miniwallet to make a transaction
+        self.wallet = MiniWallet(self.nodes[0])
+        self.wallet.generate(1)
         # Get out of IBD for the minfeefilter and getpeerinfo tests.
         self.nodes[0].generate(101)
 
@@ -74,8 +78,7 @@ class NetTest(BitcoinTestFramework):
     def test_getpeerinfo(self):
         self.log.info("Test getpeerinfo")
         # Create a few getpeerinfo last_block/last_transaction values.
-        if self.is_wallet_compiled():
-            self.nodes[0].sendtoaddress(self.nodes[1].getnewaddress(), 1)
+        self.wallet.send_self_transfer(from_node=self.nodes[0]) # Make a transaction so we can see it in the getpeerinfo results
         self.nodes[1].generate(1)
         self.sync_all()
         time_now = int(time.time())
@@ -100,6 +103,9 @@ class NetTest(BitcoinTestFramework):
 
         assert_equal(peer_info[1][0]['connection_type'], 'manual')
         assert_equal(peer_info[1][1]['connection_type'], 'inbound')
+
+        # Check dynamically generated networks list in getpeerinfo help output.
+        assert "(ipv4, ipv6, onion, i2p, not_publicly_routable)" in self.nodes[0].help("getpeerinfo")
 
     def test_getnettotals(self):
         self.log.info("Test getnettotals")
@@ -149,6 +155,9 @@ class NetTest(BitcoinTestFramework):
         for info in network_info:
             assert_net_servicesnames(int(info["localservices"], 0x10), info["localservicesnames"])
 
+        # Check dynamically generated networks list in getnetworkinfo help output.
+        assert "(ipv4, ipv6, onion, i2p)" in self.nodes[0].help("getnetworkinfo")
+
     def test_getaddednodeinfo(self):
         self.log.info("Test getaddednodeinfo")
         assert_equal(self.nodes[0].getaddednodeinfo(), [])
@@ -186,7 +195,7 @@ class NetTest(BitcoinTestFramework):
         for i in range(10000):
             first_octet = i >> 8
             second_octet = i % 256
-            a = "{}.{}.1.1".format(first_octet, second_octet)
+            a = "{}.{}.1.1".format(first_octet, second_octet)  # IPV4
             imported_addrs.append(a)
             self.nodes[0].addpeeraddress(a, 8333)
 
@@ -203,6 +212,7 @@ class NetTest(BitcoinTestFramework):
             assert_equal(a["services"], NODE_NETWORK | NODE_WITNESS)
             assert a["address"] in imported_addrs
             assert_equal(a["port"], 8333)
+            assert_equal(a["network"], "ipv4")
 
         node_addresses = self.nodes[0].getnodeaddresses(1)
         assert_equal(len(node_addresses), 1)

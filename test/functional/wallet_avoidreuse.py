@@ -65,7 +65,6 @@ def assert_balances(node, mine):
 class AvoidReuseTest(BitcoinTestFramework):
 
     def set_test_params(self):
-        self.setup_clean_chain = False
         self.num_nodes = 2
         # This test isn't testing txn relay/timing, so set whitelist on the
         # peers for instant txn relay. This speeds up the test run time 2-3x.
@@ -254,7 +253,7 @@ class AvoidReuseTest(BitcoinTestFramework):
             if second_addr_type == "p2sh-segwit":
                 new_fundaddr = fund_decoded["segwit"]["p2sh-segwit"]
             elif second_addr_type == "bech32":
-                new_fundaddr = fund_decoded["segwit"]["addresses"][0]
+                new_fundaddr = fund_decoded["segwit"]["address"]
             else:
                 new_fundaddr = fundaddr
                 assert_equal(second_addr_type, "legacy")

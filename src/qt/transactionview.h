@@ -35,6 +35,7 @@ class TransactionView : public QWidget
 
 public:
     explicit TransactionView(const PlatformStyle *platformStyle, QWidget *parent = nullptr);
+    ~TransactionView();
 
     void setModel(WalletModel *model);
 
@@ -81,10 +82,6 @@ private:
     QAction *copyLabelAction{nullptr};
 
     QWidget *createDateRangeWidget();
-
-    GUIUtil::TableViewLastColumnResizingFixer *columnResizingFixer{nullptr};
-
-    virtual void resizeEvent(QResizeEvent* event) override;
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 
