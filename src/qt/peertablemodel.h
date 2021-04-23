@@ -47,6 +47,7 @@ public:
     enum ColumnIndex {
         NetNodeId = 0,
         Address,
+        Direction,
         ConnectionType,
         Network,
         Ping,
@@ -74,7 +75,8 @@ public Q_SLOTS:
 
 private:
     interfaces::Node& m_node;
-    const QStringList columns{tr("Peer Id"), tr("Address"), tr("Type"), tr("Network"), tr("Ping"), tr("Sent"), tr("Received"), tr("User Agent")};
+    /*: Column titles of the Peers tab window. */
+    const QStringList columns{tr("Peer Id"), tr("Address"), tr("Direction"), tr("Type"), tr("Network"), tr("Ping"), tr("Sent"), tr("Received"), tr("User Agent")};
     std::unique_ptr<PeerTablePriv> priv;
     QTimer *timer;
 };
