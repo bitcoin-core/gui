@@ -179,9 +179,9 @@ QVariant PeerTableModel::data(const QModelIndex &index, int role) const
         assert(false);
     } else if (role == Qt::TextAlignmentRole) {
         switch (column) {
-        case NetNodeId:
         case Address:
             return {};
+        case NetNodeId:
         case ConnectionType:
         case Network:
             return QVariant(Qt::AlignCenter);
