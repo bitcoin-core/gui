@@ -3,6 +3,7 @@
              (gnu packages autotools)
              (gnu packages base)
              (gnu packages bash)
+             (gnu packages bison)
              (gnu packages cdrom)
              (gnu packages check)
              (gnu packages cmake)
@@ -213,19 +214,22 @@ chain for " target " development."))
         gzip
         xz
         zlib
+        (list zlib "static")
         ;; Build tools
         gnu-make
         libtool
         autoconf
         automake
         pkg-config
+        bison
         ;; Scripting
         perl
         python-3
         ;; Git
         git
         ;; Native gcc 7 toolchain
-        gcc-toolchain-7)
+        gcc-toolchain-7
+        (list gcc-toolchain-7 "static"))
   (let ((target (getenv "HOST")))
     (cond ((string-suffix? "-mingw32" target)
            ;; Windows
@@ -235,5 +239,5 @@ chain for " target " development."))
           ((string-contains target "-linux-")
            (list (make-bitcoin-cross-toolchain target)))
           ((string-contains target "darwin")
-           (list clang-8 binutils imagemagick libtiff librsvg font-tuffy cmake xorriso))
+           (list clang-toolchain-8 binutils imagemagick libtiff librsvg font-tuffy cmake xorriso))
           (else '())))))

@@ -27,12 +27,8 @@ QRImageWidget::QRImageWidget(QWidget *parent):
     QLabel(parent), contextMenu(nullptr)
 {
     contextMenu = new QMenu(this);
-    QAction *saveImageAction = new QAction(tr("&Save Image..."), this);
-    connect(saveImageAction, &QAction::triggered, this, &QRImageWidget::saveImage);
-    contextMenu->addAction(saveImageAction);
-    QAction *copyImageAction = new QAction(tr("&Copy Image"), this);
-    connect(copyImageAction, &QAction::triggered, this, &QRImageWidget::copyImage);
-    contextMenu->addAction(copyImageAction);
+    contextMenu->addAction(tr("Save Image..."), this, &QRImageWidget::saveImage);
+    contextMenu->addAction(tr("Copy Image"), this, &QRImageWidget::copyImage);
 }
 
 bool QRImageWidget::setQR(const QString& data, const QString& text)
@@ -120,7 +116,9 @@ void QRImageWidget::saveImage()
 {
     if (!GUIUtil::HasPixmap(this))
         return;
-    QString fn = GUIUtil::getSaveFileName(this, tr("Save QR Code"), QString(), tr("PNG Image (*.png)"), nullptr);
+    QString fn = GUIUtil::getSaveFileName(
+        this, tr("Save QR Code"), QString(),
+        tr("PNG Image", "Name of PNG file format") + QLatin1String(" (*.png)"), nullptr);
     if (!fn.isEmpty())
     {
         exportImage().save(fn);

@@ -66,6 +66,16 @@ ssize_t Sock::Recv(void* buf, size_t len, int flags) const
     return recv(m_socket, static_cast<char*>(buf), len, flags);
 }
 
+int Sock::Connect(const sockaddr* addr, socklen_t addr_len) const
+{
+    return connect(m_socket, addr, addr_len);
+}
+
+int Sock::GetSockOpt(int level, int opt_name, void* opt_val, socklen_t* opt_len) const
+{
+    return getsockopt(m_socket, level, opt_name, static_cast<char*>(opt_val), opt_len);
+}
+
 bool Sock::Wait(std::chrono::milliseconds timeout, Event requested, Event* occurred) const
 {
 #ifdef USE_POLL
@@ -175,7 +185,8 @@ void Sock::SendComplete(const std::string& data,
 
 std::string Sock::RecvUntilTerminator(uint8_t terminator,
                                       std::chrono::milliseconds timeout,
-                                      CThreadInterrupt& interrupt) const
+                                      CThreadInterrupt& interrupt,
+                                      size_t max_data) const
 {
     const auto deadline = GetTime<std::chrono::milliseconds>() + timeout;
     std::string data;
@@ -190,9 +201,14 @@ std::string Sock::RecvUntilTerminator(uint8_t terminator,
     // at a time is about 50 times slower.
 
     for (;;) {
+        if (data.size() >= max_data) {
+            throw std::runtime_error(
+                strprintf("Received too many bytes without a terminator (%u)", data.size()));
+        }
+
         char buf[512];
 
-        const ssize_t peek_ret{Recv(buf, sizeof(buf), MSG_PEEK)};
+        const ssize_t peek_ret{Recv(buf, std::min(sizeof(buf), max_data - data.size()), MSG_PEEK)};
 
         switch (peek_ret) {
         case -1: {

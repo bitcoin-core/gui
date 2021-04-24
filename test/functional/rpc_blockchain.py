@@ -149,6 +149,7 @@ class BlockchainTest(BitcoinTestFramework):
                         'count': 57,
                         'possible': True,
                     },
+                    'min_activation_height': 0,
                 },
                 'active': False
             },
@@ -158,7 +159,8 @@ class BlockchainTest(BitcoinTestFramework):
                     'status': 'active',
                     'start_time': -1,
                     'timeout': 9223372036854775807,
-                    'since': 0
+                    'since': 0,
+                    'min_activation_height': 0,
                 },
                 'height': 0,
                 'active': True
@@ -407,6 +409,9 @@ class BlockchainTest(BitcoinTestFramework):
 
         self.log.info("Test that getblock with verbosity 2 still works with pruned Undo data")
         datadir = get_datadir_path(self.options.tmpdir, 0)
+
+        self.log.info("Test that getblock with invalid verbosity type returns proper error message")
+        assert_raises_rpc_error(-1, "JSON value is not an integer as expected", node.getblock, blockhash, "2")
 
         def move_block_file(old, new):
             old_path = os.path.join(datadir, self.chain, 'blocks', old)

@@ -230,11 +230,8 @@ FUZZ_TARGET_INIT(coins_view, initialize_coins_view)
                     // consensus/tx_verify.cpp:171: bool Consensus::CheckTxInputs(const CTransaction &, TxValidationState &, const CCoinsViewCache &, int, CAmount &): Assertion `!coin.IsSpent()' failed.
                     return;
                 }
-                try {
-                    (void)Consensus::CheckTxInputs(transaction, state, coins_view_cache, fuzzed_data_provider.ConsumeIntegralInRange<int>(0, std::numeric_limits<int>::max()), tx_fee_out);
-                    assert(MoneyRange(tx_fee_out));
-                } catch (const std::runtime_error&) {
-                }
+                (void)Consensus::CheckTxInputs(transaction, state, coins_view_cache, fuzzed_data_provider.ConsumeIntegralInRange<int>(0, std::numeric_limits<int>::max()), tx_fee_out);
+                assert(MoneyRange(tx_fee_out));
             },
             [&] {
                 const CTransaction transaction{random_mutable_transaction};
@@ -264,7 +261,7 @@ FUZZ_TARGET_INIT(coins_view, initialize_coins_view)
                 CCoinsStats stats;
                 bool expected_code_path = false;
                 try {
-                    (void)GetUTXOStats(&coins_view_cache, stats, CoinStatsHashType::HASH_SERIALIZED);
+                    (void)GetUTXOStats(&coins_view_cache, WITH_LOCK(::cs_main, return std::ref(g_chainman.m_blockman)), stats, CoinStatsHashType::HASH_SERIALIZED);
                 } catch (const std::logic_error&) {
                     expected_code_path = true;
                 }
