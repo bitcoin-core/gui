@@ -165,7 +165,7 @@ public:
 AddressTableModel::AddressTableModel(WalletModel *parent, bool pk_hash_only) :
     QAbstractTableModel(parent), walletModel(parent)
 {
-    columns << tr("Label") << tr("Address");
+    columns << tr("Label","add tr stubs for dev notes") << tr("Address","add tr stubs for dev notes");
     priv = new AddressTablePriv(this);
     priv->refreshAddressTable(parent->wallet(), pk_hash_only);
 }
@@ -203,7 +203,7 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
         switch (column) {
         case Label:
             if (rec->label.isEmpty() && role == Qt::DisplayRole) {
-                return tr("(no label)");
+                return tr("(no label)","add tr stubs for dev notes");
             } else {
                 return rec->label;
             }
