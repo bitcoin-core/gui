@@ -45,22 +45,22 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
     switch(mode)
     {
         case Encrypt: // Ask passphrase x2
-            ui->warningLabel->setText(tr("Enter the new passphrase for the wallet.<br/>Please use a passphrase of <b>ten or more random characters</b>, or <b>eight or more words</b>."));
+            ui->warningLabel->setText(tr("Enter the new passphrase for the wallet.<br/>Please use a passphrase of <b>ten or more random characters</b>, or <b>eight or more words</b>.","add stub for dev notes"));
             ui->passLabel1->hide();
             ui->passEdit1->hide();
             setWindowTitle(tr("Encrypt wallet"));
             break;
         case Unlock: // Ask passphrase
-            ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet."));
+            ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet.","add stub for dev notes"));
             ui->passLabel2->hide();
             ui->passEdit2->hide();
             ui->passLabel3->hide();
             ui->passEdit3->hide();
-            setWindowTitle(tr("Unlock wallet"));
+            setWindowTitle(tr("Unlock wallet","add stub for dev notes"));
             break;
         case ChangePass: // Ask old passphrase + new passphrase x2
-            setWindowTitle(tr("Change passphrase"));
-            ui->warningLabel->setText(tr("Enter the old passphrase and new passphrase for the wallet."));
+            setWindowTitle(tr("Change passphrase","add stub for dev notes"));
+            ui->warningLabel->setText(tr("Enter the old passphrase and new passphrase for the wallet.","add stub for dev notes"));
             break;
     }
     textChanged();
@@ -107,8 +107,8 @@ void AskPassphraseDialog::accept()
             // Cannot encrypt with empty passphrase
             break;
         }
-        QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm wallet encryption"),
-                 tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!") + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
+        QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm wallet encryption","add stub for dev notes"),
+                 tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!","add stub for dev notes") + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?","add stub for dev notes"),
                  QMessageBox::Yes|QMessageBox::Cancel,
                  QMessageBox::Cancel);
         if(retval == QMessageBox::Yes)
@@ -116,36 +116,36 @@ void AskPassphraseDialog::accept()
             if(newpass1 == newpass2)
             {
                 QString encryption_reminder = tr("Remember that encrypting your wallet cannot fully protect "
-                "your bitcoins from being stolen by malware infecting your computer.");
+                "your bitcoins from being stolen by malware infecting your computer.","add stub for dev notes");
                 if (m_passphrase_out) {
                     m_passphrase_out->assign(newpass1);
-                    QMessageBox::warning(this, tr("Wallet to be encrypted"),
+                    QMessageBox::warning(this, tr("Wallet to be encrypted","add stub for dev notes"),
                                          "<qt>" +
-                                         tr("Your wallet is about to be encrypted. ") + encryption_reminder +
+                                         tr("Your wallet is about to be encrypted. ","add stub for dev notes") + encryption_reminder +
                                          "</b></qt>");
                 } else {
                     assert(model != nullptr);
                     if (model->setWalletEncrypted(newpass1)) {
-                        QMessageBox::warning(this, tr("Wallet encrypted"),
+                        QMessageBox::warning(this, tr("Wallet encrypted","add stub for dev notes"),
                                              "<qt>" +
-                                             tr("Your wallet is now encrypted. ") + encryption_reminder +
+                                             tr("Your wallet is now encrypted. ","add stub for dev notes") + encryption_reminder +
                                              "<br><br><b>" +
                                              tr("IMPORTANT: Any previous backups you have made of your wallet file "
                                              "should be replaced with the newly generated, encrypted wallet file. "
                                              "For security reasons, previous backups of the unencrypted wallet file "
-                                             "will become useless as soon as you start using the new, encrypted wallet.") +
+                                             "will become useless as soon as you start using the new, encrypted wallet.","add stub for dev notes") +
                                              "</b></qt>");
                     } else {
-                        QMessageBox::critical(this, tr("Wallet encryption failed"),
-                                             tr("Wallet encryption failed due to an internal error. Your wallet was not encrypted."));
+                        QMessageBox::critical(this, tr("Wallet encryption failed","add stub for dev notes"),
+                                             tr("Wallet encryption failed due to an internal error. Your wallet was not encrypted.","add stub for dev notes"));
                     }
                 }
                 QDialog::accept(); // Success
             }
             else
             {
-                QMessageBox::critical(this, tr("Wallet encryption failed"),
-                                     tr("The supplied passphrases do not match."));
+                QMessageBox::critical(this, tr("Wallet encryption failed","add stub for dev notes"),
+                                     tr("The supplied passphrases do not match.","add stub for dev notes"));
             }
         }
         else
@@ -156,13 +156,13 @@ void AskPassphraseDialog::accept()
     case Unlock:
         try {
             if (!model->setWalletLocked(false, oldpass)) {
-                QMessageBox::critical(this, tr("Wallet unlock failed"),
-                                      tr("The passphrase entered for the wallet decryption was incorrect."));
+                QMessageBox::critical(this, tr("Wallet unlock failed","add stub for dev notes"),
+                                      tr("The passphrase entered for the wallet decryption was incorrect.","add stub for dev notes"));
             } else {
                 QDialog::accept(); // Success
             }
         } catch (const std::runtime_error& e) {
-            QMessageBox::critical(this, tr("Wallet unlock failed"), e.what());
+            QMessageBox::critical(this, tr("Wallet unlock failed","add stub for dev notes"), e.what());
         }
         break;
     case ChangePass:
@@ -170,20 +170,20 @@ void AskPassphraseDialog::accept()
         {
             if(model->changePassphrase(oldpass, newpass1))
             {
-                QMessageBox::information(this, tr("Wallet encrypted"),
-                                     tr("Wallet passphrase was successfully changed."));
+                QMessageBox::information(this, tr("Wallet encrypted","add stub for dev notes"),
+                                     tr("Wallet passphrase was successfully changed.","add stub for dev notes"));
                 QDialog::accept(); // Success
             }
             else
             {
-                QMessageBox::critical(this, tr("Wallet encryption failed"),
-                                     tr("The passphrase entered for the wallet decryption was incorrect."));
+                QMessageBox::critical(this, tr("Wallet encryption failed","add stub for dev notes"),
+                                     tr("The passphrase entered for the wallet decryption was incorrect.","add stub for dev notes"));
             }
         }
         else
         {
-            QMessageBox::critical(this, tr("Wallet encryption failed"),
-                                 tr("The supplied passphrases do not match."));
+            QMessageBox::critical(this, tr("Wallet encryption failed","add stub for dev notes"),
+                                 tr("The supplied passphrases do not match.","add stub for dev notes"));
         }
         break;
     }
@@ -217,7 +217,7 @@ bool AskPassphraseDialog::event(QEvent *event)
             fCapsLock = !fCapsLock;
         }
         if (fCapsLock) {
-            ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!"));
+            ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!","add stub for dev notes"));
         } else {
             ui->capsLabel->clear();
         }
@@ -250,7 +250,7 @@ bool AskPassphraseDialog::eventFilter(QObject *object, QEvent *event)
             bool fShift = (ke->modifiers() & Qt::ShiftModifier) != 0;
             if ((fShift && *psz >= 'a' && *psz <= 'z') || (!fShift && *psz >= 'A' && *psz <= 'Z')) {
                 fCapsLock = true;
-                ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!"));
+                ui->capsLabel->setText(tr("Warning: The Caps Lock key is on!","add stub for dev notes"));
             } else if (psz->isLetter()) {
                 fCapsLock = false;
                 ui->capsLabel->clear();
