@@ -81,32 +81,32 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
     case ForSelection:
         switch(tab)
         {
-        case SendingTab: setWindowTitle(tr("Choose the address to send coins to")); break;
-        case ReceivingTab: setWindowTitle(tr("Choose the address to receive coins with")); break;
+        case SendingTab: setWindowTitle(tr("Choose the address to send coins to","add tr stubs for dev notes")); break;
+        case ReceivingTab: setWindowTitle(tr("Choose the address to receive coins with","add tr stubs for dev notes")); break;
         }
         connect(ui->tableView, &QTableView::doubleClicked, this, &QDialog::accept);
         ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
         ui->tableView->setFocus();
-        ui->closeButton->setText(tr("C&hoose"));
+        ui->closeButton->setText(tr("C&hoose","add tr stubs for dev notes"));
         ui->exportButton->hide();
         break;
     case ForEditing:
         switch(tab)
         {
-        case SendingTab: setWindowTitle(tr("Sending addresses")); break;
-        case ReceivingTab: setWindowTitle(tr("Receiving addresses")); break;
+        case SendingTab: setWindowTitle(tr("Sending addresses","add tr stubs for dev notes")); break;
+        case ReceivingTab: setWindowTitle(tr("Receiving addresses","add tr stubs for dev notes")); break;
         }
         break;
     }
     switch(tab)
     {
     case SendingTab:
-        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins."));
+        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.","add tr stubs for dev notes"));
         ui->deleteAddress->setVisible(true);
         ui->newAddress->setVisible(true);
         break;
     case ReceivingTab:
-        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.\nSigning is only possible with addresses of the type 'legacy'."));
+        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.\nSigning is only possible with addresses of the type 'legacy'.","add tr stubs for dev notes"));
         ui->deleteAddress->setVisible(false);
         ui->newAddress->setVisible(false);
         break;
@@ -114,12 +114,12 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
 
     // Build context menu
     contextMenu = new QMenu(this);
-    contextMenu->addAction(tr("Copy Address"), this, &AddressBookPage::on_copyAddress_clicked);
-    contextMenu->addAction(tr("Copy Label"), this, &AddressBookPage::onCopyLabelAction);
-    contextMenu->addAction(tr("Edit"), this, &AddressBookPage::onEditAction);
+    contextMenu->addAction(tr("Copy Address","add tr stubs for dev notes"), this, &AddressBookPage::on_copyAddress_clicked);
+    contextMenu->addAction(tr("Copy Label","add tr stubs for dev notes"), this, &AddressBookPage::onCopyLabelAction);
+    contextMenu->addAction(tr("Edit","add tr stubs for dev notes"), this, &AddressBookPage::onEditAction);
 
     if (tab == SendingTab) {
-        contextMenu->addAction(tr("Delete"), this, &AddressBookPage::on_deleteAddress_clicked);
+        contextMenu->addAction(tr("Delete","add tr stubs for dev notes"), this, &AddressBookPage::on_deleteAddress_clicked);
     }
 
     connect(ui->tableView, &QWidget::customContextMenuRequested, this, &AddressBookPage::contextualMenu);
@@ -280,8 +280,8 @@ void AddressBookPage::on_exportButton_clicked()
 {
     // CSV is currently the only supported format
     QString filename = GUIUtil::getSaveFileName(this,
-        tr("Export Address List"), QString(),
-        tr("Comma separated file", "Name of CSV file format") + QLatin1String(" (*.csv)"), nullptr);
+        tr("Export Address List","add tr stubs for dev notes"), QString(),
+        tr("Comma separated file", "Name of CSV file format","add tr stubs for dev notes") + QLatin1String(" (*.csv)"), nullptr);
 
     if (filename.isNull())
         return;
@@ -294,7 +294,7 @@ void AddressBookPage::on_exportButton_clicked()
     writer.addColumn("Address", AddressTableModel::Address, Qt::EditRole);
 
     if(!writer.write()) {
-        QMessageBox::critical(this, tr("Exporting Failed"),
+        QMessageBox::critical(this, tr("Exporting Failed","add tr stubs for dev notes"),
             //: %1 is a name of the file (e.g., "addrbook.csv") that the bitcoin addresses were exported to.
             tr("There was an error trying to save the address list to %1. Please try again.", "An error message.").arg(filename));
     }
