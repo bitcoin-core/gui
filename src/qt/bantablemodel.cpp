@@ -82,7 +82,7 @@ BanTableModel::BanTableModel(interfaces::Node& node, QObject* parent) :
     QAbstractTableModel(parent),
     m_node(node)
 {
-    columns << tr("IP/Netmask") << tr("Banned Until");
+    columns << tr("IP/Netmask","add tr stubs for dev notes") << tr("Banned Until","add tr stubs for dev notes");
     priv.reset(new BanTablePriv());
 
     // load initial data
