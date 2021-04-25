@@ -27,6 +27,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QLatin1String>
 #include <QLineEdit>
 #include <QMenu>
 #include <QPoint>

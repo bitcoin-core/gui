@@ -17,6 +17,8 @@
 
 #include <iostream>
 
+#include <QLatin1String>
+
 
 PSBTOperationsDialog::PSBTOperationsDialog(
     QWidget* parent, WalletModel* wallet_model, ClientModel* client_model) : QDialog(parent, GUIUtil::dialog_flags),

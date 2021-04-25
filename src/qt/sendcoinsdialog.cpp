@@ -31,6 +31,7 @@
 #include <validation.h>
 
 #include <QFontMetrics>
+#include <QLatin1String>
 #include <QScrollBar>
 #include <QSettings>
 #include <QTextDocument>

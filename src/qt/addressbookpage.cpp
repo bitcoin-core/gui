@@ -16,6 +16,7 @@
 #include <qt/platformstyle.h>
 
 #include <QIcon>
+#include <QLatin1String>
 #include <QMenu>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>

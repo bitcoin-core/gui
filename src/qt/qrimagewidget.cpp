@@ -10,6 +10,7 @@
 #include <QClipboard>
 #include <QDrag>
 #include <QFontDatabase>
+#include <QLatin1String>
 #include <QMenu>
 #include <QMimeData>
 #include <QMouseEvent>
