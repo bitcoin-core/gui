@@ -244,15 +244,15 @@ void BitcoinGUI::createActions()
     QActionGroup *tabGroup = new QActionGroup(this);
     connect(modalOverlay, &ModalOverlay::triggered, tabGroup, &QActionGroup::setEnabled);
 
-    overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&Overview"), this);
-    overviewAction->setStatusTip(tr("Show general overview of wallet"));
+    overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&Overview","add tr stubs for dev notes"), this);
+    overviewAction->setStatusTip(tr("Show general overview of wallet","add tr stubs for dev notes"));
     overviewAction->setToolTip(overviewAction->statusTip());
     overviewAction->setCheckable(true);
     overviewAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
     tabGroup->addAction(overviewAction);
 
-    sendCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/send"), tr("&Send"), this);
-    sendCoinsAction->setStatusTip(tr("Send coins to a Bitcoin address"));
+    sendCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/send"), tr("&Send","add tr stubs for dev notes"), this);
+    sendCoinsAction->setStatusTip(tr("Send coins to a Bitcoin address","add tr stubs for dev notes"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
     sendCoinsAction->setCheckable(true);
     sendCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_2));
@@ -262,8 +262,8 @@ void BitcoinGUI::createActions()
     sendCoinsMenuAction->setStatusTip(sendCoinsAction->statusTip());
     sendCoinsMenuAction->setToolTip(sendCoinsMenuAction->statusTip());
 
-    receiveCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/receiving_addresses"), tr("&Receive"), this);
-    receiveCoinsAction->setStatusTip(tr("Request payments (generates QR codes and bitcoin: URIs)"));
+    receiveCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/receiving_addresses"), tr("&Receive","add tr stubs for dev notes"), this);
+    receiveCoinsAction->setStatusTip(tr("Request payments (generates QR codes and bitcoin: URIs)","add tr stubs for dev notes"));
     receiveCoinsAction->setToolTip(receiveCoinsAction->statusTip());
     receiveCoinsAction->setCheckable(true);
     receiveCoinsAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_3));
@@ -273,8 +273,8 @@ void BitcoinGUI::createActions()
     receiveCoinsMenuAction->setStatusTip(receiveCoinsAction->statusTip());
     receiveCoinsMenuAction->setToolTip(receiveCoinsMenuAction->statusTip());
 
-    historyAction = new QAction(platformStyle->SingleColorIcon(":/icons/history"), tr("&Transactions"), this);
-    historyAction->setStatusTip(tr("Browse transaction history"));
+    historyAction = new QAction(platformStyle->SingleColorIcon(":/icons/history"), tr("&Transactions","add tr stubs for dev notes"), this);
+    historyAction->setStatusTip(tr("Browse transaction history","add tr stubs for dev notes"));
     historyAction->setToolTip(historyAction->statusTip());
     historyAction->setCheckable(true);
     historyAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_4));
@@ -297,76 +297,76 @@ void BitcoinGUI::createActions()
     connect(historyAction, &QAction::triggered, this, &BitcoinGUI::gotoHistoryPage);
 #endif // ENABLE_WALLET
 
-    quitAction = new QAction(tr("E&xit"), this);
-    quitAction->setStatusTip(tr("Quit application"));
+    quitAction = new QAction(tr("E&xit","add tr stubs for dev notes"), this);
+    quitAction->setStatusTip(tr("Quit application","add tr stubs for dev notes"));
     quitAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q));
     quitAction->setMenuRole(QAction::QuitRole);
-    aboutAction = new QAction(tr("&About %1").arg(PACKAGE_NAME), this);
-    aboutAction->setStatusTip(tr("Show information about %1").arg(PACKAGE_NAME));
+    aboutAction = new QAction(tr("&About %1","add tr stubs for dev notes").arg(PACKAGE_NAME), this);
+    aboutAction->setStatusTip(tr("Show information about %1","add tr stubs for dev notes").arg(PACKAGE_NAME));
     aboutAction->setMenuRole(QAction::AboutRole);
     aboutAction->setEnabled(false);
-    aboutQtAction = new QAction(tr("About &Qt"), this);
-    aboutQtAction->setStatusTip(tr("Show information about Qt"));
+    aboutQtAction = new QAction(tr("About &Qt","add tr stubs for dev notes"), this);
+    aboutQtAction->setStatusTip(tr("Show information about Qt","add tr stubs for dev notes"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
-    optionsAction = new QAction(tr("&Options..."), this);
-    optionsAction->setStatusTip(tr("Modify configuration options for %1").arg(PACKAGE_NAME));
+    optionsAction = new QAction(tr("&Options...","add tr stubs for dev notes"), this);
+    optionsAction->setStatusTip(tr("Modify configuration options for %1","add tr stubs for dev notes").arg(PACKAGE_NAME));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     optionsAction->setEnabled(false);
-    toggleHideAction = new QAction(tr("&Show / Hide"), this);
-    toggleHideAction->setStatusTip(tr("Show or hide the main Window"));
+    toggleHideAction = new QAction(tr("&Show / Hide","add tr stubs for dev notes"), this);
+    toggleHideAction->setStatusTip(tr("Show or hide the main Window","add tr stubs for dev notes"));
 
-    encryptWalletAction = new QAction(tr("&Encrypt Wallet..."), this);
-    encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
+    encryptWalletAction = new QAction(tr("&Encrypt Wallet...","add tr stubs for dev notes"), this);
+    encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet","add tr stubs for dev notes"));
     encryptWalletAction->setCheckable(true);
-    backupWalletAction = new QAction(tr("&Backup Wallet..."), this);
-    backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
-    changePassphraseAction = new QAction(tr("&Change Passphrase..."), this);
-    changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
-    signMessageAction = new QAction(tr("Sign &message..."), this);
-    signMessageAction->setStatusTip(tr("Sign messages with your Bitcoin addresses to prove you own them"));
-    verifyMessageAction = new QAction(tr("&Verify message..."), this);
-    verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified Bitcoin addresses"));
-    m_load_psbt_action = new QAction(tr("&Load PSBT from file..."), this);
-    m_load_psbt_action->setStatusTip(tr("Load Partially Signed Bitcoin Transaction"));
-    m_load_psbt_clipboard_action = new QAction(tr("Load PSBT from clipboard..."), this);
-    m_load_psbt_clipboard_action->setStatusTip(tr("Load Partially Signed Bitcoin Transaction from clipboard"));
+    backupWalletAction = new QAction(tr("&Backup Wallet...","add tr stubs for dev notes"), this);
+    backupWalletAction->setStatusTip(tr("Backup wallet to another location","add tr stubs for dev notes"));
+    changePassphraseAction = new QAction(tr("&Change Passphrase...","add tr stubs for dev notes"), this);
+    changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption","add tr stubs for dev notes"));
+    signMessageAction = new QAction(tr("Sign &message...","add tr stubs for dev notes"), this);
+    signMessageAction->setStatusTip(tr("Sign messages with your Bitcoin addresses to prove you own them","add tr stubs for dev notes"));
+    verifyMessageAction = new QAction(tr("&Verify message...","add tr stubs for dev notes"), this);
+    verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified Bitcoin addresses","add tr stubs for dev notes"));
+    m_load_psbt_action = new QAction(tr("&Load PSBT from file...","add tr stubs for dev notes"), this);
+    m_load_psbt_action->setStatusTip(tr("Load Partially Signed Bitcoin Transaction","add tr stubs for dev notes"));
+    m_load_psbt_clipboard_action = new QAction(tr("Load PSBT from clipboard...","add tr stubs for dev notes"), this);
+    m_load_psbt_clipboard_action->setStatusTip(tr("Load Partially Signed Bitcoin Transaction from clipboard","add tr stubs for dev notes"));
 
-    openRPCConsoleAction = new QAction(tr("Node window"), this);
-    openRPCConsoleAction->setStatusTip(tr("Open node debugging and diagnostic console"));
+    openRPCConsoleAction = new QAction(tr("Node window","add tr stubs for dev notes"), this);
+    openRPCConsoleAction->setStatusTip(tr("Open node debugging and diagnostic console","add tr stubs for dev notes"));
     // initially disable the debug window menu item
     openRPCConsoleAction->setEnabled(false);
     openRPCConsoleAction->setObjectName("openRPCConsoleAction");
 
-    usedSendingAddressesAction = new QAction(tr("&Sending addresses"), this);
-    usedSendingAddressesAction->setStatusTip(tr("Show the list of used sending addresses and labels"));
-    usedReceivingAddressesAction = new QAction(tr("&Receiving addresses"), this);
-    usedReceivingAddressesAction->setStatusTip(tr("Show the list of used receiving addresses and labels"));
+    usedSendingAddressesAction = new QAction(tr("&Sending addresses","add tr stubs for dev notes"), this);
+    usedSendingAddressesAction->setStatusTip(tr("Show the list of used sending addresses and labels","add tr stubs for dev notes"));
+    usedReceivingAddressesAction = new QAction(tr("&Receiving addresses","add tr stubs for dev notes"), this);
+    usedReceivingAddressesAction->setStatusTip(tr("Show the list of used receiving addresses and labels","add tr stubs for dev notes"));
 
-    openAction = new QAction(tr("Open &URI..."), this);
-    openAction->setStatusTip(tr("Open a bitcoin: URI"));
+    openAction = new QAction(tr("Open &URI...","add tr stubs for dev notes"), this);
+    openAction->setStatusTip(tr("Open a bitcoin: URI","add tr stubs for dev notes"));
 
-    m_open_wallet_action = new QAction(tr("Open Wallet"), this);
+    m_open_wallet_action = new QAction(tr("Open Wallet","add tr stubs for dev notes"), this);
     m_open_wallet_action->setEnabled(false);
-    m_open_wallet_action->setStatusTip(tr("Open a wallet"));
+    m_open_wallet_action->setStatusTip(tr("Open a wallet","add tr stubs for dev notes"));
     m_open_wallet_menu = new QMenu(this);
 
-    m_close_wallet_action = new QAction(tr("Close Wallet..."), this);
-    m_close_wallet_action->setStatusTip(tr("Close wallet"));
+    m_close_wallet_action = new QAction(tr("Close Wallet...","add tr stubs for dev notes"), this);
+    m_close_wallet_action->setStatusTip(tr("Close wallet","add tr stubs for dev notes"));
 
-    m_create_wallet_action = new QAction(tr("Create Wallet..."), this);
+    m_create_wallet_action = new QAction(tr("Create Wallet...","add tr stubs for dev notes"), this);
     m_create_wallet_action->setEnabled(false);
-    m_create_wallet_action->setStatusTip(tr("Create a new wallet"));
+    m_create_wallet_action->setStatusTip(tr("Create a new wallet","add tr stubs for dev notes"));
 
-    m_close_all_wallets_action = new QAction(tr("Close All Wallets..."), this);
-    m_close_all_wallets_action->setStatusTip(tr("Close all wallets"));
+    m_close_all_wallets_action = new QAction(tr("Close All Wallets...","add tr stubs for dev notes"), this);
+    m_close_all_wallets_action->setStatusTip(tr("Close all wallets","add tr stubs for dev notes"));
 
-    showHelpMessageAction = new QAction(tr("&Command-line options"), this);
+    showHelpMessageAction = new QAction(tr("&Command-line options","add tr stubs for dev notes"), this);
     showHelpMessageAction->setMenuRole(QAction::NoRole);
-    showHelpMessageAction->setStatusTip(tr("Show the %1 help message to get a list with possible Bitcoin command-line options").arg(PACKAGE_NAME));
+    showHelpMessageAction->setStatusTip(tr("Show the %1 help message to get a list with possible Bitcoin command-line options","add tr stubs for dev notes").arg(PACKAGE_NAME));
 
-    m_mask_values_action = new QAction(tr("&Mask values"), this);
+    m_mask_values_action = new QAction(tr("&Mask values","add tr stubs for dev notes"), this);
     m_mask_values_action->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_M));
-    m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab"));
+    m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab","add tr stubs for dev notes"));
     m_mask_values_action->setCheckable(true);
 
     connect(quitAction, &QAction::triggered, qApp, QApplication::quit);
@@ -398,7 +398,7 @@ void BitcoinGUI::createActions()
             m_open_wallet_menu->clear();
             for (const std::pair<const std::string, bool>& i : m_wallet_controller->listWalletDir()) {
                 const std::string& path = i.first;
-                QString name = path.empty() ? QString("["+tr("default wallet")+"]") : QString::fromStdString(path);
+                QString name = path.empty() ? QString("["+tr("default wallet","add tr stubs for dev notes")+"]") : QString::fromStdString(path);
                 // Menu items remove single &. Single & are shown when && is in
                 // the string, but only the first occurrence. So replace only
                 // the first & with &&.
@@ -419,7 +419,7 @@ void BitcoinGUI::createActions()
                 });
             }
             if (m_open_wallet_menu->isEmpty()) {
-                QAction* action = m_open_wallet_menu->addAction(tr("No wallets available"));
+                QAction* action = m_open_wallet_menu->addAction(tr("No wallets available","add tr stubs for dev notes"));
                 action->setEnabled(false);
             }
         });
@@ -454,7 +454,7 @@ void BitcoinGUI::createMenuBar()
 #endif
 
     // Configure the menus
-    QMenu *file = appMenuBar->addMenu(tr("&File"));
+    QMenu *file = appMenuBar->addMenu(tr("&File","add tr stubs for dev notes"));
     if(walletFrame)
     {
         file->addAction(m_create_wallet_action);
@@ -472,7 +472,7 @@ void BitcoinGUI::createMenuBar()
     }
     file->addAction(quitAction);
 
-    QMenu *settings = appMenuBar->addMenu(tr("&Settings"));
+    QMenu *settings = appMenuBar->addMenu(tr("&Settings","add tr stubs for dev notes"));
     if(walletFrame)
     {
         settings->addAction(encryptWalletAction);
@@ -483,9 +483,9 @@ void BitcoinGUI::createMenuBar()
     }
     settings->addAction(optionsAction);
 
-    QMenu* window_menu = appMenuBar->addMenu(tr("&Window"));
+    QMenu* window_menu = appMenuBar->addMenu(tr("&Window","add tr stubs for dev notes"));
 
-    QAction* minimize_action = window_menu->addAction(tr("Minimize"));
+    QAction* minimize_action = window_menu->addAction(tr("Minimize","add tr stubs for dev notes"));
     minimize_action->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
     connect(minimize_action, &QAction::triggered, [] {
         QApplication::activeWindow()->showMinimized();
@@ -495,7 +495,7 @@ void BitcoinGUI::createMenuBar()
     });
 
 #ifdef Q_OS_MAC
-    QAction* zoom_action = window_menu->addAction(tr("Zoom"));
+    QAction* zoom_action = window_menu->addAction(tr("Zoom","add tr stubs for dev notes"));
     connect(zoom_action, &QAction::triggered, [] {
         QWindow* window = qApp->focusWindow();
         if (window->windowState() != Qt::WindowMaximized) {
@@ -513,7 +513,7 @@ void BitcoinGUI::createMenuBar()
     if (walletFrame) {
 #ifdef Q_OS_MAC
         window_menu->addSeparator();
-        QAction* main_window_action = window_menu->addAction(tr("Main Window"));
+        QAction* main_window_action = window_menu->addAction(tr("Main Window","add tr stubs for dev notes"));
         connect(main_window_action, &QAction::triggered, [this] {
             GUIUtil::bringToFront(this);
         });
@@ -533,7 +533,7 @@ void BitcoinGUI::createMenuBar()
         });
     }
 
-    QMenu *help = appMenuBar->addMenu(tr("&Help"));
+    QMenu *help = appMenuBar->addMenu(tr("&Help","add tr stubs for dev notes"));
     help->addAction(showHelpMessageAction);
     help->addSeparator();
     help->addAction(aboutAction);
@@ -544,7 +544,7 @@ void BitcoinGUI::createToolBars()
 {
     if(walletFrame)
     {
-        QToolBar *toolbar = addToolBar(tr("Tabs toolbar"));
+        QToolBar *toolbar = addToolBar(tr("Tabs toolbar","add tr stubs for dev notes"));
         appToolBar = toolbar;
         toolbar->setMovable(false);
         toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -564,7 +564,7 @@ void BitcoinGUI::createToolBars()
         connect(m_wallet_selector, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &BitcoinGUI::setCurrentWalletBySelectorIndex);
 
         m_wallet_selector_label = new QLabel();
-        m_wallet_selector_label->setText(tr("Wallet:") + " ");
+        m_wallet_selector_label->setText(tr("Wallet:","add tr stubs for dev notes") + " ");
         m_wallet_selector_label->setBuddy(m_wallet_selector);
 
         m_wallet_selector_label_action = appToolBar->addWidget(m_wallet_selector_label);
@@ -758,7 +758,7 @@ void BitcoinGUI::createTrayIcon()
 #ifndef Q_OS_MAC
     if (QSystemTrayIcon::isSystemTrayAvailable()) {
         trayIcon = new QSystemTrayIcon(m_network_style->getTrayAndWindowIcon(), this);
-        QString toolTip = tr("%1 client").arg(PACKAGE_NAME) + " " + m_network_style->getTitleAddText();
+        QString toolTip = tr("%1 client","add tr stubs for dev notes").arg(PACKAGE_NAME) + " " + m_network_style->getTitleAddText();
         trayIcon->setToolTip(toolTip);
     }
 #endif
@@ -917,7 +917,7 @@ void BitcoinGUI::updateNetworkState()
     if (m_node.getNetworkActive()) {
         tooltip = tr("%n active connection(s) to Bitcoin network", "", count) + QString(".<br>") + tr("Click to disable network activity.");
     } else {
-        tooltip = tr("Network activity disabled.") + QString("<br>") + tr("Click to enable network activity again.");
+        tooltip = tr("Network activity disabled.","add tr stubs for dev notes") + QString("<br>") + tr("Click to enable network activity again.","add tr stubs for dev notes");
         icon = ":/icons/network_disabled";
     }
 
@@ -944,7 +944,7 @@ void BitcoinGUI::updateHeadersSyncProgressLabel()
     int headersTipHeight = clientModel->getHeaderTipHeight();
     int estHeadersLeft = (GetTime() - headersTipTime) / Params().GetConsensus().nPowTargetSpacing;
     if (estHeadersLeft > HEADER_HEIGHT_DELTA_SYNC)
-        progressBarLabel->setText(tr("Syncing Headers (%1%)...").arg(QString::number(100.0 / (headersTipHeight+estHeadersLeft)*headersTipHeight, 'f', 1)));
+        progressBarLabel->setText(tr("Syncing Headers (%1%)...","add tr stubs for dev notes").arg(QString::number(100.0 / (headersTipHeight+estHeadersLeft)*headersTipHeight, 'f', 1)));
 }
 
 void BitcoinGUI::openOptionsDialogWithTab(OptionsDialog::Tab tab)
@@ -990,24 +990,24 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
                 updateHeadersSyncProgressLabel();
                 return;
             }
-            progressBarLabel->setText(tr("Synchronizing with network..."));
+            progressBarLabel->setText(tr("Synchronizing with network...","add tr stubs for dev notes"));
             updateHeadersSyncProgressLabel();
             break;
         case BlockSource::DISK:
             if (header) {
-                progressBarLabel->setText(tr("Indexing blocks on disk..."));
+                progressBarLabel->setText(tr("Indexing blocks on disk...","add tr stubs for dev notes"));
             } else {
-                progressBarLabel->setText(tr("Processing blocks on disk..."));
+                progressBarLabel->setText(tr("Processing blocks on disk...","add tr stubs for dev notes"));
             }
             break;
         case BlockSource::REINDEX:
-            progressBarLabel->setText(tr("Reindexing blocks on disk..."));
+            progressBarLabel->setText(tr("Reindexing blocks on disk...","add tr stubs for dev notes"));
             break;
         case BlockSource::NONE:
             if (header) {
                 return;
             }
-            progressBarLabel->setText(tr("Connecting to peers..."));
+            progressBarLabel->setText(tr("Connecting to peers...","add tr stubs for dev notes"));
             break;
     }
 
@@ -1020,7 +1020,7 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
 
     // Set icon state: spinning if catching up, tick otherwise
     if (secs < MAX_BLOCK_TIME_GAP) {
-        tooltip = tr("Up to date") + QString(".<br>") + tooltip;
+        tooltip = tr("Up to date","add tr stubs for dev notes") + QString(".<br>") + tooltip;
         labelBlocksIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
 
 #ifdef ENABLE_WALLET
@@ -1039,12 +1039,12 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
         QString timeBehindText = GUIUtil::formatNiceTimeOffset(secs);
 
         progressBarLabel->setVisible(true);
-        progressBar->setFormat(tr("%1 behind").arg(timeBehindText));
+        progressBar->setFormat(tr("%1 behind","add tr stubs for dev notes").arg(timeBehindText));
         progressBar->setMaximum(1000000000);
         progressBar->setValue(nVerificationProgress * 1000000000.0 + 0.5);
         progressBar->setVisible(true);
 
-        tooltip = tr("Catching up...") + QString("<br>") + tooltip;
+        tooltip = tr("Catching up...","add tr stubs for dev notes") + QString("<br>") + tooltip;
         if(count != prevBlocks)
         {
             labelBlocksIcon->setPixmap(platformStyle->SingleColorIcon(QString(
@@ -1063,9 +1063,9 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
 #endif // ENABLE_WALLET
 
         tooltip += QString("<br>");
-        tooltip += tr("Last received block was generated %1 ago.").arg(timeBehindText);
+        tooltip += tr("Last received block was generated %1 ago.","add tr stubs for dev notes").arg(timeBehindText);
         tooltip += QString("<br>");
-        tooltip += tr("Transactions after this will not yet be visible.");
+        tooltip += tr("Transactions after this will not yet be visible.","add tr stubs for dev notes");
     }
 
     // Don't word-wrap this (fixed-width) tooltip
@@ -1090,15 +1090,15 @@ void BitcoinGUI::message(const QString& title, QString message, unsigned int sty
     } else {
         switch (style) {
         case CClientUIInterface::MSG_ERROR:
-            msgType = tr("Error");
-            message = tr("Error: %1").arg(message);
+            msgType = tr("Error","add tr stubs for dev notes");
+            message = tr("Error: %1","add tr stubs for dev notes").arg(message);
             break;
         case CClientUIInterface::MSG_WARNING:
-            msgType = tr("Warning");
-            message = tr("Warning: %1").arg(message);
+            msgType = tr("Warning","add tr stubs for dev notes");
+            message = tr("Warning: %1","add tr stubs for dev notes").arg(message);
             break;
         case CClientUIInterface::MSG_INFORMATION:
-            msgType = tr("Information");
+            msgType = tr("Information","add tr stubs for dev notes");
             // No need to prepend the prefix here.
             break;
         default:
@@ -1195,17 +1195,17 @@ void BitcoinGUI::showEvent(QShowEvent *event)
 void BitcoinGUI::incomingTransaction(const QString& date, int unit, const CAmount& amount, const QString& type, const QString& address, const QString& label, const QString& walletName)
 {
     // On new transaction, make an info balloon
-    QString msg = tr("Date: %1\n").arg(date) +
-                  tr("Amount: %1\n").arg(BitcoinUnits::formatWithUnit(unit, amount, true));
+    QString msg = tr("Date: %1\n","add tr stubs for dev notes").arg(date) +
+                  tr("Amount: %1\n","add tr stubs for dev notes").arg(BitcoinUnits::formatWithUnit(unit, amount, true));
     if (m_node.walletClient().getWallets().size() > 1 && !walletName.isEmpty()) {
-        msg += tr("Wallet: %1\n").arg(walletName);
+        msg += tr("Wallet: %1\n","add tr stubs for dev notes").arg(walletName);
     }
-    msg += tr("Type: %1\n").arg(type);
+    msg += tr("Type: %1\n","add tr stubs for dev notes").arg(type);
     if (!label.isEmpty())
-        msg += tr("Label: %1\n").arg(label);
+        msg += tr("Label: %1\n","add tr stubs for dev notes").arg(label);
     else if (!address.isEmpty())
-        msg += tr("Address: %1\n").arg(address);
-    message((amount)<0 ? tr("Sent transaction") : tr("Incoming transaction"),
+        msg += tr("Address: %1\n","add tr stubs for dev notes").arg(address);
+    message((amount)<0 ? tr("Sent transaction","add tr stubs for dev notes") : tr("Incoming transaction","add tr stubs for dev notes"),
              msg, CClientUIInterface::MSG_INFORMATION);
 }
 #endif // ENABLE_WALLET
@@ -1257,7 +1257,7 @@ bool BitcoinGUI::handlePaymentRequest(const SendCoinsRecipient& recipient)
 void BitcoinGUI::setHDStatus(bool privkeyDisabled, int hdEnabled)
 {
     labelWalletHDStatusIcon->setPixmap(platformStyle->SingleColorIcon(privkeyDisabled ? ":/icons/eye" : hdEnabled ? ":/icons/hd_enabled" : ":/icons/hd_disabled").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-    labelWalletHDStatusIcon->setToolTip(privkeyDisabled ? tr("Private key <b>disabled</b>") : hdEnabled ? tr("HD key generation is <b>enabled</b>") : tr("HD key generation is <b>disabled</b>"));
+    labelWalletHDStatusIcon->setToolTip(privkeyDisabled ? tr("Private key <b>disabled</b>","add tr stubs for dev notes") : hdEnabled ? tr("HD key generation is <b>enabled</b>","add tr stubs for dev notes") : tr("HD key generation is <b>disabled</b>","add tr stubs for dev notes"));
     labelWalletHDStatusIcon->show();
     // eventually disable the QLabel to set its opacity to 50%
     labelWalletHDStatusIcon->setEnabled(hdEnabled);
@@ -1276,7 +1276,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
     case WalletModel::Unlocked:
         labelWalletEncryptionIcon->show();
         labelWalletEncryptionIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/lock_open").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
+        labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>","add tr stubs for dev notes"));
         encryptWalletAction->setChecked(true);
         changePassphraseAction->setEnabled(true);
         encryptWalletAction->setEnabled(false);
@@ -1284,7 +1284,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
     case WalletModel::Locked:
         labelWalletEncryptionIcon->show();
         labelWalletEncryptionIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/lock_closed").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>locked</b>"));
+        labelWalletEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>locked</b>","add tr stubs for dev notes"));
         encryptWalletAction->setChecked(true);
         changePassphraseAction->setEnabled(true);
         encryptWalletAction->setEnabled(false);
@@ -1316,7 +1316,7 @@ void BitcoinGUI::updateProxyIcon()
         if (!GUIUtil::HasPixmap(labelProxyIcon)) {
             QString ip_port_q = QString::fromStdString(ip_port);
             labelProxyIcon->setPixmap(platformStyle->SingleColorIcon(":/icons/proxy").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
-            labelProxyIcon->setToolTip(tr("Proxy is <b>enabled</b>: %1").arg(ip_port_q));
+            labelProxyIcon->setToolTip(tr("Proxy is <b>enabled</b>: %1","add tr stubs for dev notes").arg(ip_port_q));
         } else {
             labelProxyIcon->show();
         }
@@ -1405,7 +1405,7 @@ static bool ThreadSafeMessageBox(BitcoinGUI* gui, const bilingual_str& message, 
 
     QString detailed_message; // This is original message, in English, for googling and referencing.
     if (message.original != message.translated) {
-        detailed_message = BitcoinGUI::tr("Original message:") + "\n" + QString::fromStdString(message.original);
+        detailed_message = BitcoinGUI::tr("Original message:","add tr stubs for dev notes") + "\n" + QString::fromStdString(message.original);
     }
 
     // In case of modal message, use blocking connection to wait for user to click a button
@@ -1445,7 +1445,7 @@ UnitDisplayStatusBarControl::UnitDisplayStatusBarControl(const PlatformStyle *pl
     menu(nullptr)
 {
     createContextMenu();
-    setToolTip(tr("Unit to show amounts in. Click to select another unit."));
+    setToolTip(tr("Unit to show amounts in. Click to select another unit.","add tr stubs for dev notes"));
     QList<BitcoinUnits::Unit> units = BitcoinUnits::availableUnits();
     int max_width = 0;
     const QFontMetrics fm(font());
