@@ -37,12 +37,14 @@
 #include <QDateTime>
 #include <QFont>
 #include <QKeyEvent>
+#include <QLatin1String>
 #include <QMenu>
 #include <QMessageBox>
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
 #include <QString>
+#include <QStringBuilder>
 #include <QStringList>
 #include <QTime>
 #include <QTimer>
@@ -52,6 +54,9 @@ const int CONSOLE_HISTORY = 50;
 const int INITIAL_TRAFFIC_GRAPH_MINS = 30;
 const QSize FONT_RANGE(4, 40);
 const char fontSizeSettingsKey[] = "consoleFontSize";
+
+const QLatin1String COLON_SPACE{": "};
+const QLatin1String SPACE{" "};
 
 const struct {
     const char *url;
@@ -463,16 +468,18 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
 
     constexpr QChar nonbreaking_hyphen(8209);
     const std::vector<QString> CONNECTION_TYPE_DOC{
-        tr("Inbound: initiated by peer"),
-        tr("Outbound Full Relay: default"),
-        tr("Outbound Block Relay: does not relay transactions or addresses"),
-        tr("Outbound Manual: added using RPC %1 or %2/%3 configuration options")
+        //: The connection direction (Inbound/Outbound) is also used in ConnectionTypeToQString() and PeerTableModel::data().
+        //: The connection types (Full Relay, Block Relay, Manual, Feeler, Address Fetch) are also used in ConnectionTypeToQString().
+        tr("Inbound") % COLON_SPACE % tr("initiated by peer"),
+        tr("Outbound") % SPACE % tr("Full Relay") % COLON_SPACE % tr("default"),
+        tr("Outbound") % SPACE % tr("Block Relay") % COLON_SPACE % tr("does not relay transactions or addresses"),
+        tr("Outbound") % SPACE % tr("Manual") % COLON_SPACE % tr("added using RPC %1 or %2/%3 configuration options")
             .arg("addnode")
-            .arg(QString(nonbreaking_hyphen) + "addnode")
-            .arg(QString(nonbreaking_hyphen) + "connect"),
-        tr("Outbound Feeler: short-lived, for testing addresses"),
-        tr("Outbound Address Fetch: short-lived, for soliciting addresses")};
-    const QString list{"<ul><li>" + Join(CONNECTION_TYPE_DOC, QString("</li><li>")) + "</li></ul>"};
+            .arg(QString(nonbreaking_hyphen) % "addnode")
+            .arg(QString(nonbreaking_hyphen) % "connect"),
+        tr("Outbound") % SPACE % tr("Feeler") % COLON_SPACE % tr("short-lived, for testing addresses"),
+        tr("Outbound") % SPACE % tr("Address Fetch") % COLON_SPACE % tr("short-lived, for soliciting addresses")};
+    const QString list{"<ul><li>" % Join(CONNECTION_TYPE_DOC, QString("</li><li>")) % "</li></ul>"};
     ui->peerConnectionTypeLabel->setToolTip(ui->peerConnectionTypeLabel->toolTip().arg(list));
     const QString hb_list{"<ul><li>\""
         + ts.to + "\" – " + tr("we selected the peer for high bandwidth relay") + "</li><li>\""

@@ -666,10 +666,12 @@ QString ConnectionTypeToQString(ConnectionType conn_type, bool prepend_direction
 {
     QString prefix;
     if (prepend_direction) {
+        //: Connection direction. Also used in CONNECTION_TYPE_DOC and PeerTableModel::data().
         prefix = (conn_type == ConnectionType::INBOUND) ? QObject::tr("Inbound") : QObject::tr("Outbound") + " ";
     }
     switch (conn_type) {
     case ConnectionType::INBOUND: return prefix;
+    //: The connection types (Full Relay, Block Relay, Manual, Feeler, Address Fetch) are also used in CONNECTION_TYPE_DOC.
     case ConnectionType::OUTBOUND_FULL_RELAY: return prefix + QObject::tr("Full Relay");
     case ConnectionType::BLOCK_RELAY: return prefix + QObject::tr("Block Relay");
     case ConnectionType::MANUAL: return prefix + QObject::tr("Manual");
