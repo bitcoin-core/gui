@@ -420,8 +420,8 @@ void BitcoinApplication::shutdownResult()
 void BitcoinApplication::handleRunawayException(const QString &message)
 {
     QMessageBox::critical(
-        nullptr, tr("Runaway exception"),
-        tr("A fatal error occurred. %1 can no longer continue safely and will quit.").arg(PACKAGE_NAME) %
+        nullptr, tr("Runaway exception","add tr stubs for dev notes","add tr stubs for dev notes","add tr stubs for dev notes"),
+        tr("A fatal error occurred. %1 can no longer continue safely and will quit.","add tr stubs for dev notes").arg(PACKAGE_NAME) %
         QLatin1String("<br><br>") % GUIUtil::MakeHtmlLink(message, PACKAGE_BUGREPORT));
     ::exit(EXIT_FAILURE);
 }
@@ -430,9 +430,9 @@ void BitcoinApplication::handleNonFatalException(const QString& message)
 {
     assert(QThread::currentThread() == thread());
     QMessageBox::warning(
-        nullptr, tr("Internal error"),
+        nullptr, tr("Internal error","add tr stubs for dev notes","add tr stubs for dev notes"),
         tr("An internal error occurred. %1 will attempt to continue safely. This is "
-           "an unexpected bug which can be reported as described below.").arg(PACKAGE_NAME) %
+           "an unexpected bug which can be reported as described below.","add tr stubs for dev notes").arg(PACKAGE_NAME) %
         QLatin1String("<br><br>") % GUIUtil::MakeHtmlLink(message, PACKAGE_BUGREPORT));
 }
 
@@ -542,13 +542,13 @@ int GuiMain(int argc, char* argv[])
     if (!CheckDataDirOption()) {
         InitError(strprintf(Untranslated("Specified data directory \"%s\" does not exist.\n"), gArgs.GetArg("-datadir", "")));
         QMessageBox::critical(nullptr, PACKAGE_NAME,
-            QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(gArgs.GetArg("-datadir", ""))));
+            QObject::tr("Error: Specified data directory \"%1\" does not exist.","add tr stubs for dev notes").arg(QString::fromStdString(gArgs.GetArg("-datadir", ""))));
         return EXIT_FAILURE;
     }
     if (!gArgs.ReadConfigFiles(error, true)) {
         InitError(strprintf(Untranslated("Error reading configuration file: %s\n"), error));
         QMessageBox::critical(nullptr, PACKAGE_NAME,
-            QObject::tr("Error: Cannot parse configuration file: %1.").arg(QString::fromStdString(error)));
+            QObject::tr("Error: Cannot parse configuration file: %1.","add tr stubs for dev notes").arg(QString::fromStdString(error)));
         return EXIT_FAILURE;
     }
 
@@ -563,7 +563,7 @@ int GuiMain(int argc, char* argv[])
         SelectParams(gArgs.GetChainName());
     } catch(std::exception &e) {
         InitError(Untranslated(strprintf("%s\n", e.what())));
-        QMessageBox::critical(nullptr, PACKAGE_NAME, QObject::tr("Error: %1").arg(e.what()));
+        QMessageBox::critical(nullptr, PACKAGE_NAME, QObject::tr("Error: %1","add tr stubs for dev notes","add tr stubs for dev notes").arg(e.what()));
         return EXIT_FAILURE;
     }
 #ifdef ENABLE_WALLET
@@ -572,7 +572,7 @@ int GuiMain(int argc, char* argv[])
 #endif
     if (!gArgs.InitSettings(error)) {
         InitError(Untranslated(error));
-        QMessageBox::critical(nullptr, PACKAGE_NAME, QObject::tr("Error initializing settings: %1").arg(QString::fromStdString(error)));
+        QMessageBox::critical(nullptr, PACKAGE_NAME, QObject::tr("Error initializing settings: %1","add tr stubs for dev notes").arg(QString::fromStdString(error)));
         return EXIT_FAILURE;
     }
 
@@ -635,7 +635,7 @@ int GuiMain(int argc, char* argv[])
         if (app.baseInitialize()) {
             app.requestInitialize();
 #if defined(Q_OS_WIN)
-            WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("%1 didn't yet exit safely...").arg(PACKAGE_NAME), (HWND)app.getMainWinId());
+            WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("%1 didn't yet exit safely...","add tr stubs for dev notes").arg(PACKAGE_NAME), (HWND)app.getMainWinId());
 #endif
             app.exec();
             app.requestShutdown();
