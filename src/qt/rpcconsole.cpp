@@ -482,9 +482,9 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     const QString list{"<ul><li>" % Join(CONNECTION_TYPE_DOC, QString("</li><li>")) % "</li></ul>"};
     ui->peerConnectionTypeLabel->setToolTip(ui->peerConnectionTypeLabel->toolTip().arg(list));
     const QString hb_list{"<ul><li>\""
-        + ts.to + "\" – " + tr("we selected the peer for high bandwidth relay") + "</li><li>\""
-        + ts.from + "\" – " + tr("the peer selected us for high bandwidth relay") + "</li><li>\""
-        + ts.no + "\" – " + tr("no high bandwidth relay selected") + "</li></ul>"};
+        % ts.to % "\" – " % tr("we selected the peer for high bandwidth relay") % "</li><li>\""
+        % ts.from % "\" – " % tr("the peer selected us for high bandwidth relay") % "</li><li>\""
+        % ts.no % "\" – " % tr("no high bandwidth relay selected") % "</li></ul>"};
     ui->peerHighBandwidthLabel->setToolTip(ui->peerHighBandwidthLabel->toolTip().arg(hb_list));
     ui->dataDir->setToolTip(ui->dataDir->toolTip().arg(QString(nonbreaking_hyphen) + "datadir"));
     ui->blocksDir->setToolTip(ui->blocksDir->toolTip().arg(QString(nonbreaking_hyphen) + "blocksdir"));
@@ -627,10 +627,10 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         // create peer table context menu
         peersTableContextMenu = new QMenu(this);
         peersTableContextMenu->addAction(tr("Disconnect"), this, &RPCConsole::disconnectSelectedNode);
-        peersTableContextMenu->addAction(ts.ban_for + " " + tr("1 hour"), [this] { banSelectedNode(60 * 60); });
-        peersTableContextMenu->addAction(ts.ban_for + " " + tr("1 day"), [this] { banSelectedNode(60 * 60 * 24); });
-        peersTableContextMenu->addAction(ts.ban_for + " " + tr("1 week"), [this] { banSelectedNode(60 * 60 * 24 * 7); });
-        peersTableContextMenu->addAction(ts.ban_for + " " + tr("1 year"), [this] { banSelectedNode(60 * 60 * 24 * 365); });
+        peersTableContextMenu->addAction(ts.ban_for % SPACE % tr("1 hour"), [this] { banSelectedNode(60 * 60); });
+        peersTableContextMenu->addAction(ts.ban_for % SPACE % tr("1 day"), [this] { banSelectedNode(60 * 60 * 24); });
+        peersTableContextMenu->addAction(ts.ban_for % SPACE % tr("1 week"), [this] { banSelectedNode(60 * 60 * 24 * 7); });
+        peersTableContextMenu->addAction(ts.ban_for % SPACE % tr("1 year"), [this] { banSelectedNode(60 * 60 * 24 * 365); });
         connect(ui->peerWidget, &QTableView::customContextMenuRequested, this, &RPCConsole::showPeersTableContextMenu);
 
         // peer table signal handling - update peer details when selecting new node
@@ -842,12 +842,12 @@ void RPCConsole::message(int category, const QString &message, bool html)
 
 void RPCConsole::updateNetworkState()
 {
-    QString connections = QString::number(clientModel->getNumConnections()) + " (";
-    connections += tr("In:") + " " + QString::number(clientModel->getNumConnections(CONNECTIONS_IN)) + " / ";
-    connections += tr("Out:") + " " + QString::number(clientModel->getNumConnections(CONNECTIONS_OUT)) + ")";
+    QString connections = QString::number(clientModel->getNumConnections()) % " (";
+    connections += tr("In:") % SPACE % QString::number(clientModel->getNumConnections(CONNECTIONS_IN)) % " / ";
+    connections += tr("Out:") % SPACE % QString::number(clientModel->getNumConnections(CONNECTIONS_OUT)) % ")";
 
     if(!clientModel->node().getNetworkActive()) {
-        connections += " (" + tr("Network activity disabled") + ")";
+        connections += " (" % tr("Network activity disabled") % ")";
     }
 
     ui->numberOfConnections->setText(connections);
@@ -1029,7 +1029,7 @@ void RPCConsole::updateDetailWidget()
     }
     const auto stats = selected_peers.first().data(PeerTableModel::StatsRole).value<CNodeCombinedStats*>();
     // update the detail ui with latest node information
-    QString peerAddrDetails(QString::fromStdString(stats->nodeStats.addrName) + " ");
+    QString peerAddrDetails(QString::fromStdString(stats->nodeStats.addrName) % SPACE);
     peerAddrDetails += tr("(peer id: %1)").arg(QString::number(stats->nodeStats.nodeid));
     if (!stats->nodeStats.addrLocal.empty())
         peerAddrDetails += "<br />" + tr("via %1").arg(QString::fromStdString(stats->nodeStats.addrLocal));
