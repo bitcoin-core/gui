@@ -198,6 +198,13 @@ QVariant PeerTableModel::data(const QModelIndex &index, int role) const
         case NetNodeId: return QVariant::fromValue(rec);
         default: return QVariant();
         }
+    } else if (role == Qt::FontRole) {
+        switch (column) {
+        case Address:
+            return GUIUtil::fixedPitchFont();
+        default:
+            return QFont();
+        }
     }
 
     return QVariant();
