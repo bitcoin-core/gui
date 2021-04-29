@@ -419,7 +419,6 @@ public:
     RecursiveMutex cs_sendProcessing;
 
     uint64_t nRecvBytes GUARDED_BY(cs_vRecv){0};
-
     std::atomic<int64_t> nLastSend{0};
     std::atomic<int64_t> nLastRecv{0};
     //! Unix epoch time at peer connection, in seconds.

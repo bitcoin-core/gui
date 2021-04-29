@@ -53,7 +53,7 @@ public:
         Network,
         Ping,
         Sent,
-        Received,
+        Recv,
         Subversion
     };
 
@@ -97,12 +97,12 @@ private:
         /*: Title of Peers Table column which indicates the current latency
             of the connection with the peer. */
         tr("Ping"),
-        /*: Title of Peers Table column which indicates the total amount of
+        /*: Title of Peers Table column which indicates the speed of
             network information we have sent to the peer. */
         tr("Sent"),
-        /*: Title of Peers Table column which indicates the total amount of
+        /*: Title of Peers Table column which indicates the speed of
             network information we have received from the peer. */
-        tr("Received"),
+        tr("Recv"),
         /*: Title of Peers Table column which contains the peer's
             User Agent string. */
         tr("User Agent")};

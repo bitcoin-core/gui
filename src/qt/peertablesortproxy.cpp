@@ -34,10 +34,19 @@ bool PeerTableSortProxy::lessThan(const QModelIndex& left_index, const QModelInd
         return left_stats.m_network < right_stats.m_network;
     case PeerTableModel::Ping:
         return left_stats.m_min_ping_time < right_stats.m_min_ping_time;
-    case PeerTableModel::Sent:
-        return left_stats.nSendBytes < right_stats.nSendBytes;
-    case PeerTableModel::Received:
-        return left_stats.nRecvBytes < right_stats.nRecvBytes;
+    case PeerTableModel::Sent: {
+        int64_t now = GetTimeSeconds();
+        int Right = right_stats.nSendBytes * 8 / (now + 1 - right_stats.nTimeConnected);
+        int Left = left_stats.nSendBytes * 8 / (now + 1 - left_stats.nTimeConnected);
+        return Left < Right;
+    }
+    case PeerTableModel::Recv: {
+        int64_t now = GetTimeSeconds();
+        int Right = right_stats.nRecvBytes * 8 / (now + 1 - right_stats.nTimeConnected);
+        int Left = left_stats.nRecvBytes * 8 / (now + 1 - left_stats.nTimeConnected);
+        return Left < Right;
+    }
+
     case PeerTableModel::Subversion:
         return left_stats.cleanSubVer.compare(right_stats.cleanSubVer) < 0;
     } // no default case, so the compiler can warn about missing cases
