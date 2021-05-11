@@ -616,6 +616,8 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         ui->peerWidget->setColumnWidth(PeerTableModel::Subversion, SUBVERSION_COLUMN_WIDTH);
         ui->peerWidget->setColumnWidth(PeerTableModel::Ping, PING_COLUMN_WIDTH);
         ui->peerWidget->horizontalHeader()->setStretchLastSection(true);
+        ui->peerWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);//peers tableview
+        ui->scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);//peers-tab detailview
 
         // create peer table context menu
         peersTableContextMenu = new QMenu(this);
@@ -639,6 +641,7 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         ui->banlistWidget->setColumnWidth(BanTableModel::Address, BANSUBNET_COLUMN_WIDTH);
         ui->banlistWidget->setColumnWidth(BanTableModel::Bantime, BANTIME_COLUMN_WIDTH);
         ui->banlistWidget->horizontalHeader()->setStretchLastSection(true);
+        ui->banlistWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
         // create ban table context menu
         banTableContextMenu = new QMenu(this);
