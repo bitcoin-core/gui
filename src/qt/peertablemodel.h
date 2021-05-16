@@ -53,7 +53,8 @@ public:
         Ping,
         Sent,
         Received,
-        Subversion
+        Subversion,
+        Bumper
     };
 
     enum {
@@ -104,7 +105,9 @@ private:
         tr("Received"),
         /*: Title of Peers Table column which contains the peer's
             User Agent string. */
-        tr("User Agent")};
+        tr("User Agent"),
+        tr("•")};
+    std::unique_ptr<PeerTablePriv> priv;
     QTimer *timer;
 };
 

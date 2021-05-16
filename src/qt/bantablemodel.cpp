@@ -28,6 +28,8 @@ bool BannedNodeLessThan::operator()(const CCombinedBan& left, const CCombinedBan
         return pLeft->subnet.ToString().compare(pRight->subnet.ToString()) < 0;
     case BanTableModel::Bantime:
         return pLeft->banEntry.nBanUntil < pRight->banEntry.nBanUntil;
+    case BanTableModel::Bumper:
+        return 0;
     } // no default case, so the compiler can warn about missing cases
     assert(false);
 }
@@ -82,7 +84,7 @@ BanTableModel::BanTableModel(interfaces::Node& node, QObject* parent) :
     QAbstractTableModel(parent),
     m_node(node)
 {
-    columns << tr("IP/Netmask") << tr("Banned Until");
+    columns << tr("IP/Netmask") << tr("Banned Until") << tr("•");
     priv.reset(new BanTablePriv());
 
     // load initial data
@@ -120,6 +122,8 @@ QVariant BanTableModel::data(const QModelIndex &index, int role) const
     const auto column = static_cast<ColumnIndex>(index.column());
     if (role == Qt::DisplayRole) {
         switch (column) {
+        case Bumper:
+            return QString::fromStdString("");
         case Address:
             return QString::fromStdString(rec->subnet.ToString());
         case Bantime:
@@ -127,6 +131,15 @@ QVariant BanTableModel::data(const QModelIndex &index, int role) const
             date = date.addSecs(rec->banEntry.nBanUntil);
             return QLocale::system().toString(date, QLocale::LongFormat);
         } // no default case, so the compiler can warn about missing cases
+        assert(false);
+    }
+    else if (role == Qt::TextAlignmentRole) {
+        switch (column) {
+        case Address:
+        case Bantime:
+        case Bumper:
+            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
+        }
         assert(false);
     }
 

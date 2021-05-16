@@ -51,7 +51,8 @@ public:
 
     enum ColumnIndex {
         Address = 0,
-        Bantime = 1
+        Bantime,
+        Bumper
     };
 
     /** @name Methods overridden from QAbstractTableModel
