@@ -40,10 +40,6 @@ WalletController::WalletController(ClientModel& client_model, const PlatformStyl
         getOrCreateWallet(std::move(wallet));
     });
 
-    for (std::unique_ptr<interfaces::Wallet>& wallet : m_node.walletClient().getWallets()) {
-        getOrCreateWallet(std::move(wallet));
-    }
-
     m_activity_worker->moveToThread(m_activity_thread);
     m_activity_thread->start();
     QTimer::singleShot(0, m_activity_worker, []() {
@@ -190,33 +186,23 @@ WalletControllerActivity::WalletControllerActivity(WalletController* wallet_cont
     , m_wallet_controller(wallet_controller)
     , m_parent_widget(parent_widget)
 {
-}
-
-WalletControllerActivity::~WalletControllerActivity()
-{
-    delete m_progress_dialog;
+    connect(this, &WalletControllerActivity::finished, this, &QObject::deleteLater);
 }
 
 void WalletControllerActivity::showProgressDialog(const QString& label_text)
 {
-    assert(!m_progress_dialog);
-    m_progress_dialog = new QProgressDialog(m_parent_widget);
+    auto progress_dialog = new QProgressDialog(m_parent_widget);
+    progress_dialog->setAttribute(Qt::WA_DeleteOnClose);
+    connect(this, &WalletControllerActivity::finished, progress_dialog, &QWidget::close);
 
-    m_progress_dialog->setLabelText(label_text);
-    m_progress_dialog->setRange(0, 0);
-    m_progress_dialog->setCancelButton(nullptr);
-    m_progress_dialog->setWindowModality(Qt::ApplicationModal);
-    GUIUtil::PolishProgressDialog(m_progress_dialog);
+    progress_dialog->setLabelText(label_text);
+    progress_dialog->setRange(0, 0);
+    progress_dialog->setCancelButton(nullptr);
+    progress_dialog->setWindowModality(Qt::ApplicationModal);
+    GUIUtil::PolishProgressDialog(progress_dialog);
     // The setValue call forces QProgressDialog to start the internal duration estimation.
     // See details in https://bugreports.qt.io/browse/QTBUG-47042.
-    m_progress_dialog->setValue(0);
-}
-
-void WalletControllerActivity::destroyProgressDialog()
-{
-    assert(m_progress_dialog);
-    delete m_progress_dialog;
-    m_progress_dialog = nullptr;
+    progress_dialog->setValue(0);
 }
 
 CreateWalletActivity::CreateWalletActivity(WalletController* wallet_controller, QWidget* parent_widget)
@@ -275,8 +261,6 @@ void CreateWalletActivity::createWallet()
 
 void CreateWalletActivity::finish()
 {
-    destroyProgressDialog();
-
     if (!m_error_message.empty()) {
         QMessageBox::critical(m_parent_widget, tr("Create wallet failed"), QString::fromStdString(m_error_message.translated));
     } else if (!m_warning_message.empty()) {
@@ -316,8 +300,6 @@ OpenWalletActivity::OpenWalletActivity(WalletController* wallet_controller, QWid
 
 void OpenWalletActivity::finish()
 {
-    destroyProgressDialog();
-
     if (!m_error_message.empty()) {
         QMessageBox::critical(m_parent_widget, tr("Open wallet failed"), QString::fromStdString(m_error_message.translated));
     } else if (!m_warning_message.empty()) {
@@ -341,5 +323,23 @@ void OpenWalletActivity::open(const std::string& path)
         if (wallet) m_wallet_model = m_wallet_controller->getOrCreateWallet(std::move(wallet));
 
         QTimer::singleShot(0, this, &OpenWalletActivity::finish);
+    });
+}
+
+LoadWalletsActivity::LoadWalletsActivity(WalletController* wallet_controller, QWidget* parent_widget)
+    : WalletControllerActivity(wallet_controller, parent_widget)
+{
+}
+
+void LoadWalletsActivity::load()
+{
+    showProgressDialog(tr("Loading wallets…"));
+
+    QTimer::singleShot(0, worker(), [this] {
+        for (std::unique_ptr<interfaces::Wallet>& wallet : node().walletClient().getWallets()) {
+            m_wallet_controller->getOrCreateWallet(std::move(wallet));
+        }
+
+        QTimer::singleShot(0, this, [this] { Q_EMIT finished(); });
     });
 }

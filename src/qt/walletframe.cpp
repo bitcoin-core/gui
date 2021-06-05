@@ -44,7 +44,6 @@ WalletFrame::WalletFrame(const PlatformStyle* _platformStyle, BitcoinGUI* _gui)
     QPushButton* create_wallet_button = new QPushButton(tr("Create a new wallet"), walletStack);
     connect(create_wallet_button, &QPushButton::clicked, [this] {
         auto activity = new CreateWalletActivity(gui->getWalletController(), this);
-        connect(activity, &CreateWalletActivity::finished, activity, &QObject::deleteLater);
         activity->create();
     });
     no_wallet_layout->addWidget(create_wallet_button, 0, Qt::AlignHCenter | Qt::AlignTop);
