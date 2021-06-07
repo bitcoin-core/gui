@@ -793,6 +793,11 @@ qreal calculateIdealFontSize(int width, const QString& text, QFont font, qreal m
     return font_size;
 }
 
+ThemedLabel::ThemedLabel(QWidget* parent)
+{
+    QLabel{parent};
+}
+
 ThemedLabel::ThemedLabel(const PlatformStyle* platform_style, QWidget* parent)
     : QLabel{parent}, m_platform_style{platform_style}
 {
@@ -807,6 +812,11 @@ void ThemedLabel::setThemedPixmap(const QString& image_filename, int width, int 
     updateThemedPixmap();
 }
 
+void ThemedLabel::setPlatformStyle(const PlatformStyle* platform_style)
+{
+    m_platform_style = platform_style;
+    assert(m_platform_style);
+}
 void ThemedLabel::changeEvent(QEvent* e)
 {
 #ifdef Q_OS_MACOS
@@ -819,7 +829,9 @@ void ThemedLabel::changeEvent(QEvent* e)
 
 void ThemedLabel::updateThemedPixmap()
 {
-    setPixmap(m_platform_style->SingleColorIcon(m_image_filename).pixmap(m_pixmap_width, m_pixmap_height));
+    if (m_platform_style) {
+        setPixmap(m_platform_style->SingleColorIcon(m_image_filename).pixmap(m_pixmap_width, m_pixmap_height));
+    }
 }
 
 ClickableLabel::ClickableLabel(const PlatformStyle* platform_style, QWidget* parent)

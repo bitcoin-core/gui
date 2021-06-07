@@ -237,14 +237,16 @@ namespace GUIUtil
         Q_OBJECT
 
     public:
+        explicit ThemedLabel(QWidget* parent = nullptr);
         explicit ThemedLabel(const PlatformStyle* platform_style, QWidget* parent = nullptr);
         void setThemedPixmap(const QString& image_filename, int width, int height);
+        void setPlatformStyle(const PlatformStyle* platform_style);
 
     protected:
         void changeEvent(QEvent* e) override;
 
     private:
-        const PlatformStyle* m_platform_style;
+        const PlatformStyle* m_platform_style = nullptr;
         QString m_image_filename;
         int m_pixmap_width;
         int m_pixmap_height;
