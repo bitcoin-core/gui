@@ -26,7 +26,7 @@ public:
 
     SERIALIZE_METHODS(RecentRequestEntry, obj) {
         unsigned int date_timet;
-        SER_WRITE(obj, date_timet = obj.date.toTime_t());
+        SER_WRITE(obj, date_timet = obj.date.toSecsSinceEpoch());
         READWRITE(obj.nVersion, obj.id, date_timet, obj.recipient);
         SER_READ(obj, obj.date = QDateTime::fromSecsSinceEpoch(date_timet));
     }
