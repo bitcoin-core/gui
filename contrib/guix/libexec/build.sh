@@ -33,6 +33,9 @@ Required environment variables as seen inside the container:
     OUTDIR: ${OUTDIR:?not set}
 EOF
 
+ACTUAL_OUTDIR="${OUTDIR}"
+OUTDIR="${DISTSRC}/output"
+
 #####################
 # Environment Setup #
 #####################
@@ -175,7 +178,6 @@ case "$HOST" in
 esac
 
 # Environment variables for determinism
-export QT_RCC_SOURCE_DATE_OVERRIDE=1
 export TAR_OPTIONS="--owner=0 --group=0 --numeric-owner --mtime='@${SOURCE_DATE_EPOCH}' --sort=name"
 export TZ="UTC"
 case "$HOST" in
@@ -224,8 +226,11 @@ GIT_ARCHIVE="${DIST_ARCHIVE_BASE}/${DISTNAME}.tar.gz"
 # Create the source tarball if not already there
 if [ ! -e "$GIT_ARCHIVE" ]; then
     mkdir -p "$(dirname "$GIT_ARCHIVE")"
+    touch "${DIST_ARCHIVE_BASE}"/SKIPATTEST.TAG
     git archive --prefix="${DISTNAME}/" --output="$GIT_ARCHIVE" HEAD
 fi
+
+mkdir -p "$OUTDIR"
 
 ###########################
 # Binary Tarball Building #
@@ -255,7 +260,7 @@ case "$HOST" in
 esac
 
 case "$HOST" in
-    powerpc64-linux-*) HOST_LDFLAGS="${HOST_LDFLAGS} -Wl,-z,noexecstack" ;;
+    powerpc64-linux-*|riscv64-linux-*) HOST_LDFLAGS="${HOST_LDFLAGS} -Wl,-z,noexecstack" ;;
 esac
 
 # Make $HOST-specific native binaries from depends available in $PATH
@@ -292,7 +297,8 @@ mkdir -p "$DISTSRC"
     # version symbols for Linux distro back-compatibility.
     make -C src --jobs=1 check-symbols  ${V:+V=1}
 
-    mkdir -p ${OUTDIR}
+    mkdir -p "$OUTDIR"
+
     # Make the os-specific installers
     case "$HOST" in
         *mingw*)
@@ -427,3 +433,17 @@ mkdir -p "$DISTSRC"
             ;;
     esac
 )  # $DISTSRC
+
+rm -rf "$ACTUAL_OUTDIR"
+mv --no-target-directory "$OUTDIR" "$ACTUAL_OUTDIR" \
+    || ( rm -rf "$ACTUAL_OUTDIR" && exit 1 )
+
+(
+    cd /outdir-base
+    {
+        echo "$GIT_ARCHIVE"
+        find "$ACTUAL_OUTDIR" -type f
+    } | xargs realpath --relative-base="$PWD" \
+      | xargs sha256sum \
+      | sponge "$ACTUAL_OUTDIR"/SHA256SUMS.part
+)

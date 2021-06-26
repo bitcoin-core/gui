@@ -300,13 +300,17 @@ BOOST_AUTO_TEST_CASE(cnetaddr_basic)
 
     // IPv6, scoped/link-local. See https://tools.ietf.org/html/rfc4007
     // We support non-negative decimal integers (uint32_t) as zone id indices.
-    // Test with a fairly-high value, e.g. 32, to avoid locally reserved ids.
+    // Normal link-local scoped address functionality is to append "%" plus the
+    // zone id, for example, given a link-local address of "fe80::1" and a zone
+    // id of "32", return the address as "fe80::1%32".
     const std::string link_local{"fe80::1"};
     const std::string scoped_addr{link_local + "%32"};
     BOOST_REQUIRE(LookupHost(scoped_addr, addr, false));
     BOOST_REQUIRE(addr.IsValid());
     BOOST_REQUIRE(addr.IsIPv6());
     BOOST_CHECK(!addr.IsBindAny());
+    BOOST_CHECK_EQUAL(addr.ToString(), scoped_addr);
+
     // Test that the delimiter "%" and default zone id of 0 can be omitted for the default scope.
     BOOST_REQUIRE(LookupHost(link_local + "%0", addr, false));
     BOOST_REQUIRE(addr.IsValid());
@@ -314,15 +318,8 @@ BOOST_AUTO_TEST_CASE(cnetaddr_basic)
     BOOST_CHECK(!addr.IsBindAny());
     BOOST_CHECK_EQUAL(addr.ToString(), link_local);
 
-    // TORv2
-    BOOST_REQUIRE(addr.SetSpecial("6hzph5hv6337r6p2.onion"));
-    BOOST_REQUIRE(addr.IsValid());
-    BOOST_REQUIRE(addr.IsTor());
-
-    BOOST_CHECK(!addr.IsI2P());
-    BOOST_CHECK(!addr.IsBindAny());
-    BOOST_CHECK(addr.IsAddrV1Compatible());
-    BOOST_CHECK_EQUAL(addr.ToString(), "6hzph5hv6337r6p2.onion");
+    // TORv2, no longer supported
+    BOOST_CHECK(!addr.SetSpecial("6hzph5hv6337r6p2.onion"));
 
     // TORv3
     const char* torv3_addr = "pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion";
@@ -466,10 +463,8 @@ BOOST_AUTO_TEST_CASE(cnetaddr_serialize_v1)
     BOOST_CHECK_EQUAL(HexStr(s), "1a1b2a2b3a3b4a4b5a5b6a6b7a7b8a8b");
     s.clear();
 
-    BOOST_REQUIRE(addr.SetSpecial("6hzph5hv6337r6p2.onion"));
-    s << addr;
-    BOOST_CHECK_EQUAL(HexStr(s), "fd87d87eeb43f1f2f3f4f5f6f7f8f9fa");
-    s.clear();
+    // TORv2, no longer supported
+    BOOST_CHECK(!addr.SetSpecial("6hzph5hv6337r6p2.onion"));
 
     BOOST_REQUIRE(addr.SetSpecial("pg6mmjiyjmcrsslvykfwnntlaru7p5svn6y2ymmju6nubxndf4pscryd.onion"));
     s << addr;
@@ -504,10 +499,8 @@ BOOST_AUTO_TEST_CASE(cnetaddr_serialize_v2)
     BOOST_CHECK_EQUAL(HexStr(s), "02101a1b2a2b3a3b4a4b5a5b6a6b7a7b8a8b");
     s.clear();
 
-    BOOST_REQUIRE(addr.SetSpecial("6hzph5hv6337r6p2.onion"));
-    s << addr;
-    BOOST_CHECK_EQUAL(HexStr(s), "030af1f2f3f4f5f6f7f8f9fa");
-    s.clear();
+    // TORv2, no longer supported
+    BOOST_CHECK(!addr.SetSpecial("6hzph5hv6337r6p2.onion"));
 
     BOOST_REQUIRE(addr.SetSpecial("kpgvmscirrdqpekbqjsvw5teanhatztpp2gl6eee4zkowvwfxwenqaid.onion"));
     s << addr;
@@ -613,25 +606,13 @@ BOOST_AUTO_TEST_CASE(cnetaddr_unserialize_v2)
     BOOST_CHECK(!addr.IsValid());
     BOOST_REQUIRE(s.empty());
 
-    // Valid TORv2.
+    // TORv2, no longer supported.
     s << MakeSpan(ParseHex("03"                      // network type (TORv2)
                            "0a"                      // address length
                            "f1f2f3f4f5f6f7f8f9fa")); // address
     s >> addr;
-    BOOST_CHECK(addr.IsValid());
-    BOOST_CHECK(addr.IsTor());
-    BOOST_CHECK(addr.IsAddrV1Compatible());
-    BOOST_CHECK_EQUAL(addr.ToString(), "6hzph5hv6337r6p2.onion");
+    BOOST_CHECK(!addr.IsValid());
     BOOST_REQUIRE(s.empty());
-
-    // Invalid TORv2, with bogus length.
-    s << MakeSpan(ParseHex("03"    // network type (TORv2)
-                           "07"    // address length
-                           "00")); // address
-    BOOST_CHECK_EXCEPTION(s >> addr, std::ios_base::failure,
-                          HasReason("BIP155 TORv2 address with length 7 (should be 10)"));
-    BOOST_REQUIRE(!s.empty()); // The stream is not consumed on invalid input.
-    s.clear();
 
     // Valid TORv3.
     s << MakeSpan(ParseHex("04"                               // network type (TORv3)

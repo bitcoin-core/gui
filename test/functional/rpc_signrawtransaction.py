@@ -4,17 +4,45 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Test transaction signing using the signrawtransaction* RPCs."""
 
-from test_framework.address import check_script, script_to_p2sh, script_to_p2wsh
+from test_framework.blocktools import COINBASE_MATURITY
+from test_framework.address import (
+    check_script,
+    script_to_p2sh,
+    script_to_p2wsh,
+)
 from test_framework.key import ECKey
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_raises_rpc_error, find_vout_for_address, hex_str_to_bytes
-from test_framework.messages import sha256, CTransaction, CTxInWitness
-from test_framework.script import CScript, OP_0, OP_CHECKSIG, OP_CHECKSEQUENCEVERIFY, OP_CHECKLOCKTIMEVERIFY, OP_DROP, OP_TRUE
-from test_framework.script_util import key_to_p2pkh_script, script_to_p2sh_p2wsh_script, script_to_p2wsh_script
+from test_framework.util import (
+    assert_equal,
+    assert_raises_rpc_error,
+    find_vout_for_address,
+    hex_str_to_bytes,
+)
+from test_framework.messages import (
+    CTxInWitness,
+    sha256,
+    tx_from_hex,
+)
+from test_framework.script import (
+    CScript,
+    OP_0,
+    OP_CHECKLOCKTIMEVERIFY,
+    OP_CHECKSIG,
+    OP_CHECKSEQUENCEVERIFY,
+    OP_DROP,
+    OP_TRUE,
+)
+from test_framework.script_util import (
+    key_to_p2pkh_script,
+    script_to_p2sh_p2wsh_script,
+    script_to_p2wsh_script,
+)
 from test_framework.wallet_util import bytes_to_wif
 
-from decimal import Decimal, getcontext
-from io import BytesIO
+from decimal import (
+    Decimal,
+    getcontext,
+)
 
 class SignRawTransactionsTest(BitcoinTestFramework):
     def set_test_params(self):
@@ -155,7 +183,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
     def test_fully_signed_tx(self):
         self.log.info("Test signing a fully signed transaction does nothing")
         self.nodes[0].walletpassphrase("password", 9999)
-        self.nodes[0].generate(101)
+        self.nodes[0].generate(COINBASE_MATURITY + 1)
         rawtx = self.nodes[0].createrawtransaction([], [{self.nodes[0].getnewaddress(): 10}])
         fundedtx = self.nodes[0].fundrawtransaction(rawtx)
         signedtx = self.nodes[0].signrawtransactionwithwallet(fundedtx["hex"])
@@ -174,7 +202,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         embedded_pubkey = eckey.get_pubkey().get_bytes().hex()
         p2sh_p2wsh_address = self.nodes[1].createmultisig(1, [embedded_pubkey], "p2sh-segwit")
         # send transaction to P2SH-P2WSH 1-of-1 multisig address
-        self.nodes[0].generate(101)
+        self.nodes[0].generate(COINBASE_MATURITY + 1)
         self.nodes[0].sendtoaddress(p2sh_p2wsh_address["address"], 49.999)
         self.nodes[0].generate(1)
         self.sync_all()
@@ -264,8 +292,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         )
 
         # Set the witness script
-        ctx = CTransaction()
-        ctx.deserialize(BytesIO(hex_str_to_bytes(tx)))
+        ctx = tx_from_hex(tx)
         ctx.wit.vtxinwit.append(CTxInWitness())
         ctx.wit.vtxinwit[0].scriptWitness.stack = [CScript([OP_TRUE]), script]
         tx = ctx.serialize_with_witness().hex()
@@ -300,8 +327,7 @@ class SignRawTransactionsTest(BitcoinTestFramework):
         )
 
         # Set the witness script
-        ctx = CTransaction()
-        ctx.deserialize(BytesIO(hex_str_to_bytes(tx)))
+        ctx = tx_from_hex(tx)
         ctx.wit.vtxinwit.append(CTxInWitness())
         ctx.wit.vtxinwit[0].scriptWitness.stack = [CScript([OP_TRUE]), script]
         tx = ctx.serialize_with_witness().hex()

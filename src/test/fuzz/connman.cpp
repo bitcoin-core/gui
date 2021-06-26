@@ -65,16 +65,19 @@ FUZZ_TARGET_INIT(connman, initialize_connman)
                 connman.ForEachNode([](auto) {});
             },
             [&] {
-                connman.ForEachNodeThen([](auto) {}, []() {});
-            },
-            [&] {
                 (void)connman.ForNode(fuzzed_data_provider.ConsumeIntegral<NodeId>(), [&](auto) { return fuzzed_data_provider.ConsumeBool(); });
             },
             [&] {
-                (void)connman.GetAddresses(fuzzed_data_provider.ConsumeIntegral<size_t>(), fuzzed_data_provider.ConsumeIntegral<size_t>());
+                (void)connman.GetAddresses(
+                    /* max_addresses */ fuzzed_data_provider.ConsumeIntegral<size_t>(),
+                    /* max_pct */ fuzzed_data_provider.ConsumeIntegral<size_t>(),
+                    /* network */ std::nullopt);
             },
             [&] {
-                (void)connman.GetAddresses(random_node, fuzzed_data_provider.ConsumeIntegral<size_t>(), fuzzed_data_provider.ConsumeIntegral<size_t>());
+                (void)connman.GetAddresses(
+                    /* requestor */ random_node,
+                    /* max_addresses */ fuzzed_data_provider.ConsumeIntegral<size_t>(),
+                    /* max_pct */ fuzzed_data_provider.ConsumeIntegral<size_t>());
             },
             [&] {
                 (void)connman.GetDeterministicRandomizer(fuzzed_data_provider.ConsumeIntegral<uint64_t>());

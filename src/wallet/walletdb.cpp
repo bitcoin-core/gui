@@ -155,7 +155,7 @@ bool WalletBatch::WriteWatchOnly(const CScript &dest, const CKeyMetadata& keyMet
     if (!WriteIC(std::make_pair(DBKeys::WATCHMETA, dest), keyMeta)) {
         return false;
     }
-    return WriteIC(std::make_pair(DBKeys::WATCHS, dest), '1');
+    return WriteIC(std::make_pair(DBKeys::WATCHS, dest), uint8_t{'1'});
 }
 
 bool WalletBatch::EraseWatchOnly(const CScript &dest)
@@ -308,8 +308,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 {
                     if (!ssValue.empty())
                     {
-                        char fTmp;
-                        char fUnused;
+                        uint8_t fTmp;
+                        uint8_t fUnused;
                         std::string unused_string;
                         ssValue >> fTmp >> fUnused >> unused_string;
                         strErr = strprintf("LoadWallet() upgrading tx ver=%d %d %s",
@@ -336,7 +336,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             wss.nWatchKeys++;
             CScript script;
             ssKey >> script;
-            char fYes;
+            uint8_t fYes;
             ssValue >> fYes;
             if (fYes == '1') {
                 pwallet->GetOrCreateLegacyScriptPubKeyMan()->LoadWatchOnly(script);
@@ -711,6 +711,13 @@ DBErrors WalletBatch::LoadWallet(CWallet* pwallet)
                 return DBErrors::CORRUPT;
             }
         }
+
+#ifndef ENABLE_EXTERNAL_SIGNER
+        if (pwallet->IsWalletFlagSet(WALLET_FLAG_EXTERNAL_SIGNER)) {
+            pwallet->WalletLogPrintf("Error: External signer wallet being loaded without external signer support compiled\n");
+            return DBErrors::TOO_NEW;
+        }
+#endif
 
         // Get cursor
         if (!m_batch->StartCursor())

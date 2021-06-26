@@ -16,7 +16,7 @@ $ FUZZ=process_message src/test/fuzz/fuzz
 # abort fuzzing using ctrl-c
 ```
 
-## Fuzzing harnesses, fuzzing output and fuzzing corpora
+## Fuzzing harnesses and output
 
 [`process_message`](https://github.com/bitcoin/bitcoin/blob/master/src/test/fuzz/process_message.cpp) is a fuzzing harness for the [`ProcessMessage(...)` function (`net_processing`)](https://github.com/bitcoin/bitcoin/blob/master/src/net_processing.cpp). The available fuzzing harnesses are found in [`src/test/fuzz/`](https://github.com/bitcoin/bitcoin/tree/master/src/test/fuzz).
 
@@ -64,6 +64,8 @@ block^@M-^?M-^?M-^?M-^?M-^?nM-^?M-^?
 
 In this case the fuzzer managed to create a `block` message which when passed to `ProcessMessage(...)` increased coverage.
 
+## Fuzzing corpora
+
 The project's collection of seed corpora is found in the [`bitcoin-core/qa-assets`](https://github.com/bitcoin-core/qa-assets) repo.
 
 To fuzz `process_message` using the [`bitcoin-core/qa-assets`](https://github.com/bitcoin-core/qa-assets) seed corpus:
@@ -80,6 +82,20 @@ INFO: seed corpus: files: 991 min: 1b max: 1858b total: 288291b rss: 150Mb
 #993    INITED cov: 7063 ft: 8236 corp: 25/3821b exec/s: 0 rss: 181Mb
 …
 ```
+
+## Reproduce a fuzzer crash reported by the CI
+
+- `cd` into the `qa-assets` directory and update it with `git pull qa-assets`
+- locate the crash case described in the CI output, e.g. `Test unit written to
+  ./crash-1bc91feec9fc00b107d97dc225a9f2cdaa078eb6`
+- make sure to compile with all sanitizers, if they are needed (fuzzing runs
+  more slowly with sanitizers enabled, but a crash should be reproducible very
+  quickly from a crash case)
+- run the fuzzer with the case number appended to the seed corpus path:
+  `FUZZ=process_message src/test/fuzz/fuzz
+  qa-assets/fuzz_seed_corpus/process_message/1bc91feec9fc00b107d97dc225a9f2cdaa078eb6`
+
+## Submit improved coverage
 
 If you find coverage increasing inputs when fuzzing you are highly encouraged to submit them for inclusion in the [`bitcoin-core/qa-assets`](https://github.com/bitcoin-core/qa-assets) repo.
 
@@ -230,3 +246,17 @@ $ honggfuzz/honggfuzz --exit_upon_crash --quiet --timeout 4 -n 1 -Q \
                        -nodebuglogfile -bind=127.0.0.1:18444 -logthreadnames \
                        -debug
 ```
+
+# OSS-Fuzz
+
+Bitcoin Core participates in Google's [OSS-Fuzz](https://github.com/google/oss-fuzz/tree/master/projects/bitcoin-core)
+program, which includes a dashboard of [publicly disclosed vulnerabilities](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=bitcoin-core).
+Generally, we try to disclose vulnerabilities as soon as possible after they
+are fixed to give users the knowledge they need to be protected. However,
+because Bitcoin is a live P2P network, and not just standalone local software,
+we might not fully disclose every issue within Google's standard
+[90-day disclosure window](https://google.github.io/oss-fuzz/getting-started/bug-disclosure-guidelines/)
+if a partial or delayed disclosure is important to protect users or the
+function of the network.
+
+OSS-Fuzz also produces [a fuzzing coverage report](https://oss-fuzz.com/coverage-report/job/libfuzzer_asan_bitcoin-core/latest).

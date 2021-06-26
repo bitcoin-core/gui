@@ -5,6 +5,8 @@
 # names can be used.
 # See https://github.com/google/sanitizers/issues/1364
 signed-integer-overflow:txmempool.cpp
+# https://github.com/bitcoin/bitcoin/pull/21798#issuecomment-829180719
+signed-integer-overflow:policy/feerate.cpp
 
 # -fsanitize=integer suppressions
 # ===============================
@@ -32,6 +34,9 @@ unsigned-integer-overflow:crypto/
 unsigned-integer-overflow:FuzzedDataProvider.h
 unsigned-integer-overflow:hash.cpp
 unsigned-integer-overflow:leveldb/
+# temporary coinstats suppressions (will be removed and fixed in https://github.com/bitcoin/bitcoin/pull/22146)
+unsigned-integer-overflow:node/coinstats.cpp
+signed-integer-overflow:node/coinstats.cpp
 unsigned-integer-overflow:policy/fees.cpp
 unsigned-integer-overflow:prevector.h
 unsigned-integer-overflow:pubkey.h
@@ -60,7 +65,6 @@ implicit-integer-sign-change:key.cpp
 implicit-integer-sign-change:noui.cpp
 implicit-integer-sign-change:policy/fees.cpp
 implicit-integer-sign-change:prevector.h
-implicit-integer-sign-change:protocol.cpp
 implicit-integer-sign-change:script/bitcoinconsensus.cpp
 implicit-integer-sign-change:script/interpreter.cpp
 implicit-integer-sign-change:serialize.h
@@ -85,6 +89,7 @@ implicit-signed-integer-truncation:chain.h
 implicit-signed-integer-truncation:crypto/
 implicit-signed-integer-truncation:cuckoocache.h
 implicit-signed-integer-truncation:leveldb/
+implicit-signed-integer-truncation:miner.cpp
 implicit-signed-integer-truncation:net.cpp
 implicit-signed-integer-truncation:net_processing.cpp
 implicit-signed-integer-truncation:streams.h
@@ -96,7 +101,6 @@ implicit-unsigned-integer-truncation:crypto/
 implicit-unsigned-integer-truncation:leveldb/
 # std::variant warning fixed in https://github.com/gcc-mirror/gcc/commit/074436cf8cdd2a9ce75cadd36deb8301f00e55b9
 implicit-unsigned-integer-truncation:std::__detail::__variant::_Variant_storage
-shift-base:nanobench.h
 shift-base:*/include/c++/
 shift-base:arith_uint256.cpp
 shift-base:crypto/

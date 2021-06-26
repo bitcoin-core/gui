@@ -35,11 +35,12 @@ BITCOIN_TEST_SUITE = \
   $(TEST_UTIL_H)
 
 FUZZ_SUITE_LD_COMMON = \
- $(LIBBITCOIN_SERVER) \
- $(LIBBITCOIN_COMMON) \
- $(LIBBITCOIN_UTIL) \
  $(LIBTEST_UTIL) \
  $(LIBTEST_FUZZ) \
+ $(LIBBITCOIN_SERVER) \
+ $(LIBBITCOIN_WALLET) \
+ $(LIBBITCOIN_COMMON) \
+ $(LIBBITCOIN_UTIL) \
  $(LIBBITCOIN_CONSENSUS) \
  $(LIBBITCOIN_CRYPTO) \
  $(LIBBITCOIN_CLI) \
@@ -121,6 +122,7 @@ BITCOIN_TESTS =\
   test/script_tests.cpp \
   test/script_standard_tests.cpp \
   test/scriptnum_tests.cpp \
+  test/serfloat_tests.cpp \
   test/serialize_tests.cpp \
   test/settings_tests.cpp \
   test/sighash_tests.cpp \
@@ -159,7 +161,6 @@ BITCOIN_TESTS += \
   wallet/test/scriptpubkeyman_tests.cpp
 
 FUZZ_SUITE_LD_COMMON +=\
- $(LIBBITCOIN_WALLET) \
  $(SQLITE_LIBS) \
  $(BDB_LIBS)
 
@@ -257,7 +258,7 @@ test_fuzz_fuzz_SOURCES = \
  test/fuzz/netaddress.cpp \
  test/fuzz/netbase_dns_lookup.cpp \
  test/fuzz/node_eviction.cpp \
- test/fuzz/p2p_transport_deserializer.cpp \
+ test/fuzz/p2p_transport_serialization.cpp \
  test/fuzz/parse_hd_keypath.cpp \
  test/fuzz/parse_iso8601.cpp \
  test/fuzz/parse_numbers.cpp \
@@ -303,6 +304,7 @@ test_fuzz_fuzz_SOURCES = \
  test/fuzz/tx_out.cpp \
  test/fuzz/tx_pool.cpp \
  test/fuzz/txrequest.cpp \
+ test/fuzz/utxo_snapshot.cpp \
  test/fuzz/validation_load_mempool.cpp \
  test/fuzz/versionbits.cpp
 endif # ENABLE_FUZZ_BINARY
@@ -348,11 +350,6 @@ endif
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
 if EMBEDDED_UNIVALUE
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
-endif
-
-if ENABLE_FUZZ_LINK_ALL
-all-local: $(FUZZ_BINARY)
-	bash ./test/fuzz/danger_link_all.sh
 endif
 
 %.cpp.test: %.cpp

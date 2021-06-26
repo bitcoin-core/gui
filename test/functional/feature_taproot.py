@@ -5,6 +5,7 @@
 # Test Taproot softfork (BIPs 340-342)
 
 from test_framework.blocktools import (
+    COINBASE_MATURITY,
     create_coinbase,
     create_block,
     add_witness_commitment,
@@ -18,7 +19,6 @@ from test_framework.messages import (
     CTxIn,
     CTxInWitness,
     CTxOut,
-    ToHex,
 )
 from test_framework.script import (
     ANNEX_TAG,
@@ -1305,7 +1305,7 @@ class TaprootTest(BitcoinTestFramework):
             # Add change
             fund_tx.vout.append(CTxOut(balance - 10000, random.choice(host_spks)))
             # Ask the wallet to sign
-            ss = BytesIO(bytes.fromhex(node.signrawtransactionwithwallet(ToHex(fund_tx))["hex"]))
+            ss = BytesIO(bytes.fromhex(node.signrawtransactionwithwallet(fund_tx.serialize().hex())["hex"]))
             fund_tx.deserialize(ss)
             # Construct UTXOData entries
             fund_tx.rehash()
@@ -1440,7 +1440,7 @@ class TaprootTest(BitcoinTestFramework):
     def run_test(self):
         # Post-taproot activation tests go first (pre-taproot tests' blocks are invalid post-taproot).
         self.log.info("Post-activation tests...")
-        self.nodes[1].generate(101)
+        self.nodes[1].generate(COINBASE_MATURITY + 1)
         self.test_spenders(self.nodes[1], spenders_taproot_active(), input_counts=[1, 2, 2, 2, 2, 3])
 
         # Re-connect nodes in case they have been disconnected
