@@ -74,8 +74,6 @@ QVariant PeerTableModel::data(const QModelIndex& index, int role) const
         case Address:
             // prepend to peer address down-arrow symbol for inbound connection and up-arrow for outbound connection
             return QString::fromStdString((rec->nodeStats.fInbound ? "↓ " : "↑ ") + rec->nodeStats.addrName);
-        case ConnectionType:
-            return GUIUtil::ConnectionTypeToQString(rec->nodeStats.m_conn_type, /* prepend_direction */ false);
         case Network:
             return GUIUtil::NetworkToQString(rec->nodeStats.m_network);
         case Ping:
@@ -94,7 +92,6 @@ QVariant PeerTableModel::data(const QModelIndex& index, int role) const
             return QVariant(Qt::AlignRight | Qt::AlignVCenter);
         case Address:
             return {};
-        case ConnectionType:
         case Network:
             return QVariant(Qt::AlignCenter);
         case Ping:

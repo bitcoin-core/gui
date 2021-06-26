@@ -48,7 +48,6 @@ public:
     enum ColumnIndex {
         NetNodeId = 0,
         Address,
-        ConnectionType,
         Network,
         Ping,
         Sent,
@@ -87,9 +86,6 @@ private:
         /*: Title of Peers Table column which contains the
             IP/Onion/I2P address of the connected peer. */
         tr("Address"),
-        /*: Title of Peers Table column which describes the type of
-            peer connection. The "type" describes why the connection exists. */
-        tr("Type"),
         /*: Title of Peers Table column which states the network the peer
             connected through. */
         tr("Network"),
