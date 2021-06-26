@@ -285,9 +285,10 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params& consensusParams, 
     while (pcursor->Valid()) {
         nNow = GetTime();
         if (nNow > nLastNow) {
-            int nPercent = 100 * nCount / nHighest;
+            if (nHighest < 0) nHighest = 0;
+            int nPercent = 100 * nCount / (nHighest + 1);
             if (nPercent > nLastPercent) {
-                uiInterface.InitMessage(strprintf(_("Loading blocks... %d%%").translated, (100 * nCount) / nHighest));
+                uiInterface.InitMessage(strprintf(_("Loading blocks... %d%%").translated, nPercent));
                 nLastPercent = nPercent;
             }
             nLastNow = nNow;
