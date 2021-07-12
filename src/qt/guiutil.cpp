@@ -669,12 +669,9 @@ QString NetworkToQString(Network net)
     assert(false);
 }
 
-QString ConnectionTypeToQString(ConnectionType conn_type, bool prepend_direction)
+QString ConnectionTypeToQString(ConnectionType conn_type)
 {
-    QString prefix;
-    if (prepend_direction) {
-        prefix = (conn_type == ConnectionType::INBOUND) ? QObject::tr("Inbound") : QObject::tr("Outbound") + " ";
-    }
+    QString prefix{conn_type == ConnectionType::INBOUND ? QObject::tr("Inbound") : QObject::tr("Outbound") + " "};
     switch (conn_type) {
     case ConnectionType::INBOUND: return prefix;
     case ConnectionType::OUTBOUND_FULL_RELAY: return prefix + QObject::tr("Full Relay");

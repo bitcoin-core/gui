@@ -212,7 +212,7 @@ namespace GUIUtil
     QString NetworkToQString(Network net);
 
     /** Convert enum ConnectionType to QString */
-    QString ConnectionTypeToQString(ConnectionType conn_type, bool prepend_direction);
+    QString ConnectionTypeToQString(ConnectionType conn_type);
 
     /** Convert seconds into a QString with days, hours, mins, secs */
     QString formatDurationStr(int secs);
