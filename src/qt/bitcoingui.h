@@ -214,6 +214,8 @@ private:
     void openOptionsDialogWithTab(OptionsDialog::Tab tab);
 
 Q_SIGNALS:
+    void quitClicked();
+    void rpcExecutorThreadFinished();
     /** Signal raised when a URI was entered or dragged to the GUI */
     void receivedURI(const QString &uri);
     /** Signal raised when RPC console shown */
@@ -322,6 +324,9 @@ public Q_SLOTS:
     void showProgress(const QString &title, int nProgress);
 
     void showModalOverlay();
+
+    /** Hide all windows and tray icon. */
+    void hideAll();
 };
 
 class UnitDisplayStatusBarControl : public QLabel

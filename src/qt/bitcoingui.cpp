@@ -99,6 +99,8 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     updateWindowTitle();
 
     rpcConsole = new RPCConsole(node, _platformStyle, nullptr);
+    connect(rpcConsole, &RPCConsole::executorThreadFinished, this, &BitcoinGUI::rpcExecutorThreadFinished);
+
     helpMessageDialog = new HelpMessageDialog(this, false);
 #ifdef ENABLE_WALLET
     if(enableWallet)
@@ -226,8 +228,6 @@ BitcoinGUI::~BitcoinGUI()
 
     QSettings settings;
     settings.setValue("MainWindowGeometry", saveGeometry());
-    if(trayIcon) // Hide tray icon, as deleting will let it linger until quit (on Ubuntu)
-        trayIcon->hide();
 #ifdef Q_OS_MAC
     delete m_app_nap_inhibitor;
     delete appMenuBar;
@@ -367,15 +367,13 @@ void BitcoinGUI::createActions()
     m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab"));
     m_mask_values_action->setCheckable(true);
 
-    connect(quitAction, &QAction::triggered, qApp, QApplication::quit);
+    connect(quitAction, &QAction::triggered, this, &BitcoinGUI::quitClicked);
     connect(aboutAction, &QAction::triggered, this, &BitcoinGUI::aboutClicked);
     connect(aboutQtAction, &QAction::triggered, qApp, QApplication::aboutQt);
     connect(optionsAction, &QAction::triggered, this, &BitcoinGUI::optionsClicked);
     connect(toggleHideAction, &QAction::triggered, this, &BitcoinGUI::toggleHidden);
     connect(showHelpMessageAction, &QAction::triggered, this, &BitcoinGUI::showHelpMessageClicked);
     connect(openRPCConsoleAction, &QAction::triggered, this, &BitcoinGUI::showDebugWindow);
-    // prevents an open debug window from becoming stuck/unusable on client shutdown
-    connect(quitAction, &QAction::triggered, rpcConsole, &QWidget::hide);
 
 #ifdef ENABLE_WALLET
     if(walletFrame)
@@ -626,11 +624,6 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel, interfaces::BlockAndH
     } else {
         // Disable possibility to show main window via action
         toggleHideAction->setEnabled(false);
-        if(trayIconMenu)
-        {
-            // Disable context menu on tray icon
-            trayIconMenu->clear();
-        }
         // Propagate cleared model to child objects
         rpcConsole->setClientModel(nullptr);
 #ifdef ENABLE_WALLET
@@ -990,6 +983,7 @@ void BitcoinGUI::openOptionsDialogWithTab(OptionsDialog::Tab tab)
     OptionsDialog dlg(this, enableWallet);
     dlg.setCurrentTab(tab);
     dlg.setModel(clientModel->getOptionsModel());
+    connect(&dlg, &OptionsDialog::quitOnReset, this, &BitcoinGUI::quitClicked);
     dlg.exec();
 }
 
@@ -1210,10 +1204,7 @@ void BitcoinGUI::closeEvent(QCloseEvent *event)
     {
         if(!clientModel->getOptionsModel()->getMinimizeOnClose())
         {
-            // close rpcConsole in case it was open to make some space for the shutdown window
-            rpcConsole->close();
-
-            QApplication::quit();
+            Q_EMIT quitClicked();
         }
         else
         {
@@ -1406,9 +1397,7 @@ void BitcoinGUI::detectShutdown()
 {
     if (m_node.shutdownRequested())
     {
-        if(rpcConsole)
-            rpcConsole->hide();
-        qApp->quit();
+        Q_EMIT quitClicked();
     }
 }
 
@@ -1435,6 +1424,14 @@ void BitcoinGUI::showModalOverlay()
 {
     if (modalOverlay && (progressBar->isVisible() || modalOverlay->isLayerVisible()))
         modalOverlay->toggleVisibility();
+}
+
+void BitcoinGUI::hideAll()
+{
+    trayIconMenu->clear();
+    trayIcon->hide();
+    rpcConsole->hide();
+    hide();
 }
 
 static bool ThreadSafeMessageBox(BitcoinGUI* gui, const bilingual_str& message, const std::string& caption, unsigned int style)

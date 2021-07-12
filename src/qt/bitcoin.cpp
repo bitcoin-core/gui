@@ -259,6 +259,8 @@ void BitcoinApplication::createOptionsModel(bool resetSettings)
 void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
 {
     window = new BitcoinGUI(node(), platformStyle, networkStyle, nullptr);
+    connect(window, &BitcoinGUI::quitClicked, this, &BitcoinApplication::requestShutdown);
+    connect(window, &BitcoinGUI::rpcExecutorThreadFinished, this, &BitcoinApplication::requestNodeShutdown);
 
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, &QTimer::timeout, window, &BitcoinGUI::detectShutdown);
@@ -338,9 +340,7 @@ void BitcoinApplication::requestShutdown()
     // for example the RPC console may still be executing a command.
     shutdownWindow.reset(ShutdownWindow::showShutdownWindow(window));
 
-    qDebug() << __func__ << ": Requesting shutdown";
-    startThread();
-    window->hide();
+    window->hideAll();
     // Must disconnect node signals otherwise current thread can deadlock since
     // no event loop is running.
     window->unsubscribeFromCoreSignals();
@@ -354,9 +354,6 @@ void BitcoinApplication::requestShutdown()
 
     delete clientModel;
     clientModel = nullptr;
-
-    // Request shutdown from core thread
-    Q_EMIT requestedShutdown();
 }
 
 void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHeaderTipInfo tip_info)
@@ -406,13 +403,21 @@ void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHead
         pollShutdownTimer->start(200);
     } else {
         Q_EMIT splashFinished(); // Make sure splash screen doesn't stick around during shutdown
-        quit(); // Exit first main loop invocation
+        requestNodeShutdown();
     }
+}
+
+void BitcoinApplication::requestNodeShutdown()
+{
+    qDebug() << __func__ << ": Requesting shutdown";
+    startThread();
+    // Request shutdown from core thread
+    Q_EMIT requestedShutdown();
 }
 
 void BitcoinApplication::shutdownResult()
 {
-    quit(); // Exit second main loop invocation after shutdown finished
+    quit();
 }
 
 void BitcoinApplication::handleRunawayException(const QString &message)
@@ -636,8 +641,6 @@ int GuiMain(int argc, char* argv[])
 #if defined(Q_OS_WIN)
             WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("%1 didn't yet exit safely…").arg(PACKAGE_NAME), (HWND)app.getMainWinId());
 #endif
-            app.exec();
-            app.requestShutdown();
             app.exec();
             rv = app.getReturnValue();
         } else {
