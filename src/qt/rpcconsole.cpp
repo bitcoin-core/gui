@@ -493,14 +493,28 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
 
     constexpr QChar nonbreaking_hyphen(8209);
     const std::vector<QString> CONNECTION_TYPE_DOC{
+        //: Explanatory text for an Inbound peer connection.
         tr("Inbound: initiated by peer"),
+        /*: Explanatory text for an Outbound peer connection which
+            relays all network information. This is the default behavior for
+            Outbound connections. */
         tr("Outbound Full Relay: default"),
+        /*: Explanatory text for an Outbound peer connection which
+            only relays network information about Blocks. */
         tr("Outbound Block Relay: does not relay transactions or addresses"),
+        /*: Explanatory text for an Outbound peer connection which was
+            established manually through one of several methods. The numbered
+            arguments are stand-ins for the methods available to establish
+            manual connections. */
         tr("Outbound Manual: added using RPC %1 or %2/%3 configuration options")
             .arg("addnode")
             .arg(QString(nonbreaking_hyphen) + "addnode")
             .arg(QString(nonbreaking_hyphen) + "connect"),
+        /*: Explanatory text for a temporary Outbound peer connection which
+            is used to test the validity of known addresses. */
         tr("Outbound Feeler: short-lived, for testing addresses"),
+        /*: Explanatory text for an Outbound peer connection which is used
+            to get addresses from a peer. */
         tr("Outbound Address Fetch: short-lived, for soliciting addresses")};
     const QString list{"<ul><li>" + Join(CONNECTION_TYPE_DOC, QString("</li><li>")) + "</li></ul>"};
     ui->peerConnectionTypeLabel->setToolTip(ui->peerConnectionTypeLabel->toolTip().arg(list));
