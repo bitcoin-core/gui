@@ -751,6 +751,28 @@ case $host in
      ;;
 esac
 
+AC_ARG_ENABLE([font-override],
+  [AS_HELP_STRING([--enable-font-override],
+  [override monospace font with embedded Roboto Mono (default is yes for macOS/Windows)])],
+  [font_override=$enableval],
+  [
+    case $TARGET_OS in
+      darwin|windows)
+        font_override=yes
+        ;;
+      *)
+        font_override=no
+        ;;
+    esac
+  ])
+if test "x$font_override" = "xembedded"; then
+  dnl Accept as an alternative to 'yes' in case of future override with other fonts
+  font_override=yes
+fi
+if test "x$font_override" = "xyes"; then
+  AC_DEFINE([EMBED_MONOSPACE_FONT],[1],[Define if embedded monospace font should be used])
+fi
+
 if test x$use_extended_functional_tests != xno; then
   AC_SUBST(EXTENDED_FUNCTIONAL_TESTS, --extended)
 fi
@@ -1766,6 +1788,7 @@ AM_CONDITIONAL([ENABLE_QT],[test x$bitcoin_enable_qt = xyes])
 AM_CONDITIONAL([ENABLE_QT_TESTS],[test x$BUILD_TEST_QT = xyes])
 AM_CONDITIONAL([ENABLE_BENCH],[test x$use_bench = xyes])
 AM_CONDITIONAL([USE_QRCODE], [test x$use_qr = xyes])
+AM_CONDITIONAL([EMBED_MONOSPACE_FONT], [test x$font_override = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
 AM_CONDITIONAL([USE_LIBEVENT],[test x$use_libevent = xyes])
 AM_CONDITIONAL([GLIBC_BACK_COMPAT],[test x$use_glibc_compat = xyes])
@@ -1833,6 +1856,7 @@ AC_SUBST(USE_BDB)
 AC_SUBST(ENABLE_EXTERNAL_SIGNER)
 AC_SUBST(USE_UPNP)
 AC_SUBST(USE_QRCODE)
+AC_SUBST(EMBED_MONOSPACE_FONT)
 AC_SUBST(BOOST_LIBS)
 AC_SUBST(SQLITE_LIBS)
 AC_SUBST(TESTDEFS)
