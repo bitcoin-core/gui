@@ -781,6 +781,22 @@ QString formatBytes(uint64_t bytes)
     return QObject::tr("%1 GB").arg(bytes / 1'000'000'000);
 }
 
+QString formatBps(uint64_t bits)
+{
+    if (bits < 10'000)
+        //: "Bits per second"
+        return QObject::tr("%1 bps").arg(bits);
+    if (bits < 10'000'000)
+        //: "Kilobits per second"
+        return QObject::tr("%1 kbps").arg(bits / 1'000);
+    if (bits < 10'000'000'000)
+        //: "Megabits per second"
+        return QObject::tr("%1 Mbps").arg(bits / 1'000'000);
+
+    //: "Gigabits per second"
+    return QObject::tr("%1 Gbps").arg(bits / 1'000'000'000);
+}
+
 qreal calculateIdealFontSize(int width, const QString& text, QFont font, qreal minPointSize, qreal font_size) {
     while(font_size >= minPointSize) {
         font.setPointSizeF(font_size);

@@ -52,7 +52,7 @@ public:
         Network,
         Ping,
         Sent,
-        Received,
+        Recv,
         Subversion
     };
 
@@ -98,7 +98,7 @@ private:
         tr("Sent"),
         /*: Title of Peers Table column which indicates the total amount of
             network information we have received from the peer. */
-        tr("Received"),
+        tr("Recv"),
         /*: Title of Peers Table column which contains the peer's
             User Agent string. */
         tr("User Agent")};
