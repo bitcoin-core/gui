@@ -24,10 +24,10 @@ InitExecutor::InitExecutor(interfaces::Node& node)
 
 InitExecutor::~InitExecutor()
 {
-    qDebug() << __func__ << ": Stopping thread";
+    qDebug() << "Stopping thread";
     m_thread.quit();
     m_thread.wait();
-    qDebug() << __func__ << ": Stopped thread";
+    qDebug() << "Stopped thread";
 }
 
 void InitExecutor::handleRunawayException(const std::exception* e)
@@ -40,7 +40,7 @@ void InitExecutor::initialize()
 {
     try {
         util::ThreadRename("qt-init");
-        qDebug() << __func__ << ": Running initialization in thread";
+        qDebug() << "Running initialization in thread";
         interfaces::BlockAndHeaderTipInfo tip_info;
         bool rv = m_node.appInitMain(&tip_info);
         Q_EMIT initializeResult(rv, tip_info);
@@ -54,9 +54,9 @@ void InitExecutor::initialize()
 void InitExecutor::shutdown()
 {
     try {
-        qDebug() << __func__ << ": Running Shutdown in thread";
+        qDebug() << "Running Shutdown in thread";
         m_node.appShutdown();
-        qDebug() << __func__ << ": Shutdown finished";
+        qDebug() << "Shutdown finished";
         Q_EMIT shutdownResult();
     } catch (const std::exception& e) {
         handleRunawayException(&e);

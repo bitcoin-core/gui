@@ -147,9 +147,8 @@ static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTrans
 /* qDebug() message handler --> debug.log */
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
-    Q_UNUSED(context);
     if (type == QtDebugMsg) {
-        LogPrint(BCLog::QT, "GUI: %s\n", msg.toStdString());
+        LogPrint(BCLog::QT, "GUI: %s: %s\n", context.function, msg.toStdString());
     } else {
         LogPrintf("GUI: %s\n", msg.toStdString());
     }
@@ -270,7 +269,7 @@ void BitcoinApplication::InitPruneSetting(int64_t prune_MiB)
 
 void BitcoinApplication::requestInitialize()
 {
-    qDebug() << __func__ << ": Requesting initialize";
+    qDebug() << "Requesting initialize";
     startThread();
     Q_EMIT requestedInitialize();
 }
@@ -282,7 +281,7 @@ void BitcoinApplication::requestShutdown()
     // for example the RPC console may still be executing a command.
     shutdownWindow.reset(ShutdownWindow::showShutdownWindow(window));
 
-    qDebug() << __func__ << ": Requesting shutdown";
+    qDebug() << "Requesting shutdown";
     window->hide();
     // Must disconnect node signals otherwise current thread can deadlock since
     // no event loop is running.
@@ -304,7 +303,7 @@ void BitcoinApplication::requestShutdown()
 
 void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHeaderTipInfo tip_info)
 {
-    qDebug() << __func__ << ": Initialization result: " << success;
+    qDebug() << "Initialization result: " << success;
     // Set exit result.
     returnValue = success ? EXIT_SUCCESS : EXIT_FAILURE;
     if(success)
