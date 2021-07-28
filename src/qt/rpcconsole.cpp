@@ -872,7 +872,7 @@ void RPCConsole::clear(bool keep_prompt)
            "%7WARNING: Scammers have been active, telling users to type"
            " commands here, stealing their wallet contents. Do not use this console"
            " without fully understanding the ramifications of a command.%8")
-            .arg("<span class=\"secwarning\">",
+            .arg(gArgs.GetChainName() == CBaseChainParams::TESTNET ? "<span>" : "<span class=\"secwarning\">",
                  "<span>");
 
     message(CMD_REPLY, welcome_message, true);
