@@ -16,17 +16,19 @@ static const struct {
     const char *appName;
     const int iconColorHueShift;
     const int iconColorSaturationReduction;
+    const char * secWarningStyle;
 } network_styles[] = {
-    {"main", QAPP_APP_NAME_DEFAULT, 0, 0},
-    {"test", QAPP_APP_NAME_TESTNET, 70, 30},
-    {"signet", QAPP_APP_NAME_SIGNET, 35, 15},
-    {"regtest", QAPP_APP_NAME_REGTEST, 160, 30},
+    {"main", QAPP_APP_NAME_DEFAULT, 0, 0, ".secwarning { color: red; }"},
+    {"test", QAPP_APP_NAME_TESTNET, 70, 30, ".secwarning { }"},
+    {"signet", QAPP_APP_NAME_SIGNET, 35, 15, ".secwarning { color: red; }"},
+    {"regtest", QAPP_APP_NAME_REGTEST, 160, 30, ".secwarning { color: red; }"},
 };
 
 // titleAddText needs to be const char* for tr()
-NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift, const int iconColorSaturationReduction, const char *_titleAddText):
+NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift, const int iconColorSaturationReduction, const char *_titleAddText, const char * _secWarningStyle):
     appName(_appName),
-    titleAddText(qApp->translate("SplashScreen", _titleAddText))
+    titleAddText(qApp->translate("SplashScreen", _titleAddText)),
+    secWarningStyle(_secWarningStyle)
 {
     // load pixmap
     QPixmap pixmap(":/icons/bitcoin");
@@ -86,7 +88,8 @@ const NetworkStyle* NetworkStyle::instantiate(const std::string& networkId)
                     network_style.appName,
                     network_style.iconColorHueShift,
                     network_style.iconColorSaturationReduction,
-                    titleAddText.c_str());
+                    titleAddText.c_str(),
+                    network_style.secWarningStyle);
         }
     }
     return nullptr;

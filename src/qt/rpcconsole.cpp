@@ -467,11 +467,12 @@ void RPCExecutor::request(const QString &command, const WalletModel* wallet_mode
     }
 }
 
-RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformStyle, QWidget *parent) :
+RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformStyle, QWidget *parent, const NetworkStyle * networkStyle) :
     QWidget(parent),
     m_node(node),
     ui(new Ui::RPCConsole),
-    platformStyle(_platformStyle)
+    platformStyle(_platformStyle),
+    networkStyle(networkStyle)
 {
     ui->setupUi(this);
     QSettings settings;
@@ -840,22 +841,22 @@ void RPCConsole::clear(bool keep_prompt)
 
     // Set default style sheet
     QFontInfo fixedFontInfo(GUIUtil::fixedPitchFont());
+    std::string * _style =
+                new std::string("table { } \
+                td.time { color: #808080; font-size: %2; padding-top: 3px; } \
+                td.message { font-family: %1; font-size: %2; white-space:pre-wrap; } \
+                td.cmd-request { color: #006060; } \
+                td.cmd-error { color: red; } ");
+    _style->append(
+                networkStyle->getSecWarningStyle().toStdString());
+    _style->append(
+                ("b { color: #006060; } "));
     ui->messagesWidget->document()->setDefaultStyleSheet(
-        QString(
-                "table { }"
-                "td.time { color: #808080; font-size: %2; padding-top: 3px; } "
-                "td.message { font-family: %1; font-size: %2; white-space:pre-wrap; } "
-                "td.cmd-request { color: #006060; } "
-                "td.cmd-error { color: red; } "
-                ".secwarning { color: red; }"
-                "b { color: #006060; } "
+        QString(_style->c_str()
             ).arg(fixedFontInfo.family(), QString("%1pt").arg(consoleFontSize))
         );
 
     static const QString welcome_message =
-        /*: RPC console welcome message.
-            Placeholders %7 and %8 are style tags for the warning content, and
-            they are not space separated from the rest of the text intentionally. */
         tr("Welcome to the %1 RPC console.\n"
            "Use up and down arrows to navigate history, and %2 to clear screen.\n"
            "Use %3 and %4 to increase or decrease the font size.\n"
@@ -868,11 +869,13 @@ void RPCConsole::clear(bool keep_prompt)
                  "<b>" + ui->fontSmallerButton->shortcut().toString(QKeySequence::NativeText) + "</b>",
                  "<b>help</b>",
                  "<b>help-console</b>") +
+        /* These placeholders are style tags for the warning content, and
+           they are not space separated from the rest of the text intentionally. */
         tr(
-           "%7WARNING: Scammers have been active, telling users to type"
+           "%1WARNING: Scammers have been active, telling users to type"
            " commands here, stealing their wallet contents. Do not use this console"
-           " without fully understanding the ramifications of a command.%8")
-            .arg(gArgs.GetChainName() == CBaseChainParams::TESTNET ? "<span>" : "<span class=\"secwarning\">",
+           " without fully understanding the ramifications of a command.%2")
+            .arg("<span class=\"secwarning\">",
                  "<span>");
 
     message(CMD_REPLY, welcome_message, true);

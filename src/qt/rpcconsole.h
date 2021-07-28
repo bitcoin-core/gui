@@ -6,6 +6,7 @@
 #define BITCOIN_QT_RPCCONSOLE_H
 
 #include <qt/guiutil.h>
+#include <qt/networkstyle.h>
 #include <qt/peertablemodel.h>
 
 #include <net.h>
@@ -40,7 +41,7 @@ class RPCConsole: public QWidget
     Q_OBJECT
 
 public:
-    explicit RPCConsole(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent);
+    explicit RPCConsole(interfaces::Node& node, const PlatformStyle *platformStyle, QWidget *parent, const NetworkStyle * networkStyle);
     ~RPCConsole();
 
     static bool RPCParseCommandLine(interfaces::Node* node, std::string &strResult, const std::string &strCommand, bool fExecute, std::string * const pstrFilteredOut = nullptr, const WalletModel* wallet_model = nullptr);
@@ -160,6 +161,7 @@ private:
     QString cmdBeforeBrowsing;
     QList<NodeId> cachedNodeids;
     const PlatformStyle* const platformStyle;
+    const NetworkStyle * const networkStyle;
     RPCTimerInterface *rpcTimerInterface = nullptr;
     QMenu *peersTableContextMenu = nullptr;
     QMenu *banTableContextMenu = nullptr;
