@@ -841,18 +841,18 @@ void RPCConsole::clear(bool keep_prompt)
 
     // Set default style sheet
     QFontInfo fixedFontInfo(GUIUtil::fixedPitchFont());
-    std::string * _style =
-                new std::string("table { } \
+    std::string _style(" \
+                table { } \
                 td.time { color: #808080; font-size: %2; padding-top: 3px; } \
                 td.message { font-family: %1; font-size: %2; white-space:pre-wrap; } \
                 td.cmd-request { color: #006060; } \
                 td.cmd-error { color: red; } ");
-    _style->append(
+    _style.append(
                 networkStyle->getSecWarningStyle().toStdString());
-    _style->append(
+    _style.append(
                 ("b { color: #006060; } "));
     ui->messagesWidget->document()->setDefaultStyleSheet(
-        QString(_style->c_str()
+        QString(_style.c_str()
             ).arg(fixedFontInfo.family(), QString("%1pt").arg(consoleFontSize))
         );
 
