@@ -656,6 +656,23 @@ void CWallet::AddToSpends(const uint256& wtxid, WalletBatch* batch)
         AddToSpends(txin.prevout, wtxid, batch);
 }
 
+void CWallet::UpdateAddressBookUsed(const CWalletTx& wtx)
+{
+    for (const auto& output : wtx.tx->vout) {
+        CTxDestination dest;
+        if (!ExtractDestination(output.scriptPubKey, dest)) continue;
+        m_address_book[dest].m_used = true;
+    }
+}
+
+void CWallet::InitialiseAddressBookUsed()
+{
+    for (const auto& entry : mapWallet) {
+        const CWalletTx& wtx = entry.second;
+        UpdateAddressBookUsed(wtx);
+    }
+}
+
 bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
 {
     if (IsCrypted())
@@ -953,6 +970,7 @@ CWalletTx* CWallet::AddToWallet(CTransactionRef tx, const TxState& state, const 
         wtx.m_it_wtxOrdered = wtxOrdered.insert(std::make_pair(wtx.nOrderPos, &wtx));
         wtx.nTimeSmart = ComputeTimeSmart(wtx, rescanning_old_block);
         AddToSpends(hash, &batch);
+        UpdateAddressBookUsed(wtx);
     }
 
     if (!fInsertedNew)
@@ -2133,7 +2151,12 @@ DBErrors CWallet::LoadWallet()
         assert(m_internal_spk_managers.empty());
     }
 
-    return nLoadWalletRet;
+    if (nLoadWalletRet != DBErrors::LOAD_OK)
+        return nLoadWalletRet;
+
+    InitialiseAddressBookUsed();
+
+    return DBErrors::LOAD_OK;
 }
 
 DBErrors CWallet::ZapSelectTx(std::vector<uint256>& vHashIn, std::vector<uint256>& vHashOut)
