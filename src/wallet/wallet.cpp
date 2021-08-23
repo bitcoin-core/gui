@@ -1364,9 +1364,13 @@ CAmount CWallet::GetDebit(const CTransaction& tx, const isminefilter& filter) co
 bool CWallet::IsHDEnabled() const
 {
     // All Active ScriptPubKeyMans must be HD for this to be true
-    bool result = true;
+    bool result = false;
     for (const auto& spk_man : GetActiveScriptPubKeyMans()) {
-        result &= spk_man->IsHDEnabled();
+        if (spk_man->IsHDEnabled()) {
+            result = true;
+        } else {
+            return false;
+        }
     }
     return result;
 }
