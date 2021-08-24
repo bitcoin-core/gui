@@ -195,7 +195,7 @@ QString formatBitcoinURI(const SendCoinsRecipient &info)
 {
     bool bech_32 = info.address.startsWith(QString::fromStdString(Params().Bech32HRP() + "1"));
 
-    QString ret = QString("bitcoin:%1").arg(bech_32 ? info.address.toUpper() : info.address);
+    QString ret = QString("bitcoin:%1").arg(info.address);
     int paramCount = 0;
 
     if (info.amount)
@@ -216,6 +216,10 @@ QString formatBitcoinURI(const SendCoinsRecipient &info)
         QString msg(QUrl::toPercentEncoding(info.message));
         ret += QString("%1message=%2").arg(paramCount == 0 ? "?" : "&").arg(msg);
         paramCount++;
+    }
+
+    if (bech_32 && paramCount == 0) {
+        ret = ret.toUpper();
     }
 
     return ret;
