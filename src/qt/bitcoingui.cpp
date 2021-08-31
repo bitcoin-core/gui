@@ -454,6 +454,46 @@ void BitcoinGUI::createMenuBar()
     appMenuBar = menuBar();
 #endif
 
+    // Add chain selection submenu
+    QAction* chain_selection_action{nullptr};
+    QMenu* chain_selection_menu{nullptr};
+    chain_selection_action = new QAction(tr("&Switch chain"), this);
+    chain_selection_action->setStatusTip(tr("Restart application using a different (test) network"));
+    chain_selection_menu = new QMenu(this);
+
+    connect(chain_selection_menu, &QMenu::aboutToShow, [this, chain_selection_menu] {
+        chain_selection_menu->clear();
+        const std::vector<std::pair<QString, QString>> chains = {{"main", "&Bitcoin"}, {"test", "&Testnet"}, {"regtest", "&Regtest"}, {"signet", "&Signet"}};
+        for (auto chain : chains) {
+            const bool is_current = gArgs.GetChainName() == chain.first.toStdString();
+            QAction* action = chain_selection_menu->addAction(chain.second);
+            action->setCheckable(true);
+            action->setChecked(is_current);
+            action->setEnabled(!is_current);
+
+            connect(action, &QAction::triggered, [this, chain] {
+                //: Switch to the mainnet, testnet, signet or regtest chain.
+                QMessageBox::StandardButton btn_ret_val = QMessageBox::question(this, tr("Switch chain"),
+                    //: Switching between mainnet, testnet, signet or regtest chain requires a restart.
+                    tr("Client restart required to switch chain.\n\nClient will be shut down. Do you want to proceed?"),
+                    QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+
+                if (btn_ret_val == QMessageBox::Cancel) return;
+
+                // QSettings are stored seperately for each network. Switch application name
+                // to mainnet before storing the selected chain.
+                QScopedPointer<const NetworkStyle> networkStyle(NetworkStyle::instantiate("main"));
+                assert(!networkStyle.isNull());
+                QApplication::setApplicationName(networkStyle->getAppName());
+
+                QSettings settings;
+                settings.setValue("chain", chain.first);
+                Q_EMIT quitRequested();
+            });
+        }
+    });
+    chain_selection_action->setMenu(chain_selection_menu);
+
     // Configure the menus
     QMenu *file = appMenuBar->addMenu(tr("&File"));
     if(walletFrame)
@@ -483,6 +523,7 @@ void BitcoinGUI::createMenuBar()
         settings->addSeparator();
     }
     settings->addAction(optionsAction);
+    settings->addAction(chain_selection_action);
 
     QMenu* window_menu = appMenuBar->addMenu(tr("&Window"));
 

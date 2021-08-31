@@ -190,6 +190,10 @@ GUI changes
 - UTXOs which are locked via the GUI are now stored persistently in the
   wallet database, so are not lost on node shutdown or crash. (#23065)
 
+- Toggle chain from mainnet to testnet, signet or regtest. The GUI now always sets `-chain`,
+  so any occurrences of `-testnet`, `-signet` or `-regtest` in `bitcoin.conf` should
+  be replace with `chain=test`, `chain=signet` or `chain=regtest` respectively. (bitcoin-core/gui#414)
+
 - The Bech32 checkbox has been replaced with a dropdown for all address types, including the new Bech32m (BIP-350) standard for Taproot enabled wallets.
 
 Low-level changes
