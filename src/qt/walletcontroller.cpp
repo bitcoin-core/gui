@@ -125,19 +125,10 @@ WalletModel* WalletController::getOrCreateWallet(std::unique_ptr<interfaces::Wal
         }
     }
 
-    // Instantiate model and register it.
-    WalletModel* wallet_model = new WalletModel(std::move(wallet), m_client_model, m_platform_style,
-                                                nullptr /* required for the following moveToThread() call */);
-
-    // Move WalletModel object to the thread that created the WalletController
-    // object (GUI main thread), instead of the current thread, which could be
-    // an outside wallet thread or RPC thread sending a LoadWallet notification.
-    // This ensures queued signals sent to the WalletModel object will be
-    // handled on the GUI event loop.
-    wallet_model->moveToThread(thread());
-    // setParent(parent) must be called in the thread which created the parent object. More details in #18948.
-    QMetaObject::invokeMethod(this, [wallet_model, this] {
-        wallet_model->setParent(this);
+    WalletModel* wallet_model;
+    // Instantiate model in GUI main thread.
+    QMetaObject::invokeMethod(this, [&] {
+        wallet_model = new WalletModel(std::move(wallet), m_client_model, m_platform_style, this);
     }, GUIUtil::blockingGUIThreadConnection());
 
     m_wallets.push_back(wallet_model);
