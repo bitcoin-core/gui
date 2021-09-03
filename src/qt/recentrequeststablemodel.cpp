@@ -23,11 +23,6 @@
 RecentRequestsTableModel::RecentRequestsTableModel(WalletModel *parent) :
     QAbstractTableModel(parent), walletModel(parent)
 {
-    // Load entries from wallet
-    for (const std::string& request : parent->wallet().getAddressReceiveRequests()) {
-        addNewRequest(request);
-    }
-
     /* These columns must match the indices in the ColumnIndex enumeration */
     columns << tr("Date") << tr("Label") << tr("Message") << getAmountTitle();
 
@@ -35,6 +30,14 @@ RecentRequestsTableModel::RecentRequestsTableModel(WalletModel *parent) :
 }
 
 RecentRequestsTableModel::~RecentRequestsTableModel() = default;
+
+void RecentRequestsTableModel::preload()
+{
+    // Load entries from wallet
+    for (const std::string& request : walletModel->wallet().getAddressReceiveRequests()) {
+        addNewRequest(request);
+    }
+}
 
 int RecentRequestsTableModel::rowCount(const QModelIndex &parent) const
 {

@@ -77,6 +77,8 @@ public:
         Unlocked      // wallet->IsCrypted() && !wallet->IsLocked()
     };
 
+    void preload();
+
     OptionsModel* getOptionsModel() const;
     AddressTableModel* getAddressTableModel() const;
     TransactionTableModel* getTransactionTableModel() const;

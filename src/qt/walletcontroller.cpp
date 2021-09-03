@@ -131,6 +131,8 @@ WalletModel* WalletController::getOrCreateWallet(std::unique_ptr<interfaces::Wal
         wallet_model = new WalletModel(std::move(wallet), m_client_model, m_platform_style, this);
     }, GUIUtil::blockingGUIThreadConnection());
 
+    wallet_model->preload();
+
     m_wallets.push_back(wallet_model);
 
     // WalletModel::startPollBalance needs to be called in a thread managed by

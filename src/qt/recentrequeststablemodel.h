@@ -65,6 +65,8 @@ public:
         NUMBER_OF_COLUMNS
     };
 
+    void preload();
+
     /** @name Methods overridden from QAbstractTableModel
         @{*/
     int rowCount(const QModelIndex &parent) const override;

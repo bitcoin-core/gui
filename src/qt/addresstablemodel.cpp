@@ -70,12 +70,13 @@ class AddressTablePriv
 {
 public:
     QList<AddressTableEntry> cachedAddressTable;
-    AddressTableModel *parent;
+    AddressTableModel* const parent;
+    const bool pk_hash_only;
 
-    explicit AddressTablePriv(AddressTableModel *_parent):
-        parent(_parent) {}
+    explicit AddressTablePriv(AddressTableModel *_parent, bool pk_hash_only):
+        parent(_parent), pk_hash_only(pk_hash_only) {}
 
-    void refreshAddressTable(interfaces::Wallet& wallet, bool pk_hash_only = false)
+    void refreshAddressTable(interfaces::Wallet& wallet)
     {
         cachedAddressTable.clear();
         {
@@ -166,13 +167,17 @@ AddressTableModel::AddressTableModel(WalletModel *parent, bool pk_hash_only) :
     QAbstractTableModel(parent), walletModel(parent)
 {
     columns << tr("Label") << tr("Address");
-    priv = new AddressTablePriv(this);
-    priv->refreshAddressTable(parent->wallet(), pk_hash_only);
+    priv = new AddressTablePriv(this, pk_hash_only);
 }
 
 AddressTableModel::~AddressTableModel()
 {
     delete priv;
+}
+
+void AddressTableModel::preload()
+{
+    priv->refreshAddressTable(walletModel->wallet());
 }
 
 int AddressTableModel::rowCount(const QModelIndex &parent) const

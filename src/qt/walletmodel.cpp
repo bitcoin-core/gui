@@ -56,13 +56,19 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
     addressTableModel = new AddressTableModel(this);
     transactionTableModel = new TransactionTableModel(platformStyle, this);
     recentRequestsTableModel = new RecentRequestsTableModel(this);
-
-    subscribeToCoreSignals();
 }
 
 WalletModel::~WalletModel()
 {
     unsubscribeFromCoreSignals();
+}
+
+void WalletModel::preload()
+{
+    addressTableModel->preload();
+    transactionTableModel->preload();
+    recentRequestsTableModel->preload();
+    subscribeToCoreSignals();
 }
 
 void WalletModel::startPollBalance()

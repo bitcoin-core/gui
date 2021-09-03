@@ -256,11 +256,7 @@ TransactionTableModel::TransactionTableModel(const PlatformStyle *_platformStyle
         fProcessingQueuedTransactions(false),
         platformStyle(_platformStyle)
 {
-    subscribeToCoreSignals();
-
     columns << QString() << QString() << tr("Date") << tr("Type") << tr("Label") << BitcoinUnits::getAmountColumnTitle(walletModel->getOptionsModel()->getDisplayUnit());
-    priv->refreshWallet(walletModel->wallet());
-
     connect(walletModel->getOptionsModel(), &OptionsModel::displayUnitChanged, this, &TransactionTableModel::updateDisplayUnit);
 }
 
@@ -268,6 +264,12 @@ TransactionTableModel::~TransactionTableModel()
 {
     unsubscribeFromCoreSignals();
     delete priv;
+}
+
+void TransactionTableModel::preload()
+{
+    subscribeToCoreSignals();
+    priv->refreshWallet(walletModel->wallet());
 }
 
 /** Updates the column title to "Amount (DisplayUnit)" and emits headerDataChanged() signal for table headers to react. */

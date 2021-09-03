@@ -50,6 +50,8 @@ public:
     static const QString Send;      /**< Specifies send address */
     static const QString Receive;   /**< Specifies receive address */
 
+    void preload();
+
     /** @name Methods overridden from QAbstractTableModel
         @{*/
     int rowCount(const QModelIndex &parent) const override;
