@@ -63,8 +63,6 @@ private Q_SLOTS:
     void showRestartWarning(bool fPersistent = false);
     void clearStatusLabel();
     void updateProxyValidationState();
-    /* query the networks, for which the default proxy is used */
-    void updateDefaultProxyNets();
 
 Q_SIGNALS:
     void proxyIpChecks(QValidatedLineEdit *pUiProxyIp, uint16_t nProxyPort);
