@@ -193,8 +193,7 @@ void OptionsDialog::setModel(OptionsModel *_model)
         mapper->setModel(_model);
         setMapper();
         mapper->toFirst();
-
-        updateDefaultProxyNets();
+        
     }
 
     /* warn when one of the following settings changes by user action (placed here so init via mapper doesn't trigger them) */
@@ -321,8 +320,7 @@ void OptionsDialog::on_openBitcoinConfButton_clicked()
 void OptionsDialog::on_okButton_clicked()
 {
     mapper->submit();
-    accept();
-    updateDefaultProxyNets();
+    accept();    
 }
 
 void OptionsDialog::on_cancelButton_clicked()
@@ -387,27 +385,6 @@ void OptionsDialog::updateProxyValidationState()
     }
 }
 
-void OptionsDialog::updateDefaultProxyNets()
-{
-    proxyType proxy;
-    std::string strProxy;
-    QString strDefaultProxyGUI;
-
-    model->node().getProxy(NET_IPV4, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachIPv4->setChecked(true) : ui->proxyReachIPv4->setChecked(false);
-
-    model->node().getProxy(NET_IPV6, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachIPv6->setChecked(true) : ui->proxyReachIPv6->setChecked(false);
-
-    model->node().getProxy(NET_ONION, proxy);
-    strProxy = proxy.proxy.ToStringIP() + ":" + proxy.proxy.ToStringPort();
-    strDefaultProxyGUI = ui->proxyIp->text() + ":" + ui->proxyPort->text();
-    (strProxy == strDefaultProxyGUI.toStdString()) ? ui->proxyReachTor->setChecked(true) : ui->proxyReachTor->setChecked(false);
-}
 
 ProxyAddressValidator::ProxyAddressValidator(QObject *parent) :
 QValidator(parent)
