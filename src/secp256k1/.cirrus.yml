@@ -139,7 +139,7 @@ task:
     # Fetch valgrind source but don't build it yet.
     - brew fetch --HEAD LouisBrunner/valgrind/valgrind
   brew_valgrind_cache:
-    # This is $(brew --cellar valgrind) but command substition does not work here.
+    # This is $(brew --cellar valgrind) but command substitution does not work here.
     folder: /usr/local/Cellar/valgrind
     # Rebuild cache if ...
     fingerprint_script:
