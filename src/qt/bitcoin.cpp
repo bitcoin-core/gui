@@ -107,44 +107,6 @@ static QString GetLangTerritory()
     return lang_territory;
 }
 
-/** Set up translations */
-static void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTranslator, QTranslator &translatorBase, QTranslator &translator)
-{
-    // Remove old translators
-    QApplication::removeTranslator(&qtTranslatorBase);
-    QApplication::removeTranslator(&qtTranslator);
-    QApplication::removeTranslator(&translatorBase);
-    QApplication::removeTranslator(&translator);
-
-    // Get desired locale (e.g. "de_DE")
-    // 1) System default language
-    QString lang_territory = GetLangTerritory();
-
-    // Convert to "de" only by truncating "_DE"
-    QString lang = lang_territory;
-    lang.truncate(lang_territory.lastIndexOf('_'));
-
-    // Load language files for configured locale:
-    // - First load the translator for the base language, without territory
-    // - Then load the more specific locale translator
-
-    // Load e.g. qt_de.qm
-    if (qtTranslatorBase.load("qt_" + lang, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
-        QApplication::installTranslator(&qtTranslatorBase);
-
-    // Load e.g. qt_de_DE.qm
-    if (qtTranslator.load("qt_" + lang_territory, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
-        QApplication::installTranslator(&qtTranslator);
-
-    // Load e.g. bitcoin_de.qm (shortcut "de" needs to be defined in bitcoin.qrc)
-    if (translatorBase.load(lang, ":/translations/"))
-        QApplication::installTranslator(&translatorBase);
-
-    // Load e.g. bitcoin_de_DE.qm (shortcut "de_DE" needs to be defined in bitcoin.qrc)
-    if (translator.load(lang_territory, ":/translations/"))
-        QApplication::installTranslator(&translator);
-}
-
 static bool InitSettings()
 {
     if (!gArgs.GetSettingsPath()) {
@@ -314,6 +276,43 @@ void BitcoinApplication::parameterSetup()
 void BitcoinApplication::InitPruneSetting(int64_t prune_MiB)
 {
     optionsModel->SetPruneTargetGB(PruneMiBtoGB(prune_MiB), true);
+}
+
+void BitcoinApplication::initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTranslator, QTranslator &translatorBase, QTranslator &translator)
+{
+    // Remove old translators
+    removeTranslator(&qtTranslatorBase);
+    removeTranslator(&qtTranslator);
+    removeTranslator(&translatorBase);
+    removeTranslator(&translator);
+
+    // Get desired locale (e.g. "de_DE")
+    // 1) System default language
+    QString lang_territory = GetLangTerritory();
+
+    // Convert to "de" only by truncating "_DE"
+    QString lang = lang_territory;
+    lang.truncate(lang_territory.lastIndexOf('_'));
+
+    // Load language files for configured locale:
+    // - First load the translator for the base language, without territory
+    // - Then load the more specific locale translator
+
+    // Load e.g. qt_de.qm
+    if (qtTranslatorBase.load("qt_" + lang, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+        installTranslator(&qtTranslatorBase);
+
+    // Load e.g. qt_de_DE.qm
+    if (qtTranslator.load("qt_" + lang_territory, QLibraryInfo::location(QLibraryInfo::TranslationsPath)))
+        installTranslator(&qtTranslator);
+
+    // Load e.g. bitcoin_de.qm (shortcut "de" needs to be defined in bitcoin.qrc)
+    if (translatorBase.load(lang, ":/translations/"))
+        installTranslator(&translatorBase);
+
+    // Load e.g. bitcoin_de_DE.qm (shortcut "de_DE" needs to be defined in bitcoin.qrc)
+    if (translator.load(lang_territory, ":/translations/"))
+        installTranslator(&translator);
 }
 
 void BitcoinApplication::requestInitialize()
@@ -518,7 +517,7 @@ int GuiMain(int argc, char* argv[])
     /// 4. Initialization of translations, so that intro dialog is in user's language
     // Now that QSettings are accessible, initialize translations
     QTranslator qtTranslatorBase, qtTranslator, translatorBase, translator;
-    initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
+    app.initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
     // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
     // but before showing splash screen.
@@ -581,7 +580,7 @@ int GuiMain(int argc, char* argv[])
     // Allow for separate UI settings for testnets
     QApplication::setApplicationName(networkStyle->getAppName());
     // Re-initialize translations after changing application name (language in network-specific settings can be different)
-    initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
+    app.initTranslations(qtTranslatorBase, qtTranslator, translatorBase, translator);
 
 #ifdef ENABLE_WALLET
     /// 8. URI IPC sending

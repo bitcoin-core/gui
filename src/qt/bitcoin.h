@@ -17,6 +17,7 @@
 #include <optional>
 
 #include <QApplication>
+#include <QTranslator>
 
 class BitcoinGUI;
 class ClientModel;
@@ -47,6 +48,8 @@ public:
     void createOptionsModel(bool resetSettings);
     /// Initialize prune setting
     void InitPruneSetting(int64_t prune_MiB);
+    /** Set up translations */
+    void initTranslations(QTranslator &qtTranslatorBase, QTranslator &qtTranslator, QTranslator &translatorBase, QTranslator &translator);
     /// Create main window
     void createWindow(const NetworkStyle *networkStyle);
     /// Create splash screen
