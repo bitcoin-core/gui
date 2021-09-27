@@ -75,10 +75,6 @@ void OptionsModel::Init(bool resetSettings)
         settings.setValue("nDisplayUnit", BitcoinUnits::BTC);
     nDisplayUnit = settings.value("nDisplayUnit").toInt();
 
-    if (!settings.contains("strThirdPartyTxUrls"))
-        settings.setValue("strThirdPartyTxUrls", "");
-    strThirdPartyTxUrls = settings.value("strThirdPartyTxUrls", "").toString();
-
     if (!settings.contains("fCoinControlFeatures"))
         settings.setValue("fCoinControlFeatures", false);
     fCoinControlFeatures = settings.value("fCoinControlFeatures", false).toBool();
@@ -129,6 +125,10 @@ void OptionsModel::Init(bool resetSettings)
         settings.setValue("SubFeeFromAmount", false);
     }
     m_sub_fee_from_amount = settings.value("SubFeeFromAmount", false).toBool();
+
+    if (!settings.contains("strThirdPartyTxUrls"))
+        settings.setValue("strThirdPartyTxUrls", "");
+    strThirdPartyTxUrls = settings.value("strThirdPartyTxUrls", "").toString();
 #endif
 
     // Network
@@ -349,11 +349,11 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("external_signer_path");
         case SubFeeFromAmount:
             return m_sub_fee_from_amount;
+        case ThirdPartyTxUrls:
+            return strThirdPartyTxUrls;
 #endif
         case DisplayUnit:
             return nDisplayUnit;
-        case ThirdPartyTxUrls:
-            return strThirdPartyTxUrls;
         case Language:
             return settings.value("language");
         case UseEmbeddedMonospacedFont:
@@ -480,16 +480,16 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             m_sub_fee_from_amount = value.toBool();
             settings.setValue("SubFeeFromAmount", m_sub_fee_from_amount);
             break;
-#endif
-        case DisplayUnit:
-            setDisplayUnit(value);
-            break;
         case ThirdPartyTxUrls:
             if (strThirdPartyTxUrls != value.toString()) {
                 strThirdPartyTxUrls = value.toString();
                 settings.setValue("strThirdPartyTxUrls", strThirdPartyTxUrls);
                 setRestartRequired(true);
             }
+            break;
+#endif
+        case DisplayUnit:
+            setDisplayUnit(value);
             break;
         case Language:
             if (settings.value("language") != value) {
