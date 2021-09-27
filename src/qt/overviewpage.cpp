@@ -91,7 +91,7 @@ public:
         }
         else
         {
-            foreground = option.palette.color(QPalette::Text);
+            foreground = COLOR_CONFIRMED;
         }
         painter->setPen(foreground);
         QString amountText = BitcoinUnits::formatWithUnit(unit, amount, true, BitcoinUnits::SeparatorStyle::ALWAYS);
