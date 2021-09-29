@@ -200,21 +200,75 @@ void OptionsDialog::setModel(OptionsModel *_model)
     /* warn when one of the following settings changes by user action (placed here so init via mapper doesn't trigger them) */
 
     /* Main */
-    connect(ui->prune, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    connect(ui->prune, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-prune")) {
+            showRestartWarning();
+        }
+    });
     connect(ui->prune, &QCheckBox::clicked, this, &OptionsDialog::togglePruneWarning);
-    connect(ui->pruneSize, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
-    connect(ui->databaseCache, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
-    connect(ui->externalSignerPath, &QLineEdit::textChanged, [this]{ showRestartWarning(); });
-    connect(ui->threadsScriptVerif, qOverload<int>(&QSpinBox::valueChanged), this, &OptionsDialog::showRestartWarning);
+    connect(ui->pruneSize, qOverload<int>(&QSpinBox::valueChanged), [this] {
+        if (!model->getOverriddenByCommandLine().contains("-prune")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->databaseCache, qOverload<int>(&QSpinBox::valueChanged), [this] {
+        if (!model->getOverriddenByCommandLine().contains("-dbcache")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->externalSignerPath, &QLineEdit::textChanged, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-signer")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->threadsScriptVerif, qOverload<int>(&QSpinBox::valueChanged), [this] {
+        if (!model->getOverriddenByCommandLine().contains("-par")) {
+            showRestartWarning();
+        }
+    });
+
     /* Wallet */
-    connect(ui->spendZeroConfChange, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    connect(ui->spendZeroConfChange, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-spendzeroconfchange")) {
+            showRestartWarning();
+        }
+    });
+
     /* Network */
-    connect(ui->allowIncoming, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
-    connect(ui->enableServer, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
-    connect(ui->connectSocks, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
-    connect(ui->connectSocksTor, &QCheckBox::clicked, this, &OptionsDialog::showRestartWarning);
+    connect(ui->allowIncoming, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-listen")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->enableServer, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-server")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->connectSocks, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-proxy")) {
+            showRestartWarning();
+        }
+    });
+
+    connect(ui->connectSocksTor, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-onion")) {
+            showRestartWarning();
+        }
+    });
+
     /* Display */
-    connect(ui->lang, qOverload<>(&QValueComboBox::valueChanged), [this]{ showRestartWarning(); });
+    connect(ui->lang, qOverload<>(&QValueComboBox::valueChanged), [this] {
+        if (!model->getOverriddenByCommandLine().contains("-lang")) {
+            showRestartWarning();
+        }
+    });
+
     connect(ui->thirdPartyTxUrls, &QLineEdit::textChanged, [this]{ showRestartWarning(); });
 }
 

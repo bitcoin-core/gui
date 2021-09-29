@@ -98,6 +98,7 @@ public:
     void SetPruneTargetGB(int prune_target_gb, bool force = false);
 
     /* Restart flag helper */
+    void MaybeRestartRequired(const QString& option);
     void setRestartRequired(bool fRequired);
     bool isRestartRequired() const;
 

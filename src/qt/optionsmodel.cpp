@@ -415,7 +415,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case ProxyUse:
             if (settings.value("fUseProxy") != value) {
                 settings.setValue("fUseProxy", value.toBool());
-                setRestartRequired(true);
+                MaybeRestartRequired("-proxy");
             }
             break;
         case ProxyIP: {
@@ -423,7 +423,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             if (!ip_port.is_set || ip_port.ip != value.toString()) {
                 ip_port.ip = value.toString();
                 SetProxySetting(settings, "addrProxy", ip_port);
-                setRestartRequired(true);
+                MaybeRestartRequired("-proxy");
             }
         }
         break;
@@ -432,7 +432,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             if (!ip_port.is_set || ip_port.port != value.toString()) {
                 ip_port.port = value.toString();
                 SetProxySetting(settings, "addrProxy", ip_port);
-                setRestartRequired(true);
+                MaybeRestartRequired("-proxy");
             }
         }
         break;
@@ -441,7 +441,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case ProxyUseTor:
             if (settings.value("fUseSeparateProxyTor") != value) {
                 settings.setValue("fUseSeparateProxyTor", value.toBool());
-                setRestartRequired(true);
+                MaybeRestartRequired("-onion");
             }
             break;
         case ProxyIPTor: {
@@ -449,7 +449,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             if (!ip_port.is_set || ip_port.ip != value.toString()) {
                 ip_port.ip = value.toString();
                 SetProxySetting(settings, "addrSeparateProxyTor", ip_port);
-                setRestartRequired(true);
+                MaybeRestartRequired("-onion");
             }
         }
         break;
@@ -458,7 +458,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             if (!ip_port.is_set || ip_port.port != value.toString()) {
                 ip_port.port = value.toString();
                 SetProxySetting(settings, "addrSeparateProxyTor", ip_port);
-                setRestartRequired(true);
+                MaybeRestartRequired("-onion");
             }
         }
         break;
@@ -467,13 +467,13 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case SpendZeroConfChange:
             if (settings.value("bSpendZeroConfChange") != value) {
                 settings.setValue("bSpendZeroConfChange", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-spendzeroconfchange");
             }
             break;
         case ExternalSignerPath:
             if (settings.value("external_signer_path") != value.toString()) {
                 settings.setValue("external_signer_path", value.toString());
-                setRestartRequired(true);
+                MaybeRestartRequired("-signer");
             }
             break;
         case SubFeeFromAmount:
@@ -494,7 +494,7 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case Language:
             if (settings.value("language") != value) {
                 settings.setValue("language", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-lang");
             }
             break;
         case UseEmbeddedMonospacedFont:
@@ -510,37 +510,37 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
         case Prune:
             if (settings.value("bPrune") != value) {
                 settings.setValue("bPrune", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-prune");
             }
             break;
         case PruneSize:
             if (settings.value("nPruneSize") != value) {
                 settings.setValue("nPruneSize", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-prune");
             }
             break;
         case DatabaseCache:
             if (settings.value("nDatabaseCache") != value) {
                 settings.setValue("nDatabaseCache", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-dbcache");
             }
             break;
         case ThreadsScriptVerif:
             if (settings.value("nThreadsScriptVerif") != value) {
                 settings.setValue("nThreadsScriptVerif", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-par");
             }
             break;
         case Listen:
             if (settings.value("fListen") != value) {
                 settings.setValue("fListen", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-listen");
             }
             break;
         case Server:
             if (settings.value("server") != value) {
                 settings.setValue("server", value);
-                setRestartRequired(true);
+                MaybeRestartRequired("-server");
             }
             break;
         default:
@@ -562,6 +562,13 @@ void OptionsModel::setDisplayUnit(const QVariant &value)
         nDisplayUnit = value.toInt();
         settings.setValue("nDisplayUnit", nDisplayUnit);
         Q_EMIT displayUnitChanged(nDisplayUnit);
+    }
+}
+
+void OptionsModel::MaybeRestartRequired(const QString& option)
+{
+    if (!strOverriddenByCommandLine.contains(option)) {
+        setRestartRequired(true);
     }
 }
 
