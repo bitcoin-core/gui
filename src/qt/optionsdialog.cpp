@@ -218,14 +218,14 @@ void OptionsDialog::setModel(OptionsModel *_model)
         }
     });
 
-    connect(ui->externalSignerPath, &QLineEdit::textChanged, [this] {
-        if (!model->getOverriddenByCommandLine().contains("-signer")) {
+    connect(ui->threadsScriptVerif, qOverload<int>(&QSpinBox::valueChanged), [this] {
+        if (!model->getOverriddenByCommandLine().contains("-par")) {
             showRestartWarning();
         }
     });
 
-    connect(ui->threadsScriptVerif, qOverload<int>(&QSpinBox::valueChanged), [this] {
-        if (!model->getOverriddenByCommandLine().contains("-par")) {
+    connect(ui->enableServer, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-server")) {
             showRestartWarning();
         }
     });
@@ -237,15 +237,15 @@ void OptionsDialog::setModel(OptionsModel *_model)
         }
     });
 
-    /* Network */
-    connect(ui->allowIncoming, &QCheckBox::clicked, [this] {
-        if (!model->getOverriddenByCommandLine().contains("-listen")) {
+    connect(ui->externalSignerPath, &QLineEdit::textChanged, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-signer")) {
             showRestartWarning();
         }
     });
 
-    connect(ui->enableServer, &QCheckBox::clicked, [this] {
-        if (!model->getOverriddenByCommandLine().contains("-server")) {
+    /* Network */
+    connect(ui->allowIncoming, &QCheckBox::clicked, [this] {
+        if (!model->getOverriddenByCommandLine().contains("-listen")) {
             showRestartWarning();
         }
     });
