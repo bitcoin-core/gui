@@ -799,8 +799,16 @@ QString formatBytes(uint64_t bytes)
 {
     if (bytes < 1'000)
         return QObject::tr("%1 B").arg(bytes);
+    if (bytes < 10'000)
+        return QObject::tr("%1 kB").arg(0.01 * (bytes / 10));
+    if (bytes < 100'000)
+        return QObject::tr("%1 kB").arg(0.1 * (bytes / 100));
     if (bytes < 1'000'000)
         return QObject::tr("%1 kB").arg(bytes / 1'000);
+    if (bytes < 10'000'000)
+        return QObject::tr("%1 MB").arg(0.01 * (bytes / 10'000));
+    if (bytes < 100'000'000)
+        return QObject::tr("%1 MB").arg(0.1 * (bytes / 100'000));
     if (bytes < 1'000'000'000)
         return QObject::tr("%1 MB").arg(bytes / 1'000'000);
 
