@@ -1344,10 +1344,12 @@ QString RPCConsole::tabTitle(TabTypes tab_type) const
 QKeySequence RPCConsole::tabShortcut(TabTypes tab_type) const
 {
     switch (tab_type) {
-    case TabTypes::INFO: return QKeySequence(Qt::CTRL + Qt::Key_I);
-    case TabTypes::CONSOLE: return QKeySequence(Qt::CTRL + Qt::Key_T);
-    case TabTypes::GRAPH: return QKeySequence(Qt::CTRL + Qt::Key_N);
-    case TabTypes::PEERS: return QKeySequence(Qt::CTRL + Qt::Key_P);
+    //Accessibility: Enables single left handed gesture access to console tabs
+    case TabTypes::INFO:    return QKeySequence(Qt::CTRL + Qt::Key_1);
+    case TabTypes::CONSOLE: return QKeySequence(Qt::CTRL + Qt::Key_2);
+    case TabTypes::GRAPH:   return QKeySequence(Qt::CTRL + Qt::Key_3);
+    case TabTypes::PEERS:   return QKeySequence(Qt::CTRL + Qt::Key_4);
+
     } // no default case, so the compiler can warn about missing cases
 
     assert(false);
