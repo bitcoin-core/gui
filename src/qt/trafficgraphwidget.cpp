@@ -159,8 +159,7 @@ void TrafficGraphWidget::setGraphRangeMins(int mins)
     int msecsPerSample = nMins * 60 * 1000 / DESIRED_SAMPLES;
     timer->stop();
     timer->setInterval(msecsPerSample);
-
-    clear();
+    timer->start();
 }
 
 void TrafficGraphWidget::clear()
