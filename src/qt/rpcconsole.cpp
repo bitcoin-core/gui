@@ -1129,8 +1129,8 @@ void RPCConsole::scrollToEnd()
 
 void RPCConsole::on_sldGraphRange_valueChanged(int value)
 {
-    const int multiplier = 5; // each position on the slider represents 5 min
-    int mins = value * multiplier;
+    static const std::vector<int> values{1, 2, 5, 10, 20, 30, 60, 2*60, 3*60, 6*60, 12*60, 24*60};
+    int mins = values[value-1];
     setTrafficGraphRange(mins);
 }
 
