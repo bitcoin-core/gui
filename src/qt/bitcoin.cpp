@@ -488,6 +488,7 @@ int GuiMain(int argc, char* argv[])
     QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
 
     // Add new safety native permission dialog for R/W actions.
+    // We need to this for internal and removable volumes, such as an SD card, appear in the file system as part of external storage.
     static const QString write_permission = "android.permission.WRITE_EXTERNAL_STORAGE";
     if (QtAndroid::checkPermission(write_permission) == QtAndroid::PermissionResult::Denied)
         QtAndroid::requestPermissionsSync(QStringList() << write_permission);
