@@ -71,7 +71,7 @@ void TrafficGraphWidget::paintPath(QPainterPath &path, QQueue<float> &samples)
     }
 }
 
-void TrafficGraphWidget::mousePressEvent(QMouseEvent *event)
+void TrafficGraphWidget::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QWidget::mousePressEvent(event);
     fToggle = !fToggle;
