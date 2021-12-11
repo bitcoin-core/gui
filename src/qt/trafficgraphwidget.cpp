@@ -220,9 +220,13 @@ void TrafficGraphWidget::updateDisplay()
     // This function refreshes or deletes the ToolTip.
 
     bool fUpdate = false;
+    static bool last_fToggle = fToggle;
     if (!QToolTip::isVisible()) {
         if (ttpoint >= 0) { // Remove the yellow circle if the ToolTip has gone due to mouse moving elsewhere.
-            ttpoint = -1;
+            if (last_fToggle == fToggle) { // Not lost due to a toggle
+                ttpoint = -1;
+            } else
+                last_fToggle = fToggle;
             fUpdate = true;
         }
     } else if (ttpoint >= 0 && GetTime() >= tt_time + 9) { // ToolTip is about to expire so refresh it.
