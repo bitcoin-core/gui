@@ -133,7 +133,7 @@ private:
     BitcoinUnit m_display_bitcoin_unit;
     QString strThirdPartyTxUrls;
     FontChoice m_font_money{FontChoiceAbstract::EmbeddedFont};
-    FontChoice m_font_qrcodes{FontChoiceAbstract::BestSystemFont};
+    FontChoice m_font_qrcodes{FontChoiceAbstract::EmbeddedFont};
     bool fCoinControlFeatures;
     bool m_sub_fee_from_amount;
     bool m_enable_psbt_controls;
