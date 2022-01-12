@@ -8,6 +8,8 @@
 #include <QWidget>
 #include <QQueue>
 
+#include <chrono>
+
 class ClientModel;
 
 QT_BEGIN_NAMESPACE
@@ -29,7 +31,7 @@ protected:
 
 public Q_SLOTS:
     void updateRates();
-    void setGraphRangeMins(int mins);
+    void setGraphRange(std::chrono::minutes new_range);
     void clear();
 
 private:
@@ -37,7 +39,7 @@ private:
 
     QTimer *timer;
     float fMax;
-    int nMins;
+    long nMins;
     QQueue<float> vSamplesIn;
     QQueue<float> vSamplesOut;
     quint64 nLastBytesIn;

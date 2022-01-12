@@ -11,6 +11,7 @@
 #include <QColor>
 #include <QTimer>
 
+#include <chrono>
 #include <cmath>
 #include <cfloat>
 
@@ -145,22 +146,25 @@ void TrafficGraphWidget::updateRates()
     }
 
     float tmax = 0.0f;
-    for (const float f : vSamplesIn.mid(0,(DESIRED_SAMPLES*(getGraphRangeMins()/5)))) {
+    for (const float f : vSamplesIn.mid(0,(DESIRED_SAMPLES*getGraphRangeMins()/5))) {
         if(f > tmax) tmax = f;
     }
-    for (const float f : vSamplesOut.mid(0,(DESIRED_SAMPLES*(getGraphRangeMins()/5)))) {
+    for (const float f : vSamplesOut.mid(0,(DESIRED_SAMPLES*getGraphRangeMins()/5))) {
         if(f > tmax) tmax = f;
     }
     fMax = tmax;
     update();
 }
 
-void TrafficGraphWidget::setGraphRangeMins(int mins)
+void TrafficGraphWidget::setGraphRange(std::chrono::minutes new_range)
 {
-    nMins = mins;
-    int msecsPerSample = nMins * 60 * 1000 / (DESIRED_SAMPLES * (getGraphRangeMins() / 5));
+    using namespace std::chrono_literals;
+    const auto range{new_range};
+    nMins = new_range.count();
+    auto msecs_per_sample = nMins * 60 * 1000 / (DESIRED_SAMPLES * (range.count() / 5));
     timer->stop();
-    timer->setInterval(msecsPerSample);
+    timer->setInterval(msecs_per_sample);
+
     update();
     timer->start();
 }
