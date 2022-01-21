@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>457</width>
-    <height>126</height>
+    <height>138</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,6 +50,16 @@
       <widget class="QValidatedLineEdit" name="addressEdit">
        <property name="toolTip">
         <string>The address associated with this address list entry. This can only be modified for sending addresses.</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="errorMessage">
+       <property name="styleSheet">
+        <string notr="true">color:red;</string>
+       </property>
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>

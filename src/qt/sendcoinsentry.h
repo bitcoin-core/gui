@@ -68,6 +68,7 @@ private Q_SLOTS:
     void on_addressBookButton_clicked();
     void on_pasteButton_clicked();
     void updateDisplayUnit();
+    void addressEdited(const QString &);
 
 protected:
     void changeEvent(QEvent* e) override;
