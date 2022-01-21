@@ -19,6 +19,8 @@
 #include <QApplication>
 #include <QClipboard>
 
+#include <key_io.h>
+
 SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *parent) :
     QStackedWidget(parent),
     ui(new Ui::SendCoinsEntry),
@@ -50,6 +52,7 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *par
     connect(ui->deleteButton_is, &QPushButton::clicked, this, &SendCoinsEntry::deleteClicked);
     connect(ui->deleteButton_s, &QPushButton::clicked, this, &SendCoinsEntry::deleteClicked);
     connect(ui->useAvailableBalanceButton, &QPushButton::clicked, this, &SendCoinsEntry::useAvailableBalanceClicked);
+    connect(ui->payTo, &QValidatedLineEdit::textEdited, this, &SendCoinsEntry::addressEdited);
 }
 
 SendCoinsEntry::~SendCoinsEntry()
@@ -265,4 +268,25 @@ bool SendCoinsEntry::updateLabel(const QString &address)
     }
 
     return false;
+}
+
+// Address changed
+void SendCoinsEntry::addressEdited(const QString& text)
+{
+    if (text.isEmpty()) // Nothing entered
+    {
+        ui->errorMessage->setText("");
+        return;
+    }
+
+    std::string error_msg;
+
+    if (!IsValidDestination(DecodeDestination(text.toStdString(), error_msg))) // Invalid address
+    {
+        ui->errorMessage->setText(QString::fromStdString(error_msg));
+    }
+    else // Valid address
+    {
+        ui->errorMessage->setText("");
+    }
 }

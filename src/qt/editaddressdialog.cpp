@@ -10,6 +10,7 @@
 
 #include <QDataWidgetMapper>
 #include <QMessageBox>
+#include <key_io.h>
 
 
 EditAddressDialog::EditAddressDialog(Mode _mode, QWidget *parent) :
@@ -43,6 +44,8 @@ EditAddressDialog::EditAddressDialog(Mode _mode, QWidget *parent) :
     GUIUtil::ItemDelegate* delegate = new GUIUtil::ItemDelegate(mapper);
     connect(delegate, &GUIUtil::ItemDelegate::keyEscapePressed, this, &EditAddressDialog::reject);
     mapper->setItemDelegate(delegate);
+
+    connect(ui->addressEdit, &QValidatedLineEdit::textEdited, this, &EditAddressDialog::addressEdited);
 
     GUIUtil::handleCloseWindowShortcut(this);
 }
@@ -163,4 +166,25 @@ void EditAddressDialog::setAddress(const QString &_address)
 {
     this->address = _address;
     ui->addressEdit->setText(_address);
+}
+
+// Address changed
+void EditAddressDialog::addressEdited(const QString& text)
+{
+    if (text.isEmpty()) // Nothing entered
+    {
+        ui->errorMessage->setText("");
+        return;
+    }
+
+    std::string error_msg;
+
+    if (!IsValidDestination(DecodeDestination(text.toStdString(), error_msg))) // Invalid address
+    {
+        ui->errorMessage->setText(QString::fromStdString(error_msg));
+    }
+    else // Valid address
+    {
+        ui->errorMessage->setText("");
+    }
 }

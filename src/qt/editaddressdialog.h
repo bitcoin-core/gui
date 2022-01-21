@@ -42,6 +42,9 @@ public:
 public Q_SLOTS:
     void accept() override;
 
+private Q_SLOTS:
+    void addressEdited(const QString &);
+
 private:
     bool saveCurrentRow();
 
