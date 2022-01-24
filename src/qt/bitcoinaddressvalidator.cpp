@@ -95,3 +95,8 @@ QValidator::State BitcoinAddressCheckValidator::validate(QString &input, int &po
 
     return QValidator::Invalid;
 }
+
+void BitcoinAddressErrorLocator::locateErrors(const QString& str, std::string& error_message, std::vector<int>* error_locations) const
+{
+    DecodeDestination(str.toStdString(), error_message, error_locations);
+}

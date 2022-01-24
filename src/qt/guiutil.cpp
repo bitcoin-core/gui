@@ -123,6 +123,7 @@ void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent)
         QString::fromStdString(DummyAddress(Params()))));
     widget->setValidator(new BitcoinAddressEntryValidator(parent));
     widget->setCheckValidator(new BitcoinAddressCheckValidator(parent));
+    widget->setErrorLocator(new BitcoinAddressErrorLocator());
 }
 
 void AddButtonShortcut(QAbstractButton* button, const QKeySequence& shortcut)

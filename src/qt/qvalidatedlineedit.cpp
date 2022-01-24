@@ -7,10 +7,15 @@
 #include <qt/bitcoinaddressvalidator.h>
 #include <qt/guiconstants.h>
 
+#include <QContextMenuEvent>
+#include <QMenu>
+#include <QMessageBox>
+
 QValidatedLineEdit::QValidatedLineEdit(QWidget *parent) :
     QLineEdit(parent),
     valid(true),
-    checkValidator(nullptr)
+    checkValidator(nullptr),
+    errorLocator(nullptr)
 {
     connect(this, &QValidatedLineEdit::textChanged, this, &QValidatedLineEdit::markValid);
 }
@@ -108,6 +113,11 @@ void QValidatedLineEdit::setCheckValidator(const QValidator *v)
     checkValidator = v;
 }
 
+void QValidatedLineEdit::setErrorLocator(const ErrorLocator *e)
+{
+    errorLocator = e;
+}
+
 bool QValidatedLineEdit::isValid()
 {
     // use checkValidator in case the QValidatedLineEdit is disabled
@@ -120,4 +130,53 @@ bool QValidatedLineEdit::isValid()
     }
 
     return valid;
+}
+
+void QValidatedLineEdit::locateErrors()
+{
+    if (!errorLocator) return;
+
+    // Perform error location on the input
+    QString input = text();
+    std::vector<int> error_locations{};
+    std::string error_message;
+    errorLocator->locateErrors(input, error_message, &error_locations);
+
+    if (error_message.empty()) {
+        QMessageBox::information(this, "Error locator", "No errors detected.", QMessageBox::Ok);
+    } else {
+        QString error_text = "Error: " + QString::fromStdString(error_message) + "<br />";
+        if (!error_locations.empty()) {
+            error_text += "<pre>";
+            int prev_loc = 0;
+            for (int loc : error_locations) {
+                error_text += input.mid(prev_loc, loc - prev_loc);
+                error_text +=  QString("<FONT COLOR='#ff0000'>%1</FONT>").arg(input[loc]);
+                prev_loc = loc + 1;
+            }
+            if (prev_loc < input.size()) {
+                error_text += input.right(input.size() - prev_loc);
+            }
+            error_text += "</pre>";
+        }
+        QMessageBox msg = QMessageBox(QMessageBox::Information, "Error locator", error_text, QMessageBox::Ok, parentWidget());
+        msg.exec();
+    }
+}
+
+void QValidatedLineEdit::contextMenuEvent(QContextMenuEvent *event)
+{
+    QMenu *contextMenu = createStandardContextMenu();
+    if (errorLocator) {
+        contextMenu->addAction(tr("Attempt error location"), this, &QValidatedLineEdit::locateErrors);
+    }
+    contextMenu->exec(event->globalPos());
+    delete contextMenu;
+}
+
+QValidatedLineEdit::~QValidatedLineEdit()
+{
+    if (errorLocator) {
+        delete errorLocator;
+    }
 }
