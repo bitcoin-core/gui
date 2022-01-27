@@ -12,6 +12,7 @@
 #include <QTimer>
 
 #include <cmath>
+#include <cfloat>
 
 #define DESIRED_SAMPLES         800
 
@@ -135,10 +136,10 @@ void TrafficGraphWidget::updateRates()
     nLastBytesIn = bytesIn;
     nLastBytesOut = bytesOut;
 
-    while(vSamplesIn.size() > DESIRED_SAMPLES * (getGraphRangeMins() / 5)) {
+    while(vSamplesIn.size()  > FLT_MAX - 1) {
         vSamplesIn.pop_back();
     }
-    while(vSamplesOut.size() > DESIRED_SAMPLES * (getGraphRangeMins() / 5)) {
+    while(vSamplesOut.size() > FLT_MAX - 1) {
         vSamplesOut.pop_back();
     }
 
@@ -156,7 +157,7 @@ void TrafficGraphWidget::updateRates()
 void TrafficGraphWidget::setGraphRangeMins(int mins)
 {
     nMins = mins;
-    int msecsPerSample = nMins * 60 * 1000 / DESIRED_SAMPLES;
+    int msecsPerSample = nMins * 60 * 1000 / (DESIRED_SAMPLES * (getGraphRangeMins() / 5));
     timer->stop();
     timer->setInterval(msecsPerSample);
     update();
