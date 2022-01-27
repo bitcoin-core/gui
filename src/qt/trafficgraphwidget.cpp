@@ -121,6 +121,7 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *)
         painter.setPen(Qt::red);
         painter.drawPath(p);
     }
+    painter.fillRect(0,0,XMARGIN,height(), Qt::black);
 }
 
 void TrafficGraphWidget::updateRates()
