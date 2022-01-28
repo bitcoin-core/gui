@@ -145,10 +145,10 @@ void TrafficGraphWidget::updateRates()
     }
 
     float tmax = 0.0f;
-    for (const float f : vSamplesIn) {
+    for (const float f : vSamplesIn.mid(0,(DESIRED_SAMPLES*(getGraphRangeMins()/5)))) {
         if(f > tmax) tmax = f;
     }
-    for (const float f : vSamplesOut) {
+    for (const float f : vSamplesOut.mid(0,(DESIRED_SAMPLES*(getGraphRangeMins()/5)))) {
         if(f > tmax) tmax = f;
     }
     fMax = tmax;
