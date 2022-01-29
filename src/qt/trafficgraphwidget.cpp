@@ -85,7 +85,7 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *)
 
     if(fMax <= 0.0f) return;
 
-    QColor axisCol(Qt::gray);
+    QColor axisCol(QColor(78,78,78,255));
     int h = height() - YMARGIN * 2;
     painter.setPen(axisCol);
     painter.drawLine(XMARGIN, YMARGIN + h, width() - XMARGIN, YMARGIN + h);
@@ -101,7 +101,7 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *)
     if(fMax / val <= (fToggle ? 10.0f : 3.0f)) {
         float oldval = val;
         val = pow(10.0f, base - 1);
-        painter.setPen(axisCol.darker());
+        painter.setPen(axisCol.lighter());
         painter.drawText(XMARGIN, y_value(val)-yMarginText, QString("%1 %2").arg(val).arg(units));
         if (fToggle) {
             int yy = y_value(val*0.1);
@@ -126,20 +126,25 @@ void TrafficGraphWidget::paintEvent(QPaintEvent *)
     painter.drawText(XMARGIN, y_value(val)-yMarginText, QString("%1 %2").arg(val).arg(units));
 
     painter.setRenderHint(QPainter::Antialiasing);
+
     if(!vSamplesIn.empty()) {
         QPainterPath p;
         paintPath(p, vSamplesIn);
-        painter.fillPath(p, QColor(0, 255, 0, 128));
-        painter.setPen(Qt::green);
+        QPen ppen (QColor(0,255,0,0),0,Qt::SolidLine);
+        painter.setPen(ppen);
+        painter.fillPath(p, QColor(0, 255, 0, 255));
         painter.drawPath(p);
     }
+
     if(!vSamplesOut.empty()) {
         QPainterPath p;
         paintPath(p, vSamplesOut);
-        painter.fillPath(p, QColor(255, 0, 0, 128));
-        painter.setPen(Qt::red);
+        QPen ppen (QColor(255,0,0,0),0,Qt::SolidLine);
+        painter.setPen(ppen);
+        painter.fillPath(p, QColor(255, 0, 0, 255));
         painter.drawPath(p);
     }
+
     painter.fillRect(0,0,XMARGIN,height(), Qt::black);
 }
 
