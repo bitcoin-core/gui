@@ -1228,6 +1228,22 @@ void RPCConsole::updateDetailWidget()
 void RPCConsole::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+    if (width()<=minimumWidth()*2){
+        ui->groupBox->hide();
+    }else{
+        ui->groupBox->show();
+    }
+    if (height()==minimumHeight()){
+        ui->sldGraphRange->hide();
+        ui->lblGraphRange->hide();
+        ui->btnClearTrafficGraph->hide();
+    }else{
+        ui->sldGraphRange->show();
+        ui->lblGraphRange->show();
+        ui->btnClearTrafficGraph->show();
+    }
+
+
 }
 
 void RPCConsole::showEvent(QShowEvent *event)
