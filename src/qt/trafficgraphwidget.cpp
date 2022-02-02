@@ -15,7 +15,7 @@
 #include <cmath>
 #include <cfloat>
 
-#define DESIRED_SAMPLES         800
+#define DESIRED_SAMPLES         300
 
 #define XMARGIN                 10
 #define YMARGIN                 10
