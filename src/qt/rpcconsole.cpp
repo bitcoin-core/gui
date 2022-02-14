@@ -574,6 +574,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     m_node.rpcSetTimerInterfaceIfUnset(rpcTimerInterface);
 
     setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
+    ui->groupBox->setFrameStyle(QFrame::Panel | QFrame::Raised);
     updateDetailWidget();
 
     consoleFontSize = settings.value(fontSizeSettingsKey, QFont().pointSize()).toInt();
@@ -650,14 +651,8 @@ bool RPCConsole::eventFilter(QObject* obj, QEvent *event)
     return QWidget::eventFilter(obj, event);
 }
 
-void RPCConsole::onTrafficGraphClicked(){
-
-    LogPrintf("%s panelToggle = %s\n", __func__, ui->trafficGraph->panelToggle);
-    if (ui->trafficGraph->panelToggle){
-        ui->groupBox->hide();
-    }else{
-        ui->groupBox->show();
-    }
+void RPCConsole::onTrafficGraphClicked()
+{
     if (ui->trafficGraph->panelToggle){
         ui->sldGraphRange->hide();
         ui->lblGraphRange->hide();
@@ -667,11 +662,6 @@ void RPCConsole::onTrafficGraphClicked(){
         ui->lblGraphRange->show();
         ui->btnClearTrafficGraph->show();
     }
-
-
-
-
-
 }
 
 void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_t bestblock_date, double verification_progress)
@@ -1253,11 +1243,6 @@ void RPCConsole::updateDetailWidget()
 void RPCConsole::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
-    if (width()<=minimumWidth()*2){
-        ui->groupBox->hide();
-    }else{
-        ui->groupBox->show();
-    }
     if (height()==minimumHeight()){
         ui->sldGraphRange->hide();
         ui->lblGraphRange->hide();
@@ -1267,8 +1252,6 @@ void RPCConsole::resizeEvent(QResizeEvent *event)
         ui->lblGraphRange->show();
         ui->btnClearTrafficGraph->show();
     }
-
-
 }
 
 void RPCConsole::showEvent(QShowEvent *event)
