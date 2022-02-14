@@ -25,6 +25,7 @@ public:
     explicit TrafficGraphWidget(QWidget *parent = nullptr);
     void setClientModel(ClientModel *model);
     std::chrono::minutes getGraphRange() const;
+    bool panelToggle = false;
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -32,7 +33,11 @@ protected:
 public Q_SLOTS:
     void updateRates();
     void setGraphRange(std::chrono::minutes new_range);
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void clear();
+
+Q_SIGNALS:
+    void trafficGraphClicked(QWidget*, QMouseEvent *event, bool panelToggle);
 
 private:
     void paintPath(QPainterPath &path, QQueue<float> &samples);

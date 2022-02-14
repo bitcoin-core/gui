@@ -561,6 +561,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     connect(ui->fontBiggerButton, &QAbstractButton::clicked, this, &RPCConsole::fontBigger);
     connect(ui->fontSmallerButton, &QAbstractButton::clicked, this, &RPCConsole::fontSmaller);
     connect(ui->btnClearTrafficGraph, &QPushButton::clicked, ui->trafficGraph, &TrafficGraphWidget::clear);
+    connect(ui->trafficGraph, &TrafficGraphWidget::trafficGraphClicked, this, &RPCConsole::onTrafficGraphClicked);
 
     // disable the wallet selector by default
     ui->WalletSelector->setVisible(false);
@@ -647,6 +648,30 @@ bool RPCConsole::eventFilter(QObject* obj, QEvent *event)
         }
     }
     return QWidget::eventFilter(obj, event);
+}
+
+void RPCConsole::onTrafficGraphClicked(){
+
+    LogPrintf("%s panelToggle = %s\n", __func__, ui->trafficGraph->panelToggle);
+    if (ui->trafficGraph->panelToggle){
+        ui->groupBox->hide();
+    }else{
+        ui->groupBox->show();
+    }
+    if (ui->trafficGraph->panelToggle){
+        ui->sldGraphRange->hide();
+        ui->lblGraphRange->hide();
+        ui->btnClearTrafficGraph->hide();
+    }else{
+        ui->sldGraphRange->show();
+        ui->lblGraphRange->show();
+        ui->btnClearTrafficGraph->show();
+    }
+
+
+
+
+
 }
 
 void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_t bestblock_date, double verification_progress)

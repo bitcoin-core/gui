@@ -160,6 +160,15 @@ void TrafficGraphWidget::setGraphRange(std::chrono::minutes new_range)
     clear();
 }
 
+void TrafficGraphWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    QWidget::mousePressEvent(event);
+    panelToggle = !panelToggle;
+    Q_EMIT trafficGraphClicked(this, event, panelToggle);
+    LogPrintf("%s panelToggle = %s\n", __func__, panelToggle);
+    update();
+}
+
 void TrafficGraphWidget::clear()
 {
     timer->stop();
