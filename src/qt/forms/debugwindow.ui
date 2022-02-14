@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>740</width>
-    <height>430</height>
+    <width>777</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,7 +36,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="tab_info">
       <attribute name="title">
@@ -624,86 +624,18 @@
             </sizepolicy>
            </property>
            <layout class="QGridLayout" name="totalsGridLayout">
-            <item row="0" column="1">
-             <widget class="QGroupBox" name="totalsGroupBox">
-               <property name="minimumSize">
-                <size>
-                 <width>160</width>
-                 <height>40</height>
-                </size>
-               </property>
-              <property name="styleSheet">
-               <string notr="true">background:rgba(0, 0, 0, 64)</string>
+            <item row="0" column="2">
+             <spacer name="horizontalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
               </property>
-              <layout class="QGridLayout" name="sentLayout">
-               <item row="1" column="0">
-                <layout class="QHBoxLayout" name="sentHorzLayout">
-                 <item>
-                  <widget class="QLabel" name="sentLabel">
-                   <property name="styleSheet">
-                    <string notr="true">background:rgba(0, 0, 0, 16);color:rgb(255, 0, 0, 255)</string>
-                   </property>
-                   <property name="text">
-                    <string>Sent</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="lblBytesOut">
-                   <property name="minimumSize">
-                    <size>
-                     <width>50</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background:rgba(0, 0, 0, 16);color:rgb(255, 255, 255, 255)</string>
-                   </property>
-                   <property name="text">
-                    <string>### MB</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignTrailing|Qt::AlignRight|Qt::AlignVCenter</set>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item row="0" column="0">
-                <layout class="QHBoxLayout" name="receivedHorzLayout">
-                 <item>
-                  <widget class="QLabel" name="receivedLabel">
-                   <property name="styleSheet">
-                    <string notr="true">background:rgba(0, 0, 0, 16);color:rgb(0, 255, 0)</string>
-                   </property>
-                   <property name="text">
-                    <string>Received</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QLabel" name="lblBytesIn">
-                   <property name="minimumSize">
-                    <size>
-                     <width>50</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="styleSheet">
-                    <string notr="true">background:rgba(0, 0, 0, 16);color:white</string>
-                   </property>
-                   <property name="text">
-                    <string>### MB</string>
-                   </property>
-                   <property name="alignment">
-                    <set>Qt::AlignTrailing|Qt::AlignRight|Qt::AlignVCenter</set>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-              </layout>
-             </widget>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>985</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
             </item>
             <item row="1" column="1">
              <spacer name="verticalSpacer_4">
@@ -718,18 +650,151 @@
               </property>
              </spacer>
             </item>
-            <item row="0" column="2">
-             <spacer name="horizontalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
+            <item row="0" column="1">
+             <widget class="QFrame" name="totalsFrame">
+              <property name="minimumSize">
                <size>
-                <width>985</width>
-                <height>20</height>
+                <width>184</width>
+                <height>70</height>
                </size>
               </property>
-             </spacer>
+              <property name="styleSheet">
+               <string notr="true">background:rgba(218, 218, 218, 255)</string>
+              </property>
+              <layout class="QGridLayout" name="sentLayout">
+               <item row="1" column="0">
+                <layout class="QHBoxLayout" name="sentHorzLayout">
+                 <item>
+                  <widget class="QFrame" name="sentLight">
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>5</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>20</width>
+                     <height>5</height>
+                    </size>
+                   </property>
+                   <property name="autoFillBackground">
+                    <bool>false</bool>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color:rgba(255,0,0,255)</string>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="sentLabel">
+                   <property name="minimumSize">
+                    <size>
+                     <width>57</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background:rgba(0, 0, 0, 0);color:rgb(0, 0, 0, 255)</string>
+                   </property>
+                   <property name="text">
+                    <string>Sent</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblBytesOut">
+                   <property name="minimumSize">
+                    <size>
+                     <width>57</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background:rgba(0, 0, 0, 0);color:rgb(0, 0, 0)</string>
+                   </property>
+                   <property name="text">
+                    <string>### MB</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item row="0" column="0">
+                <layout class="QHBoxLayout" name="receivedHorzLayout">
+                 <item>
+                  <widget class="QFrame" name="recieveLight">
+                   <property name="minimumSize">
+                    <size>
+                     <width>20</width>
+                     <height>5</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>12</width>
+                     <height>5</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background-color:rgba(0,255,0,255)</string>
+                   </property>
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="receivedLabel">
+                   <property name="minimumSize">
+                    <size>
+                     <width>57</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background:rgba(0, 0, 0, 0);color:rgb(0, 0, 0)</string>
+                   </property>
+                   <property name="text">
+                    <string>Received</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLabel" name="lblBytesIn">
+                   <property name="minimumSize">
+                    <size>
+                     <width>57</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">background:rgba(0, 0, 0, 0);color:rgb(0, 0, 0)</string>
+                   </property>
+                   <property name="text">
+                    <string>### MB</string>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+              </layout>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -953,8 +1018,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>300</width>
-                <height>426</height>
+                <width>274</width>
+                <height>688</height>
                </rect>
               </property>
               <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1">

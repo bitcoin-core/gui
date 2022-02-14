@@ -574,7 +574,8 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     m_node.rpcSetTimerInterfaceIfUnset(rpcTimerInterface);
 
     setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
-    ui->groupBox->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    ui->totalsFrame->setFrameStyle(QFrame::Panel | QFrame::Raised);
+    ui->totalsFrame->setStyleSheet("QFrame#totalsFrame{background:rgba(189,189,189,227);border-top-left-radius: 2px;border-top-right-radius: 2px;border-bottom-right-radius: 2px;border-bottom-left-radius: 2px;}");
     updateDetailWidget();
 
     consoleFontSize = settings.value(fontSizeSettingsKey, QFont().pointSize()).toInt();
