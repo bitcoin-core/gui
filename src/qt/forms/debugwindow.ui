@@ -630,19 +630,25 @@
            <item>
             <widget class="QSlider" name="sldGraphRange">
              <property name="minimum">
-              <number>1</number>
+              <number>0</number>
              </property>
              <property name="maximum">
-              <number>288</number>
+              <number>2400</number>
              </property>
              <property name="pageStep">
-              <number>12</number>
+              <number>200</number>
              </property>
              <property name="value">
-              <number>6</number>
+              <number>0</number>
              </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="tickPosition">
+              <enum>QSlider::TicksBelow</enum>
+             </property>
+             <property name="tickInterval">
+              <number>200</number>
              </property>
             </widget>
            </item>
@@ -656,16 +662,6 @@
              </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="btnClearTrafficGraph">
-             <property name="text">
-              <string>&amp;Reset</string>
-             </property>
-             <property name="autoDefault">
-              <bool>false</bool>
              </property>
             </widget>
            </item>
