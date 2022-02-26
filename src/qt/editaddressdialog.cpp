@@ -3,9 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <qt/editaddressdialog.h>
-#include <qt/forms/ui_editaddressdialog.h>
 
+#include <key_io.h>
 #include <qt/addresstablemodel.h>
+#include <qt/forms/ui_editaddressdialog.h>
 #include <qt/guiutil.h>
 
 #include <QDataWidgetMapper>
@@ -43,6 +44,8 @@ EditAddressDialog::EditAddressDialog(Mode _mode, QWidget *parent) :
     GUIUtil::ItemDelegate* delegate = new GUIUtil::ItemDelegate(mapper);
     connect(delegate, &GUIUtil::ItemDelegate::keyEscapePressed, this, &EditAddressDialog::reject);
     mapper->setItemDelegate(delegate);
+
+    connect(ui->addressEdit, &QValidatedLineEdit::textEdited, this, &EditAddressDialog::addressEdited);
 
     GUIUtil::handleCloseWindowShortcut(this);
 }
@@ -163,4 +166,16 @@ void EditAddressDialog::setAddress(const QString &_address)
 {
     this->address = _address;
     ui->addressEdit->setText(_address);
+}
+
+// Address changed
+void EditAddressDialog::addressEdited(const QString& address)
+{
+    ui->addressErrorLabel->setStyleSheet("QLabel{color:red;}");
+
+    if (!address.isEmpty() && !IsValidDestination(DecodeDestination(address.toStdString()))) {
+        ui->addressErrorLabel->setText(tr("Warning: Invalid Bitcoin address"));
+    } else {
+        ui->addressErrorLabel->setText("");
+    }
 }
