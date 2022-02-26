@@ -7,10 +7,11 @@
 #endif
 
 #include <qt/sendcoinsentry.h>
-#include <qt/forms/ui_sendcoinsentry.h>
 
+#include <key_io.h>
 #include <qt/addressbookpage.h>
 #include <qt/addresstablemodel.h>
+#include <qt/forms/ui_sendcoinsentry.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 #include <qt/platformstyle.h>
@@ -50,6 +51,7 @@ SendCoinsEntry::SendCoinsEntry(const PlatformStyle *_platformStyle, QWidget *par
     connect(ui->deleteButton_is, &QPushButton::clicked, this, &SendCoinsEntry::deleteClicked);
     connect(ui->deleteButton_s, &QPushButton::clicked, this, &SendCoinsEntry::deleteClicked);
     connect(ui->useAvailableBalanceButton, &QPushButton::clicked, this, &SendCoinsEntry::useAvailableBalanceClicked);
+    connect(ui->payTo, &QValidatedLineEdit::textEdited, this, &SendCoinsEntry::addressEdited);
 }
 
 SendCoinsEntry::~SendCoinsEntry()
@@ -265,4 +267,16 @@ bool SendCoinsEntry::updateLabel(const QString &address)
     }
 
     return false;
+}
+
+// Address changed
+void SendCoinsEntry::addressEdited(const QString& address)
+{
+    ui->PayToLabel->setStyleSheet("QLabel{color:red;}");
+
+    if (!address.isEmpty() && !IsValidDestination(DecodeDestination(address.toStdString()))) {
+        ui->PayToLabel->setText(tr("Warning: Invalid Bitcoin address"));
+    } else {
+        ui->PayToLabel->setText("");
+    }
 }

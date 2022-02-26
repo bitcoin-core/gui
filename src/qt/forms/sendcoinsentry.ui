@@ -55,6 +55,16 @@
        <widget class="QValidatedLineEdit" name="payTo">
         <property name="toolTip">
          <string>The Bitcoin address to send the payment to</string>
+         </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="PayToLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="margin">
+         <number>2</number>
         </property>
        </widget>
       </item>
