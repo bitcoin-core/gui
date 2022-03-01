@@ -263,7 +263,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
             {
                 recipients.append(entry->getValue());
             }
-            else if (valid)
+            else
             {
                 ui->scrollArea->ensureWidgetVisible(entry);
                 valid = false;
