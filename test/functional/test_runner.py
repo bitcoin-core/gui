@@ -373,7 +373,7 @@ BASE_SCRIPTS = [
     'feature_presegwit_node_upgrade.py',
     'feature_settings.py',
     'rpc_getdescriptorinfo.py',
-    'rpc_mempool_info.py',
+    'rpc_gettxspendingprevout.py',
     'rpc_help.py',
     'feature_framework_testshell.py',
     'tool_rpcauth.py',
