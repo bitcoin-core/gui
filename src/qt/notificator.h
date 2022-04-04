@@ -68,7 +68,7 @@ private:
 
     void notifyDBus(Class cls, const QString &title, const QString &text, const QIcon &icon, int millisTimeout);
 #endif
-    void notifySystray(Class cls, const QString &title, const QString &text, int millisTimeout);
+    void notifySystray(Class cls, const QString &title, const QString &text, const QIcon &icon, int millisTimeout);
 #ifdef Q_OS_MAC
     void notifyMacUserNotificationCenter(const QString &title, const QString &text);
 #endif
