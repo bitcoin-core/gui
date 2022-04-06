@@ -1126,7 +1126,7 @@ void BitcoinGUI::message(const QString& title, QString message, unsigned int sty
     QString strTitle{PACKAGE_NAME};
     // Default to information icon
     int nMBoxIcon = QMessageBox::Information;
-    int nNotifyIcon = Notificator::Information;
+    Notificator::Class nNotifyIcon = Notificator::Information;
 
     QString msgType;
     if (!title.isEmpty()) {
@@ -1176,7 +1176,7 @@ void BitcoinGUI::message(const QString& title, QString message, unsigned int sty
         if (ret != nullptr)
             *ret = r == QMessageBox::Ok;
     } else {
-        notificator->notify(static_cast<Notificator::Class>(nNotifyIcon), strTitle, message);
+        notificator->notify(nNotifyIcon, strTitle, message);
     }
 }
 

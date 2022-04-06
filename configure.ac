@@ -1291,7 +1291,6 @@ if test "$enable_fuzz" = "yes"; then
   build_bitcoin_libs=no
   bitcoin_enable_qt=no
   bitcoin_enable_qt_test=no
-  bitcoin_enable_qt_dbus=no
   use_bench=no
   use_external_signer=no
   use_upnp=no
@@ -1318,7 +1317,7 @@ if test "$enable_fuzz" = "yes"; then
 else
   BITCOIN_QT_INIT
 
-  dnl sets $bitcoin_enable_qt, $bitcoin_enable_qt_test, $bitcoin_enable_qt_dbus
+  dnl sets $bitcoin_enable_qt, $bitcoin_enable_qt_test
   BITCOIN_QT_CONFIGURE([5.11.3])
 
   dnl Keep a copy of the original $QT_INCLUDES and use it when invoking qt's moc
@@ -1757,13 +1756,6 @@ fi
 dnl these are only used when qt is enabled
 BUILD_TEST_QT=""
 if test "$bitcoin_enable_qt" != "no"; then
-  dnl enable dbus support
-  AC_MSG_CHECKING([whether to build GUI with support for D-Bus])
-  if test "$bitcoin_enable_qt_dbus" != "no"; then
-    AC_DEFINE([USE_DBUS], [1], [Define if dbus support should be compiled in])
-  fi
-  AC_MSG_RESULT([$bitcoin_enable_qt_dbus])
-
   dnl enable qr support
   AC_MSG_CHECKING([whether to build GUI with support for QR codes])
   if test "$have_qrencode" = "no"; then
