@@ -46,12 +46,9 @@ protected:
 
         auto address = model->index(row, AddressTableModel::Address, parent);
 
-        if (filterRegExp().indexIn(model->data(address).toString()) < 0 &&
-            filterRegExp().indexIn(model->data(label).toString()) < 0) {
-            return false;
-        }
-
-        return true;
+        const auto pattern = filterRegExp();
+        return (model->data(address).toString().contains(pattern) ||
+                model->data(label).toString().contains(pattern));
     }
 };
 
@@ -143,7 +140,9 @@ void AddressBookPage::setModel(AddressTableModel *_model)
     proxyModel = new AddressBookSortFilterProxyModel(type, this);
     proxyModel->setSourceModel(_model);
 
-    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
+    connect(ui->searchLineEdit, &QLineEdit::textChanged, [this](const QString& pattern) {
+        proxyModel->setFilterFixedString(pattern);
+    });
 
     ui->tableView->setModel(proxyModel);
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
