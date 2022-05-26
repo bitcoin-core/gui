@@ -93,7 +93,6 @@ private:
     const PlatformStyle *platformStyle;
 
     void subscribeToCoreSignals();
-    void unsubscribeFromCoreSignals();
 
     QString lookupAddress(const std::string &address, bool tooltip) const;
     QVariant addressColor(const TransactionRecord *wtx) const;

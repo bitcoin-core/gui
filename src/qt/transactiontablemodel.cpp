@@ -266,7 +266,6 @@ TransactionTableModel::TransactionTableModel(const PlatformStyle *_platformStyle
 
 TransactionTableModel::~TransactionTableModel()
 {
-    unsubscribeFromCoreSignals();
     delete priv;
 }
 
@@ -753,11 +752,4 @@ void TransactionTableModel::subscribeToCoreSignals()
         priv->m_loading = progress < 100;
         priv->DispatchNotifications();
     });
-}
-
-void TransactionTableModel::unsubscribeFromCoreSignals()
-{
-    // Disconnect signals from wallet
-    m_handler_transaction_changed->disconnect();
-    m_handler_show_progress->disconnect();
 }
