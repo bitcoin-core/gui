@@ -14,9 +14,11 @@
 
 #include <qt/walletmodeltransaction.h>
 
+#include <interfaces/handler.h>
 #include <interfaces/wallet.h>
 #include <support/allocators/secure.h>
 
+#include <memory>
 #include <vector>
 
 #include <QObject>
@@ -55,7 +57,6 @@ class WalletModel : public QObject
 
 public:
     explicit WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel& client_model, const PlatformStyle *platformStyle, QObject *parent = nullptr);
-    ~WalletModel();
 
     enum StatusCode // Returned by sendCoins
     {
@@ -111,7 +112,7 @@ public:
     bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString());
     bool changePassphrase(const SecureString &oldPass, const SecureString &newPass);
 
-    // RAI object for unlocking wallet, returned by requestUnlock()
+    // RAII object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
     {
     public:
@@ -187,7 +188,6 @@ private:
     uint256 m_cached_last_update_tip{};
 
     void subscribeToCoreSignals();
-    void unsubscribeFromCoreSignals();
     void checkBalanceChanged(const interfaces::WalletBalances& new_balances);
 
 Q_SIGNALS:

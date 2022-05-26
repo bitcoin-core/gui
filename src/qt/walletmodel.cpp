@@ -60,11 +60,6 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
     subscribeToCoreSignals();
 }
 
-WalletModel::~WalletModel()
-{
-    unsubscribeFromCoreSignals();
-}
-
 void WalletModel::startPollBalance()
 {
     // This timer will be fired repeatedly to update the balance
@@ -418,18 +413,6 @@ void WalletModel::subscribeToCoreSignals()
     m_handler_show_progress = m_wallet->handleShowProgress(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2));
     m_handler_watch_only_changed = m_wallet->handleWatchOnlyChanged(std::bind(NotifyWatchonlyChanged, this, std::placeholders::_1));
     m_handler_can_get_addrs_changed = m_wallet->handleCanGetAddressesChanged(std::bind(NotifyCanGetAddressesChanged, this));
-}
-
-void WalletModel::unsubscribeFromCoreSignals()
-{
-    // Disconnect signals from wallet
-    m_handler_unload->disconnect();
-    m_handler_status_changed->disconnect();
-    m_handler_address_book_changed->disconnect();
-    m_handler_transaction_changed->disconnect();
-    m_handler_show_progress->disconnect();
-    m_handler_watch_only_changed->disconnect();
-    m_handler_can_get_addrs_changed->disconnect();
 }
 
 // WalletModel::UnlockContext implementation
