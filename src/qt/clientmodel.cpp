@@ -69,8 +69,6 @@ ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QO
 
 ClientModel::~ClientModel()
 {
-    unsubscribeFromCoreSignals();
-
     m_thread->quit();
     m_thread->wait();
 }
@@ -270,17 +268,6 @@ void ClientModel::subscribeToCoreSignals()
         [this](SynchronizationState sync_state, interfaces::BlockTip tip, double verification_progress) {
             TipChanged(sync_state, tip, verification_progress, /*header=*/true);
         });
-}
-
-void ClientModel::unsubscribeFromCoreSignals()
-{
-    m_handler_show_progress->disconnect();
-    m_handler_notify_num_connections_changed->disconnect();
-    m_handler_notify_network_active_changed->disconnect();
-    m_handler_notify_alert_changed->disconnect();
-    m_handler_banned_list_changed->disconnect();
-    m_handler_notify_block_tip->disconnect();
-    m_handler_notify_header_tip->disconnect();
 }
 
 bool ClientModel::getProxyInfo(std::string& ip_port) const

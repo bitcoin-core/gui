@@ -107,7 +107,6 @@ private:
 
     void TipChanged(SynchronizationState sync_state, interfaces::BlockTip tip, double verification_progress, bool header);
     void subscribeToCoreSignals();
-    void unsubscribeFromCoreSignals();
 
 Q_SIGNALS:
     void numConnectionsChanged(int count);
