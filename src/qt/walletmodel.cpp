@@ -28,12 +28,13 @@
 #include <wallet/coincontrol.h>
 #include <wallet/wallet.h> // for CRecipient
 
-#include <stdint.h>
 #include <functional>
+#include <set>
+#include <stdint.h>
+#include <utility>
 
 #include <QDebug>
 #include <QMessageBox>
-#include <QSet>
 #include <QTimer>
 
 using wallet::CCoinControl;
@@ -162,10 +163,8 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
         return OK;
     }
 
-    QSet<QString> setAddress; // Used to detect duplicates
-    int nAddresses = 0;
-
     // Pre-check input data for validity
+    std::set<QString> unique_addresses;
     for (const SendCoinsRecipient &rcp : recipients)
     {
         if (rcp.fSubtractFeeFromAmount)
@@ -179,8 +178,9 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
             {
                 return InvalidAmount;
             }
-            setAddress.insert(rcp.address);
-            ++nAddresses;
+            if (!unique_addresses.insert(rcp.address).second) {
+                return DuplicateAddress;
+            }
 
             CScript scriptPubKey = GetScriptForDestination(DecodeDestination(rcp.address.toStdString()));
             CRecipient recipient = {scriptPubKey, rcp.amount, rcp.fSubtractFeeFromAmount};
@@ -188,10 +188,6 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
             total += rcp.amount;
         }
-    }
-    if(setAddress.size() != nAddresses)
-    {
-        return DuplicateAddress;
     }
 
     CAmount nBalance = m_wallet->getAvailableBalance(coinControl);
