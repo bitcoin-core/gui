@@ -86,8 +86,6 @@ void AppTests::appTests()
     m_app.baseInitialize();
     m_app.requestInitialize();
     m_app.exec();
-    m_app.requestShutdown();
-    m_app.exec();
 
     // Reset global state to avoid interfering with later tests.
     LogInstance().DisconnectTestLogger();
@@ -119,6 +117,6 @@ AppTests::HandleCallback::~HandleCallback()
     assert(it != callbacks.end());
     callbacks.erase(it);
     if (callbacks.empty()) {
-        m_app_tests.m_app.exit(0);
+        m_app_tests.m_app.requestShutdown();
     }
 }
