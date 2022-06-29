@@ -958,6 +958,17 @@ void RPCConsole::updateNetworkState()
     }
 
     ui->numberOfConnections->setText(connections);
+
+    QString local_addresses;
+    LOCK(g_maplocalhost_mutex);
+    for (auto it = mapLocalHost.begin(); it != mapLocalHost.end();) {
+        local_addresses += QString::fromStdString(it->first.ToString()) + ":" + QString::number(it->second.nPort);
+        if (++it != mapLocalHost.end()) local_addresses += ", ";
+    }
+    //: Signals to the user that they do not have any local addresses.
+    if (local_addresses.isEmpty()) local_addresses = tr("None");
+
+    ui->localAddresses->setText(local_addresses);
 }
 
 void RPCConsole::setNumConnections(int count)
