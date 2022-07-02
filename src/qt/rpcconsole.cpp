@@ -1331,8 +1331,7 @@ void RPCConsole::showOrHideBanTableIfRequired()
         return;
 
     bool visible = clientModel->getBanTableModel()->shouldShow();
-    ui->banlistWidget->setVisible(visible);
-    ui->banHeading->setVisible(visible);
+    ui->banTable->setVisible(visible);
 }
 
 void RPCConsole::setTabFocus(enum TabTypes tabType)
