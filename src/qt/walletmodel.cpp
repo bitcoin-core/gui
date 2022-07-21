@@ -8,6 +8,7 @@
 
 #include <qt/walletmodel.h>
 
+#include <qt/addressinfotablemodel.h>
 #include <qt/addresstablemodel.h>
 #include <qt/clientmodel.h>
 #include <qt/guiconstants.h>
@@ -54,6 +55,7 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
 {
     fHaveWatchOnly = m_wallet->haveWatchOnly();
     addressTableModel = new AddressTableModel(this);
+    m_address_info_table_model = new AddressInfoTableModel(this);
     transactionTableModel = new TransactionTableModel(platformStyle, this);
     recentRequestsTableModel = new RecentRequestsTableModel(this);
 
@@ -290,6 +292,11 @@ OptionsModel* WalletModel::getOptionsModel() const
 AddressTableModel* WalletModel::getAddressTableModel() const
 {
     return addressTableModel;
+}
+
+AddressInfoTableModel* WalletModel::getAddressInfoTableModel() const
+{
+    return m_address_info_table_model;
 }
 
 TransactionTableModel* WalletModel::getTransactionTableModel() const

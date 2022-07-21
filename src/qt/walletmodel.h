@@ -23,6 +23,7 @@
 
 enum class OutputType;
 
+class AddressInfoTableModel;
 class AddressTableModel;
 class ClientModel;
 class OptionsModel;
@@ -78,6 +79,7 @@ public:
     };
 
     OptionsModel* getOptionsModel() const;
+    AddressInfoTableModel* getAddressInfoTableModel() const;
     AddressTableModel* getAddressTableModel() const;
     TransactionTableModel* getTransactionTableModel() const;
     RecentRequestsTableModel* getRecentRequestsTableModel() const;
@@ -175,6 +177,7 @@ private:
     OptionsModel *optionsModel;
 
     AddressTableModel *addressTableModel;
+    AddressInfoTableModel *m_address_info_table_model;
     TransactionTableModel *transactionTableModel;
     RecentRequestsTableModel *recentRequestsTableModel;
 
