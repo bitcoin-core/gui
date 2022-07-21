@@ -225,6 +225,18 @@ struct CRecipient
     bool fSubtractFeeFromAmount;
 };
 
+struct AddressInfo
+{
+    std::string address;
+    std::string hdkeypath;
+    int32_t index;
+    bool internal;
+    std::string output_type;
+    int32_t tx_count;
+    long amount;
+    std::string label;
+};
+
 class WalletRescanReserver; //forward declarations for ScanForWalletTransactions/RescanFromTime
 /**
  * A CWallet maintains a set of transactions and balances, and provides the ability to create new transactions.
