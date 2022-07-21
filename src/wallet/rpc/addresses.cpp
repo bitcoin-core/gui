@@ -743,6 +743,103 @@ RPCHelpMan listlabels()
     };
 }
 
+RPCHelpMan listaddresses()
+{
+    return RPCHelpMan{"listaddresses",
+                "\nLists wallet addresses\n"
+                "In legacy wallets, addresses may be displayed in any order \n"
+                "In descriptor wallets, addresses are displayed in the BIP32 derivation order.  \n",
+                {
+                    {"options", RPCArg::Type::OBJ, RPCArg::Optional::OMITTED_NAMED_ARG, "",
+                        {
+                            {"address_type", RPCArg::Type::STR, RPCArg::DefaultHint{"set by -addresstype"}, "The address type to use. Options are \"legacy\", \"p2sh-segwit\", and \"bech32\"."},
+                        },
+                    "\"options\""
+                    },
+                },
+                RPCResult{
+                    RPCResult::Type::ARR, "", "",
+                    {
+                        {RPCResult::Type::OBJ, "", "", {
+                            {RPCResult::Type::NUM, "index", "The hdkeypath index"},
+                            {RPCResult::Type::STR, "address", "The bitcoin address"},
+                            {RPCResult::Type::STR, "hdkeypath", "The BIP 32 HD path of the address"},
+                            {RPCResult::Type::STR, "output_type", "The address type (legacy, p2sh-segwit, and bech32)"},
+                            {RPCResult::Type::BOOL, "internal", "The address is internal (change) or external (receive)"},
+                            {RPCResult::Type::NUM, "amount", "Available amount at address"},
+                            {RPCResult::Type::NUM, "tx_count", "Number of transactions of this address"}
+                        }},
+                    },
+                },
+                RPCExamples{
+                    HelpExampleCli("listaddresses", "")
+                    + HelpExampleCli("listaddresses", "\"legacy\"")
+                },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+{
+    std::shared_ptr<CWallet> const pwallet = GetWalletForJSONRPCRequest(request);
+    if (!pwallet) return NullUniValue;
+
+    pwallet->BlockUntilSyncedToCurrentChain();
+
+    LOCK(pwallet->cs_wallet);
+
+    if (!pwallet->CanGetAddresses()) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error: This wallet has no available keys");
+    }
+
+    std::vector<OutputType> output_types(OUTPUT_TYPES.begin(), OUTPUT_TYPES.end());
+    OutputType default_output_type = pwallet->m_default_address_type;
+
+    auto pivot = std::find(output_types.begin(), output_types.end(), default_output_type);
+
+    if (pivot != output_types.end()) {
+        std::rotate(output_types.begin(), pivot, pivot + 1);
+    }
+
+    if (!request.params[0].isNull()) {
+
+        const UniValue& options = request.params[0];
+
+        RPCTypeCheckObj(options, {
+                {"address_type", UniValueType(UniValue::VSTR)},
+                {"internal", UniValueType(UniValue::VBOOL)},
+            }, true, false);
+
+        if (options.exists("address_type")) {
+            std::optional<OutputType> parsed = ParseOutputType(options["address_type"].get_str());
+            if (!parsed) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, strprintf("Unknown address type '%s'", request.params[1].get_str()));
+            } else if (parsed.value() == OutputType::BECH32M && pwallet->GetLegacyScriptPubKeyMan()) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Legacy wallets cannot provide bech32m addresses");
+            }
+            output_types = { parsed.value() };
+        }
+    }
+
+    std::vector<AddressInfo> addressInfoList = pwallet->ListAddresses(output_types);
+
+    UniValue list_address(UniValue::VARR);
+
+    for(auto addr_info : addressInfoList) {
+
+        UniValue obj(UniValue::VOBJ);
+        obj.pushKV("index", addr_info.index);
+        obj.pushKV("address", addr_info.address);
+        obj.pushKV("hdkeypath", addr_info.hdkeypath);
+        obj.pushKV("output_type", addr_info.output_type);
+        obj.pushKV("internal", addr_info.internal);
+        obj.pushKV("amount", ValueFromAmount(addr_info.amount));
+        obj.pushKV("tx_count", addr_info.tx_count);
+
+        list_address.push_back(obj);
+
+    }
+
+    return list_address;
+},
+    };
+}
 
 #ifdef ENABLE_EXTERNAL_SIGNER
 RPCHelpMan walletdisplayaddress()

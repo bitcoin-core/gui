@@ -601,6 +601,7 @@ RPCHelpMan keypoolrefill();
 RPCHelpMan newkeypool();
 RPCHelpMan getaddressesbylabel();
 RPCHelpMan listlabels();
+RPCHelpMan listaddresses();
 #ifdef ENABLE_EXTERNAL_SIGNER
 RPCHelpMan walletdisplayaddress();
 #endif // ENABLE_EXTERNAL_SIGNER
@@ -699,6 +700,7 @@ Span<const CRPCCommand> GetWalletRPCCommands()
         {"wallet", &listaddressgroupings},
         {"wallet", &listdescriptors},
         {"wallet", &listlabels},
+        {"wallet", &listaddresses},
         {"wallet", &listlockunspent},
         {"wallet", &listreceivedbyaddress},
         {"wallet", &listreceivedbylabel},
