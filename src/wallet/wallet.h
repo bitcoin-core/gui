@@ -357,6 +357,10 @@ private:
      */
     static bool AttachChain(const std::shared_ptr<CWallet>& wallet, interfaces::Chain& chain, const bool rescan_required, bilingual_str& error, std::vector<bilingual_str>& warnings);
 
+    std::vector<CTxDestination> GetDestinationsFromAddressBook(bool internal, OutputType output_type) const;
+
+    std::vector<AddressInfo> DestinationToAddressInfo(const OutputType output_type, const std::vector<CTxDestination>& destinations, bool internal, const ScriptPubKeyMan& spk_man) const;
+
 public:
     /**
      * Main wallet lock.
@@ -678,6 +682,7 @@ public:
      */
     void MarkDestinationsDirty(const std::set<CTxDestination>& destinations) EXCLUSIVE_LOCKS_REQUIRED(cs_wallet);
 
+    std::vector<AddressInfo> ListAddresses(const std::vector<OutputType> output_types) const;
     BResult<CTxDestination> GetNewDestination(const OutputType type, const std::string label);
     BResult<CTxDestination> GetNewChangeDestination(const OutputType type);
 

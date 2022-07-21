@@ -21,6 +21,7 @@
 #include <primitives/block.h>
 #include <primitives/transaction.h>
 #include <psbt.h>
+#include <regex>
 #include <script/descriptor.h>
 #include <script/script.h>
 #include <script/signingprovider.h>
@@ -37,6 +38,7 @@
 #include <wallet/context.h>
 #include <wallet/fees.h>
 #include <wallet/external_signer_scriptpubkeyman.h>
+#include <wallet/receive.h>
 
 #include <univalue.h>
 
@@ -2322,6 +2324,151 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
         res &= spk_man->TopUp(kpSize);
     }
     return res;
+}
+
+std::vector<AddressInfo> CWallet::DestinationToAddressInfo(
+    const OutputType output_type,
+    const std::vector<CTxDestination>& destinations,
+    const bool internal,
+    const ScriptPubKeyMan& spk_man) const
+{
+    LOCK(cs_wallet);
+
+    std::vector<AddressInfo> address_info_vector;
+
+    const std::regex rx(R"((\d+)(?!.*\d))");
+
+    for (auto destination : destinations) {
+        AddressInfo address_info;
+
+        address_info.address = EncodeDestination(destination);
+
+        if (const std::unique_ptr<CKeyMetadata> meta = spk_man.GetMetadata(destination)) {
+            if (meta->has_key_origin) {
+
+                std::string hdkeypath{WriteHDKeypath(meta->key_origin.path)};
+
+                std::smatch m;
+                if (regex_search(hdkeypath, m, rx)) {
+                    address_info.index = std::stoi(m[0]);
+                }
+                address_info.hdkeypath = hdkeypath;
+            }
+        }
+
+        auto addressbalances = GetAddressBalances(*this);
+        auto it = addressbalances.find(destination);
+        auto amount = (it != addressbalances.end()) ? it->second : 0;
+
+        address_info.output_type = FormatOutputType(output_type);
+        address_info.internal = internal;
+        address_info.amount = amount;
+
+        if (m_address_book.find(destination) != m_address_book.end()) {
+            address_info.label = m_address_book.at(destination).GetLabel();
+        }
+
+        address_info.tx_count = 0;
+
+        for (const std::pair<const uint256, CWalletTx>& wtx_pair : mapWallet) {
+            const CWalletTx& wtx = wtx_pair.second;
+
+            bool receivedTx = false;
+
+            for (const CTxOut& txout : wtx.tx->vout) {
+                CTxDestination tx_destination;
+                if (ExtractDestination(txout.scriptPubKey, tx_destination) && destination == tx_destination) {
+                    receivedTx = true;
+                    address_info.tx_count++;
+                    break;
+                }
+            }
+
+            if (!receivedTx) {
+                for (const CTxIn& txin : wtx.tx->vin)
+                {
+                    const CWalletTx* parentWtx = GetWalletTx(txin.prevout.hash);
+                    if (parentWtx == nullptr) continue;
+                    for (const CTxOut& txout : parentWtx->tx->vout) {
+                        CTxDestination tx_destination;
+                        if (ExtractDestination(txout.scriptPubKey, tx_destination) && destination == tx_destination) {
+                            address_info.tx_count++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        address_info_vector.push_back(address_info);
+    }
+
+    return address_info_vector;
+
+}
+
+std::vector<CTxDestination> CWallet::GetDestinationsFromAddressBook(bool internal, OutputType output_type) const
+{
+    LOCK(cs_wallet);
+
+    std::vector<CTxDestination> destinations;
+
+    auto start = m_address_book.begin();
+    auto end = m_address_book.end();
+
+    for (auto item_it = start; item_it != end; ++item_it)
+    {
+        if (item_it->second.purpose != "receive") {
+            continue;
+        }
+
+        if (internal == item_it->second.IsChange() ) {
+            auto item_output_type = OutputTypeFromDestination(item_it->first);
+            if (item_output_type.has_value() && item_output_type.value() == output_type) {
+
+                destinations.emplace_back(item_it->first);
+            }
+        }
+    }
+
+    return destinations;
+}
+
+std::vector<AddressInfo> CWallet::ListAddresses(const std::vector<OutputType> output_types) const
+{
+    LOCK(cs_wallet);
+
+    std::vector<AddressInfo> address_info_vector;
+
+
+    for (auto output_type: output_types) {
+        for (bool internal: {false, true}) {
+
+            auto spk_man = GetScriptPubKeyMan(output_type, internal);
+
+            if (spk_man) {
+
+                std::vector<CTxDestination> destinations =  spk_man->ListAddresses(output_type, internal);
+
+                if (!IsWalletFlagSet(WALLET_FLAG_DESCRIPTORS)) {
+                    std::vector<CTxDestination> addr_dest_vec = GetDestinationsFromAddressBook(internal, output_type);
+                    destinations.insert( destinations.end(), addr_dest_vec.begin(), addr_dest_vec.end() );
+                }
+
+                std::vector<AddressInfo> address_partial_vector = DestinationToAddressInfo(output_type, destinations, internal, *spk_man);
+
+                std::sort(address_partial_vector.begin(), address_partial_vector.end(),
+                    [](const AddressInfo& a, const AddressInfo& b) {
+                        return a.internal == b.internal && a.index < b.index;
+                    }
+                );
+
+                address_info_vector.insert( address_info_vector.end(), address_partial_vector.begin(), address_partial_vector.end() );
+            }
+        }
+    }
+
+    return address_info_vector;
 }
 
 BResult<CTxDestination> CWallet::GetNewDestination(const OutputType type, const std::string label)
