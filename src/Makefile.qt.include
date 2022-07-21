@@ -37,6 +37,7 @@ QT_FORMS_UI = \
 QT_MOC_CPP = \
   qt/moc_addressbookpage.cpp \
   qt/moc_addresstablemodel.cpp \
+  qt/moc_addressinfotablemodel.cpp \
   qt/moc_askpassphrasedialog.cpp \
   qt/moc_createwalletdialog.cpp \
   qt/moc_bantablemodel.cpp \
@@ -108,6 +109,7 @@ QT_QRC_LOCALE = qt/bitcoin_locale.qrc
 BITCOIN_QT_H = \
   qt/addressbookpage.h \
   qt/addresstablemodel.h \
+  qt/addressinfotablemodel.h \
   qt/askpassphrasedialog.h \
   qt/bantablemodel.h \
   qt/bitcoin.h \
@@ -251,6 +253,7 @@ BITCOIN_QT_WINDOWS_CPP = qt/winshutdownmonitor.cpp
 BITCOIN_QT_WALLET_CPP = \
   qt/addressbookpage.cpp \
   qt/addresstablemodel.cpp \
+  qt/addressinfotablemodel.cpp \
   qt/askpassphrasedialog.cpp \
   qt/coincontroldialog.cpp \
   qt/coincontroltreewidget.cpp \

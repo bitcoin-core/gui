@@ -9,6 +9,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\qt\addressbookpage.cpp" />
     <ClCompile Include="..\..\src\qt\addresstablemodel.cpp" />
+    <ClCompile Include="..\..\src\qt\addressinfotablemodel.cpp" />
     <ClCompile Include="..\..\src\qt\askpassphrasedialog.cpp" />
     <ClCompile Include="..\..\src\qt\bantablemodel.cpp" />
     <ClCompile Include="..\..\src\qt\bitcoin.cpp" />
@@ -66,6 +67,7 @@
     <ClCompile Include="..\..\src\qt\winshutdownmonitor.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_addressbookpage.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_addresstablemodel.cpp" />
+    <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_addressinfotablemodel.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_askpassphrasedialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bantablemodel.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bitcoin.cpp" />
