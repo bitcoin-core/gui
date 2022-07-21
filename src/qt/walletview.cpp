@@ -5,6 +5,7 @@
 #include <qt/walletview.h>
 
 #include <qt/addressbookpage.h>
+#include <qt/addressinfoview.h>
 #include <qt/askpassphrasedialog.h>
 #include <qt/clientmodel.h>
 #include <qt/guiutil.h>
@@ -58,6 +59,15 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     vbox->addLayout(hbox_buttons);
     transactionsPage->setLayout(vbox);
 
+    m_address_page = new QWidget(this);
+    QVBoxLayout *avbox = new QVBoxLayout();
+    m_address_info_view = new AddressInfoView(platformStyle, this);
+    m_address_info_view->setModel(walletModel);
+
+    avbox->addWidget(m_address_info_view);
+
+    m_address_page->setLayout(avbox);
+
     receiveCoinsPage = new ReceiveCoinsDialog(platformStyle);
     receiveCoinsPage->setModel(walletModel);
 
@@ -72,6 +82,7 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
 
     addWidget(overviewPage);
     addWidget(transactionsPage);
+    addWidget(m_address_page);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
 
@@ -151,6 +162,11 @@ void WalletView::gotoOverviewPage()
 void WalletView::gotoHistoryPage()
 {
     setCurrentWidget(transactionsPage);
+}
+
+void WalletView::gotoAddressInfoPage()
+{
+    setCurrentWidget(m_address_page);
 }
 
 void WalletView::gotoReceiveCoinsPage()
