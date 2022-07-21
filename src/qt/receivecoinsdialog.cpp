@@ -7,6 +7,7 @@
 #include <qt/receivecoinsdialog.h>
 #include <qt/forms/ui_receivecoinsdialog.h>
 
+#include <qt/addressinfotablemodel.h>
 #include <qt/addresstablemodel.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
@@ -154,6 +155,8 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
     /* Generate new receiving address */
     const OutputType address_type = (OutputType)ui->addressType->currentData().toInt();
     address = model->getAddressTableModel()->addRow(AddressTableModel::Receive, label, "", address_type);
+
+    model->getAddressInfoTableModel()->refresh();
 
     switch(model->getAddressTableModel()->getEditStatus())
     {
