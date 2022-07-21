@@ -107,6 +107,8 @@ BASE_SCRIPTS = [
     'wallet_basic.py --descriptors',
     'wallet_labels.py --legacy-wallet',
     'wallet_labels.py --descriptors',
+    'wallet_listaddresses.py --legacy-wallet',
+    'wallet_listaddresses.py --descriptors',
     'p2p_segwit.py',
     'p2p_timeouts.py',
     'p2p_tx_download.py',
