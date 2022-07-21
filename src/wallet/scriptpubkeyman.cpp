@@ -1654,6 +1654,69 @@ std::set<CKeyID> LegacyScriptPubKeyMan::GetKeys() const
     return set_address;
 }
 
+std::vector<CTxDestination> LegacyScriptPubKeyMan::ListAddresses(const OutputType type, const bool internal)
+{
+    LOCK(cs_KeyStore);
+
+    WalletBatch batch(m_storage.GetDatabase());
+    std::set<int64_t> *setKeyPool = internal ? &setInternalKeyPool : &setExternalKeyPool;
+    uint32_t m_next_index = internal ? m_hd_chain.m_next_external_index : m_hd_chain.m_next_internal_index;
+
+    std::vector<CTxDestination> addresses;
+    addresses.reserve(setKeyPool->size());
+
+    auto end_range = m_next_index + 5;
+
+    int64_t index = 0;
+
+    auto it = setKeyPool->begin();
+    while (it != std::end(*setKeyPool)) {
+        CKeyPool keypool;
+        if (batch.ReadPool(*(it), keypool)) {
+            auto dest = GetDestinationForKey(keypool.vchPubKey, type);
+            addresses.emplace_back(dest);
+        }
+        if (index++ >= end_range) break;
+        ++it;
+    }
+
+    return addresses;
+}
+
+std::vector<CTxDestination> DescriptorScriptPubKeyMan::ListAddresses(const OutputType type, const bool internal)
+{
+    LOCK(cs_desc_man);
+
+    std::vector<CTxDestination> addresses;
+    addresses.reserve(m_map_script_pub_keys.size());
+
+    std::vector<std::pair<CScript, int32_t>> temp_m_map_script_pub_keys;
+
+    for (auto& it : m_map_script_pub_keys) {
+        temp_m_map_script_pub_keys.push_back(it);
+    }
+
+    sort(temp_m_map_script_pub_keys.begin(), temp_m_map_script_pub_keys.end(),
+        [](const std::pair<CScript, int32_t> & a, const std::pair<CScript, int32_t> & b) -> bool {
+        return a.second < b.second;
+    });
+
+    auto end_range = m_wallet_descriptor.next_index + 5;
+
+    auto index = 0;
+
+    for (auto const& script_pub_key_item: temp_m_map_script_pub_keys) {
+        CTxDestination dest;
+        ExtractDestination(script_pub_key_item.first, dest);
+
+        addresses.emplace_back(dest);
+
+        if (index++ >= end_range) break;
+    }
+
+    return addresses;
+}
+
 BResult<CTxDestination> DescriptorScriptPubKeyMan::GetNewDestination(const OutputType type)
 {
     // Returns true if this descriptor supports getting new addresses. Conditions where we may be unable to fetch them (e.g. locked) are caught later

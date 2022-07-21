@@ -172,6 +172,7 @@ protected:
 public:
     explicit ScriptPubKeyMan(WalletStorage& storage) : m_storage(storage) {}
     virtual ~ScriptPubKeyMan() {};
+    virtual std::vector<CTxDestination> ListAddresses(const OutputType type, const bool internal) { return {}; };
     virtual BResult<CTxDestination> GetNewDestination(const OutputType type) { return Untranslated("Not supported"); }
     virtual isminetype IsMine(const CScript& script) const { return ISMINE_NO; }
 
@@ -360,6 +361,7 @@ private:
 public:
     using ScriptPubKeyMan::ScriptPubKeyMan;
 
+    std::vector<CTxDestination> ListAddresses(const OutputType type, const bool internal) override;
     BResult<CTxDestination> GetNewDestination(const OutputType type) override;
     isminetype IsMine(const CScript& script) const override;
 
@@ -568,6 +570,7 @@ public:
 
     mutable RecursiveMutex cs_desc_man;
 
+    std::vector<CTxDestination> ListAddresses(const OutputType type, const bool internal) override;
     BResult<CTxDestination> GetNewDestination(const OutputType type) override;
     isminetype IsMine(const CScript& script) const override;
 
