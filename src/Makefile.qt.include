@@ -84,6 +84,7 @@ QT_MOC_CPP = \
   qt/moc_transactionoverviewwidget.cpp \
   qt/moc_transactiontablemodel.cpp \
   qt/moc_transactionview.cpp \
+  qt/moc_addressinfoview.cpp \
   qt/moc_utilitydialog.cpp \
   qt/moc_walletcontroller.cpp \
   qt/moc_walletframe.cpp \
@@ -162,6 +163,7 @@ BITCOIN_QT_H = \
   qt/transactionrecord.h \
   qt/transactiontablemodel.h \
   qt/transactionview.h \
+  qt/addressinfoview.h \
   qt/utilitydialog.h \
   qt/walletcontroller.h \
   qt/walletframe.h \
@@ -277,6 +279,7 @@ BITCOIN_QT_WALLET_CPP = \
   qt/transactionrecord.cpp \
   qt/transactiontablemodel.cpp \
   qt/transactionview.cpp \
+  qt/addressinfoview.cpp \
   qt/walletcontroller.cpp \
   qt/walletframe.cpp \
   qt/walletmodel.cpp \

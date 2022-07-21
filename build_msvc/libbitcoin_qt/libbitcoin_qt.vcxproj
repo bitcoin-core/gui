@@ -58,6 +58,7 @@
     <ClCompile Include="..\..\src\qt\transactionrecord.cpp" />
     <ClCompile Include="..\..\src\qt\transactiontablemodel.cpp" />
     <ClCompile Include="..\..\src\qt\transactionview.cpp" />
+    <ClCompile Include="..\..\src\qt\addressinfoview.cpp" />
     <ClCompile Include="..\..\src\qt\utilitydialog.cpp" />
     <ClCompile Include="..\..\src\qt\walletcontroller.cpp" />
     <ClCompile Include="..\..\src\qt\walletframe.cpp" />
@@ -115,6 +116,7 @@
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_transactionrecord.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_transactiontablemodel.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_transactionview.cpp" />
+    <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_addressinfoview.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_utilitydialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_walletcontroller.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_walletframe.cpp" />
