@@ -213,6 +213,21 @@ public:
         });
         return result;
     }
+    std::vector<AddressInfo> listAddresses() const override
+    {
+        LOCK(m_wallet->cs_wallet);
+
+        std::vector<OutputType> output_types(OUTPUT_TYPES.begin(), OUTPUT_TYPES.end());
+        OutputType default_output_type = m_wallet->m_default_address_type;
+
+        auto pivot = std::find(output_types.begin(), output_types.end(), default_output_type);
+
+        if (pivot != output_types.end()) {
+            std::rotate(output_types.begin(), pivot, pivot + 1);
+        }
+
+        return m_wallet->ListAddresses(output_types);
+    }
     std::vector<std::string> getAddressReceiveRequests() override {
         LOCK(m_wallet->cs_wallet);
         return m_wallet->GetAddressReceiveRequests();
