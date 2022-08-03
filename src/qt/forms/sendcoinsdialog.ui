@@ -117,7 +117,7 @@
           <item>
            <widget class="QLabel" name="labelCoinControlAutomaticallySelected">
             <property name="text">
-             <string>automatically selected</string>
+             <string>Automatically selected</string>
             </property>
             <property name="margin">
              <number>5</number>
