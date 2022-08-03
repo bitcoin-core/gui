@@ -70,7 +70,7 @@
         <item row="2" column="2">
          <widget class="QLabel" name="label_5">
           <property name="text">
-           <string>Use this form to request payments. All fields are &lt;b&gt;optional&lt;/b&gt;.</string>
+           <string>Use this form to request payments.&#160;All fields are &lt;b&gt;optional&lt;/b&gt;.</string>
           </property>
          </widget>
         </item>
