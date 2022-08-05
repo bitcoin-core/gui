@@ -332,6 +332,7 @@ BITCOIN_CORE_H = \
   wallet/external_signer_scriptpubkeyman.h \
   wallet/feebumper.h \
   wallet/fees.h \
+  wallet/imports.h \
   wallet/load.h \
   wallet/receive.h \
   wallet/rpc/util.h \
@@ -484,6 +485,7 @@ libbitcoin_wallet_a_SOURCES = \
   wallet/external_signer_scriptpubkeyman.cpp \
   wallet/feebumper.cpp \
   wallet/fees.cpp \
+  wallet/imports.cpp \
   wallet/interfaces.cpp \
   wallet/load.cpp \
   wallet/receive.cpp \
