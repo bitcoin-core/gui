@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\src\qt\createwalletdialog.cpp" />
     <ClCompile Include="..\..\src\qt\csvmodelwriter.cpp" />
     <ClCompile Include="..\..\src\qt\editaddressdialog.cpp" />
+    <ClCompile Include="..\..\src\qt\importdialog.cpp" />
     <ClCompile Include="..\..\src\qt\guiutil.cpp" />
     <ClCompile Include="..\..\src\qt\initexecutor.cpp" />
     <ClCompile Include="..\..\src\qt\intro.cpp" />
@@ -79,6 +80,7 @@
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_createwalletdialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_csvmodelwriter.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_editaddressdialog.cpp" />
+    <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_importdialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_guiutil.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_initexecutor.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_intro.cpp" />

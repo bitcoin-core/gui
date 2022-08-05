@@ -312,6 +312,9 @@ void BitcoinGUI::createActions()
     encryptWalletAction->setCheckable(true);
     backupWalletAction = new QAction(tr("&Backup Wallet…"), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
+    importWalletAction = new QAction(tr("&Import To Wallet…"), this);
+    importWalletAction->setStatusTip(tr("Import dialog"));
+    importWalletMenu = new QMenu(this);
     changePassphraseAction = new QAction(tr("&Change Passphrase…"), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
     signMessageAction = new QAction(tr("Sign &message…"), this);
@@ -381,6 +384,19 @@ void BitcoinGUI::createActions()
     {
         connect(encryptWalletAction, &QAction::triggered, walletFrame, &WalletFrame::encryptWallet);
         connect(backupWalletAction, &QAction::triggered, walletFrame, &WalletFrame::backupWallet);
+        connect(importWalletMenu, &QMenu::aboutToShow, [this] {
+            importWalletMenu->clear();
+            if (walletFrame->currentWalletModel()->wallet().isLegacy()) {
+                QAction* action = importWalletMenu->addAction("Import Public Key");
+                connect(action, &QAction::triggered, walletFrame, &WalletFrame::importPubkey);
+                if (!walletFrame->currentWalletModel()->wallet().privateKeysDisabled()) {
+                    action = importWalletMenu->addAction("Import Private Key");
+                    connect(action, &QAction::triggered, walletFrame, &WalletFrame::importPrivkey);
+                }
+                action = importWalletMenu->addAction("Import Address");
+                connect(action, &QAction::triggered, walletFrame, &WalletFrame::importAddress);
+            }
+        });
         connect(changePassphraseAction, &QAction::triggered, walletFrame, &WalletFrame::changePassphrase);
         connect(signMessageAction, &QAction::triggered, [this]{ showNormalIfMinimized(); });
         connect(signMessageAction, &QAction::triggered, [this]{ gotoSignMessageTab(); });
@@ -484,6 +500,7 @@ void BitcoinGUI::createMenuBar()
         file->addAction(m_close_all_wallets_action);
         file->addSeparator();
         file->addAction(backupWalletAction);
+        file->addAction(importWalletAction);
         file->addAction(m_restore_wallet_action);
         file->addSeparator();
         file->addAction(openAction);
@@ -791,6 +808,8 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     historyAction->setEnabled(enabled);
     encryptWalletAction->setEnabled(enabled);
     backupWalletAction->setEnabled(enabled);
+    importWalletAction->setEnabled(enabled);
+    importWalletAction->setMenu(importWalletMenu);
     changePassphraseAction->setEnabled(enabled);
     signMessageAction->setEnabled(enabled);
     verifyMessageAction->setEnabled(enabled);

@@ -249,6 +249,27 @@ void WalletFrame::backupWallet()
         walletView->backupWallet();
 }
 
+void WalletFrame::importPubkey()
+{
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->importPubkey();
+}
+
+void WalletFrame::importPrivkey()
+{
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->importPrivkey();
+}
+
+void WalletFrame::importAddress()
+{
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->importAddress();
+}
+
 void WalletFrame::changePassphrase()
 {
     WalletView *walletView = currentWalletView();

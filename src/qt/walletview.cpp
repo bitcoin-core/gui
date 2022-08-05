@@ -8,6 +8,7 @@
 #include <qt/askpassphrasedialog.h>
 #include <qt/clientmodel.h>
 #include <qt/guiutil.h>
+#include <qt/importdialog.h>
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
 #include <qt/platformstyle.h>
@@ -226,6 +227,24 @@ void WalletView::backupWallet()
         Q_EMIT message(tr("Backup Successful"), tr("The wallet data was successfully saved to %1.").arg(filename),
             CClientUIInterface::MSG_INFORMATION);
     }
+}
+
+void WalletView::importPubkey()
+{
+    auto dlg = new ImportDialog(ImportDialog::importPubkey, walletModel, this);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
+}
+
+void WalletView::importPrivkey()
+{
+    auto dlg = new ImportDialog(ImportDialog::importPrivkey, walletModel, this);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
+}
+
+void WalletView::importAddress()
+{
+    auto dlg = new ImportDialog(ImportDialog::importAddress, walletModel, this);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
 }
 
 void WalletView::changePassphrase()

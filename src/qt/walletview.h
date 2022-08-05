@@ -94,6 +94,12 @@ public Q_SLOTS:
     void encryptWallet();
     /** Backup the wallet */
     void backupWallet();
+    /** Import public key */
+    void importPubkey();
+    /** Import private key */
+    void importPrivkey();
+    /** Import address */
+    void importAddress();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */

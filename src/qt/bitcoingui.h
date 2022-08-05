@@ -149,6 +149,8 @@ private:
     QAction* optionsAction = nullptr;
     QAction* encryptWalletAction = nullptr;
     QAction* backupWalletAction = nullptr;
+    QAction* importWalletAction = nullptr;
+    QMenu* importWalletMenu{nullptr};
     QAction* changePassphraseAction = nullptr;
     QAction* aboutQtAction = nullptr;
     QAction* openRPCConsoleAction = nullptr;
