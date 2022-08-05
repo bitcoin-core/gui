@@ -247,6 +247,18 @@ void WalletView::importAddress()
     GUIUtil::ShowModalDialogAsynchronously(dlg);
 }
 
+void WalletView::importMulti()
+{
+    auto dlg = new ImportDialog(ImportDialog::importMulti, walletModel, this);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
+}
+
+void WalletView::importDescriptors()
+{
+    auto dlg = new ImportDialog(ImportDialog::importDescriptors, walletModel, this);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
+}
+
 void WalletView::changePassphrase()
 {
     auto dlg = new AskPassphraseDialog(AskPassphraseDialog::ChangePass, this);

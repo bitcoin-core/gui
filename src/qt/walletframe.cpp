@@ -270,6 +270,19 @@ void WalletFrame::importAddress()
         walletView->importAddress();
 }
 
+void WalletFrame::importMulti() {
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->importMulti();
+}
+
+void WalletFrame::importDescriptors()
+{
+    WalletView *walletView = currentWalletView();
+    if (walletView)
+        walletView->importDescriptors();
+}
+
 void WalletFrame::changePassphrase()
 {
     WalletView *walletView = currentWalletView();

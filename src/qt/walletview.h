@@ -100,6 +100,10 @@ public Q_SLOTS:
     void importPrivkey();
     /** Import address */
     void importAddress();
+    /** Import multi */
+    void importMulti();
+    /** Import descriptors */
+    void importDescriptors();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */

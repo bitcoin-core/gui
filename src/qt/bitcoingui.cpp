@@ -395,6 +395,11 @@ void BitcoinGUI::createActions()
                 }
                 action = importWalletMenu->addAction("Import Address");
                 connect(action, &QAction::triggered, walletFrame, &WalletFrame::importAddress);
+                action = importWalletMenu->addAction("Import Multi");
+                connect(action, &QAction::triggered, walletFrame, &WalletFrame::importMulti);
+            } else {
+                QAction* action = importWalletMenu->addAction("Import Descriptors");
+                connect(action, &QAction::triggered, walletFrame, &WalletFrame::importDescriptors);
             }
         });
         connect(changePassphraseAction, &QAction::triggered, walletFrame, &WalletFrame::changePassphrase);

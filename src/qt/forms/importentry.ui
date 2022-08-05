@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ImportEntry</class>
+ <widget class="QStackedWidget" name="ImportEntry">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>729</width>
+    <height>150</height>
+   </rect>
+  </property>
+  <property name="focusPolicy">
+   <enum>Qt::TabFocus</enum>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <widget class="QFrame" name="importDescriptorsEntry">
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <layout class="QGridLayout" name="gridLayoutDescriptor">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMinimumSize</enum>
+    </property>
+    <property name="topMargin">
+     <number>8</number>
+    </property>
+    <property name="bottomMargin">
+     <number>4</number>
+    </property>
+    <property name="horizontalSpacing">
+     <number>12</number>
+    </property>
+    <property name="verticalSpacing">
+     <number>8</number>
+    </property>
+    <item row="0" column="0">
+     <widget class="QLabel" name="descriptorLabel">
+      <property name="text">
+       <string>Desc:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <layout class="QHBoxLayout" name="payToLayout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="descriptor">
+        <property name="toolTip">
+         <string>Enter descriptor</string>
+        </property>
+        <property name="placeholderText">
+         <string>Enter descriptor</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="deleteDescriptorButton">
+        <property name="toolTip">
+         <string>Remove this entry</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../bitcoin.qrc">
+          <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="labelLabel">
+      <property name="text">
+       <string>Label:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLineEdit" name="label">
+      <property name="toolTip">
+       <string>Label to assign to the address, only allowed with internal=false</string>
+      </property>
+      <property name="placeholderText">
+       <string>Enter a label for this address to add it to the list of used addresses</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="timestampLabel">
+      <property name="text">
+       <string> Timestamp:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayoutTimestamp" stretch="0,0,0">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="timestamp">
+        <property name="toolTip">
+         <string>Enter an epoch timestamp or nothing for the current time</string>
+        </property>
+        <property name="placeholderText">
+         <string>Enter an epoch timestamp or nothing for the current time</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkboxActive">
+        <property name="text">
+         <string>Active</string>
+        </property>
+        <property name="toolTip">
+         <string>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkboxInternal">
+        <property name="text">
+         <string>Internal</string>
+        </property>
+        <property name="toolTip">
+         <string>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="hiddenButton">
+        <property name="text">
+         <string>▽</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="0" >
+     <widget class="QLabel" name="nextIndexLabel">
+      <property name="text">
+       <string>Next Index:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QWidget" name="hiddenMenu">
+      <layout class="QHBoxLayout" name="nextIndexLayout">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QSpinBox" name="nextIndex">
+         <property name="toolTip">
+          <string>If a ranged descriptor is set to active, this specifies the next index to generate addresses from</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="range">
+         <property name="text">
+          <string>Range:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="startRange">
+         <property name="toolTip">
+          <string>If a ranged descriptor is used, this specifies the end or the range (in the form [begin,end]) to import</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="endRange">
+         <property name="toolTip">
+          <string>If a ranged descriptor is used, this specifies the end or the range (in the form [begin,end]) to import</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="4" column="0" colspan="2">
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QFrame" name="importMultiEntry">
+   <property name="frameShape">
+    <enum>QFrame::NoFrame</enum>
+   </property>
+   <layout class="QGridLayout" name="gridLayoutMulti">
+    <property name="topMargin">
+     <number>8</number>
+    </property>
+    <property name="bottomMargin">
+     <number>4</number>
+    </property>
+    <property name="horizontalSpacing">
+     <number>12</number>
+    </property>
+    <property name="verticalSpacing">
+     <number>8</number>
+    </property>
+    <item row="0" column="0" colspan="2">
+     <layout class="QHBoxLayout">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+     <item>
+      <widget class="QRadioButton" name="importScriptPubKeyRadio">
+       <property name="text">
+        <string>Import scriptPubKey</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="importDescriptorRadio">
+       <property name="text">
+        <string>Import Descriptor</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="deleteMultiButton">
+       <property name="toolTip">
+        <string>Remove this entry</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../bitcoin.qrc">
+         <normaloff>:/icons/remove</normaloff>:/icons/remove</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>22</width>
+         <height>22</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     </layout>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="scriptPubKeyLabel">
+      <property name="text">
+       <string>scriptPubKey:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayoutHideScript" stretch="0,0,0">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="scriptPubKey">
+        <property name="toolTip">
+         <string>Enter Address or scriptPubKey</string>
+        </property>
+        <property name="placeholderText">
+         <string>Enter Address or scriptPubKey</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="hideScriptsButton">
+        <property name="text">
+         <string>▽</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="redeemScriptLabel">
+      <property name="text">
+       <string>Redeem Script:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLineEdit" name="redeemScript">
+      <property name="toolTip">
+       <string>Allowed only if the scriptPubKey is a P2SH or P2SH-P2WSH address/scriptPubKey</string>
+      </property>
+      <property name="placeholderText">
+       <string>Allowed only if the scriptPubKey is a P2SH or P2SH-P2WSH address/scriptPubKey</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="witnessScriptLabel">
+      <property name="text">
+       <string>Witness Script:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="witnessScript">
+      <property name="toolTip">
+       <string>Allowed only if the scriptPubKey is a P2SH or P2SH-P2WSH address/scriptPubKey</string>
+      </property>
+      <property name="placeholderText">
+       <string>Allowed only if the scriptPubKey is a P2SH or P2SH-P2WSH address/scriptPubKey</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="publicKeyLabel">
+      <property name="text">
+       <string>Public Key:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLineEdit" name="publicKey">
+      <property name="toolTip">
+       <string>Enter Public Keys comma separated (e.g. value1,value2,value3)</string>
+      </property>
+      <property name="placeholderText">
+       <string>Enter Public Keys comma separated (e.g. value1,value2,value3)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" >
+     <widget class="QLabel" name="descLabelMulti">
+      <property name="text">
+       <string>Descriptor:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <widget class="QWidget" name="descMulti">
+      <layout class="QHBoxLayout" name="descLayoutMulti">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QLineEdit" name="desccMulti">
+         <property name="toolTip">
+          <string>Enter descriptor</string>
+         </property>
+         <property name="placeholderText">
+          <string>Enter descriptor</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="rangeMulti">
+         <property name="text">
+          <string>Range:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="startRangeMulti">
+         <property name="toolTip">
+          <string>If a ranged descriptor is used, this specifies the end or the range (in the form [begin,end]) to import</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="endRangeMulti">
+         <property name="toolTip">
+          <string>If a ranged descriptor is used, this specifies the end or the range (in the form [begin,end]) to import</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="privateKeyLabel">
+      <property name="text">
+       <string>Private Key:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLineEdit" name="privateKey">
+      <property name="toolTip">
+       <string>Enter Private Keys comma separated (e.g. value1,value2,value3)</string>
+      </property>
+      <property name="placeholderText">
+       <string>Enter Private Keys comma separated (e.g. value1,value2,value3)</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="timestampLabelMulti">
+      <property name="text">
+       <string> Timestamp:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1">
+     <layout class="QHBoxLayout" name="horizontalLayoutTimestampMulti" stretch="0,0,0">
+      <property name="spacing">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QLineEdit" name="timestampMulti">
+        <property name="toolTip">
+         <string>Enter an epoch timestamp or nothing for the current time</string>
+        </property>
+        <property name="placeholderText">
+         <string>Enter an epoch timestamp or nothing for the current time</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkboxInternalMulti">
+        <property name="text">
+         <string>Internal</string>
+        </property>
+        <property name="toolTip">
+         <string>Stating whether matching outputs should be treated as not incoming payments (also known as change)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkboxKeyPoolMulti">
+        <property name="text">
+         <string>Key Pool</string>
+        </property>
+        <property name="toolTip">
+         <string>Stating whether imported public keys should be added to the keypool for when users request new addresses. Only allowed when wallet private keys are disabled</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkboxWatchOnlyMulti">
+        <property name="text">
+         <string>Watch only</string>
+        </property>
+        <property name="toolTip">
+         <string>Stating whether matching outputs should be considered watchonly.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="8" column="0">
+     <widget class="QLabel" name="labelLabelMulti">
+      <property name="text">
+       <string>Label:</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="1">
+     <widget class="QLineEdit" name="labelMulti">
+      <property name="toolTip">
+       <string>Label to assign to the address, only allowed with internal=false</string>
+      </property>
+      <property name="placeholderText">
+       <string>Enter a label for this address to add it to the list of used addresses</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0" colspan="2">
+     <widget class="Line" name="lineMulti">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../bitcoin.qrc"/>
+ </resources>
+ <connections/>
+</ui>
