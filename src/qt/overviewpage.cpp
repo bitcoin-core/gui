@@ -16,6 +16,8 @@
 #include <qt/transactiontablemodel.h>
 #include <qt/walletmodel.h>
 
+#include <QSettings>
+
 #include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QDateTime>
@@ -176,6 +178,9 @@ void OverviewPage::handleTransactionClicked(const QModelIndex &index)
 
 void OverviewPage::setPrivacy(bool privacy)
 {
+    QSettings settings;
+    settings.setValue("privacy", privacy);
+
     m_privacy = privacy;
     if (m_balances.balance != -1) {
         setBalance(m_balances);

@@ -54,6 +54,7 @@ static const char* SettingName(OptionsModel::OptionID option)
     case OptionsModel::ProxyPortTor: return "onion";
     case OptionsModel::ProxyUseTor: return "onion";
     case OptionsModel::Language: return "lang";
+    case OptionsModel::Privacy: return "privacy";
     default: throw std::logic_error(strprintf("GUI option %i has no corresponding node setting.", option));
     }
 }
@@ -188,6 +189,10 @@ bool OptionsModel::Init(bilingual_str& error)
         settings.setValue("enable_psbt_controls", false);
     }
     m_enable_psbt_controls = settings.value("enable_psbt_controls", false).toBool();
+
+    if (!settings.contains("privacy")) {
+        settings.setValue("privacy", false);
+    }
 
     // These are shared with the core or have a command-line parameter
     // and we want command-line parameters to overwrite the GUI settings.

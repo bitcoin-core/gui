@@ -51,6 +51,7 @@ public:
         MapPortUPnP,            // bool
         MapPortNatpmp,          // bool
         MinimizeOnClose,        // bool
+        Privacy,                // bool
         ProxyUse,               // bool
         ProxyIP,                // QString
         ProxyPort,              // int
