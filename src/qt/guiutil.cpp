@@ -981,7 +981,7 @@ void PrintSlotException(
 {
     std::string description = sender->metaObject()->className();
     description += "->";
-    description += receiver->metaObject()->className();
+    description += (receiver) ? receiver->metaObject()->className() : "lambda";
     PrintExceptionContinue(exception, description.c_str());
 }
 

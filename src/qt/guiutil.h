@@ -380,6 +380,34 @@ namespace GUIUtil
         const QObject* sender,
         const QObject* receiver);
 
+    template <typename Func>
+    void GuardFunc(const Func& func, const QObject* sender, const QObject* receiver)
+    {
+        bool ok{true};
+        try {
+            func();
+        } catch (const NonFatalCheckError& e) {
+            PrintSlotException(&e, sender, receiver);
+            ok = QMetaObject::invokeMethod(
+                    qApp, "handleNonFatalException",
+                    blockingGUIThreadConnection(),
+                    Q_ARG(QString, QString::fromStdString(e.what())));
+        } catch (const std::exception& e) {
+            PrintSlotException(&e, sender, receiver);
+            ok = QMetaObject::invokeMethod(
+                    qApp, "handleRunawayException",
+                    blockingGUIThreadConnection(),
+                    Q_ARG(QString, QString::fromStdString(e.what())));
+        } catch (...) {
+            PrintSlotException(nullptr, sender, receiver);
+            ok = QMetaObject::invokeMethod(
+                    qApp, "handleRunawayException",
+                    blockingGUIThreadConnection(),
+                    Q_ARG(QString, "Unknown failure occurred."));
+        }
+        assert(ok);
+    }
+
     /**
      * A drop-in replacement of QObject::connect function
      * (see: https://doc.qt.io/qt-5/qobject.html#connect-3), that
@@ -395,31 +423,28 @@ namespace GUIUtil
         return QObject::connect(
             sender, signal, receiver,
             [sender, receiver, method](auto&&... args) {
-                bool ok{true};
-                try {
+                GuardFunc([&]() {
                     (receiver->*method)(std::forward<decltype(args)>(args)...);
-                } catch (const NonFatalCheckError& e) {
-                    PrintSlotException(&e, sender, receiver);
-                    ok = QMetaObject::invokeMethod(
-                        qApp, "handleNonFatalException",
-                        blockingGUIThreadConnection(),
-                        Q_ARG(QString, QString::fromStdString(e.what())));
-                } catch (const std::exception& e) {
-                    PrintSlotException(&e, sender, receiver);
-                    ok = QMetaObject::invokeMethod(
-                        qApp, "handleRunawayException",
-                        blockingGUIThreadConnection(),
-                        Q_ARG(QString, QString::fromStdString(e.what())));
-                } catch (...) {
-                    PrintSlotException(nullptr, sender, receiver);
-                    ok = QMetaObject::invokeMethod(
-                        qApp, "handleRunawayException",
-                        blockingGUIThreadConnection(),
-                        Q_ARG(QString, "Unknown failure occurred."));
-                }
-                assert(ok);
+                }, sender, receiver);
             },
             type);
+    }
+
+    /**
+     * A drop-in replacement of QObject::connect(Object* sender, Func1 signal, Object* context, Func2 slot) function
+     * The "context" object defines in which event loop the function will be executed.
+     */
+    template <typename Sender, typename Signal, typename Slot>
+    auto ExceptionSafeConnectWorker(
+            Sender sender, Signal signal, const QObject* context, Slot method,
+            Qt::ConnectionType type = Qt::AutoConnection)
+    {
+        return QObject::connect(sender, signal, context, [sender, method]() {
+                    GuardFunc([&]() {
+                        method();
+                    }, sender, /*receiver=*/nullptr);
+                },
+                type);
     }
 
     /**
