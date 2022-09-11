@@ -22,6 +22,7 @@
 #include <QProgressBar>
 #include <QString>
 #include <QTableView>
+#include <QTimer>
 
 #include <cassert>
 #include <chrono>
@@ -459,6 +460,15 @@ namespace GUIUtil
         if (key == Qt::Key_Back) return true;
 #endif // Q_OS_ANDROID
         return false;
+    }
+
+    template <typename Func, typename Duration>
+    void ExecInWorker(QObject* parent, Duration interval, const QObject* worker, const Func& func)
+    {
+        QTimer* timer = new QTimer(parent);
+        timer->setSingleShot(true);
+        GUIUtil::ExceptionSafeConnectWorker(timer, &QTimer::timeout, worker, func);
+        timer->start(interval);
     }
 
 } // namespace GUIUtil

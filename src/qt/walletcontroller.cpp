@@ -261,7 +261,7 @@ void CreateWalletActivity::createWallet()
         flags |= WALLET_FLAG_EXTERNAL_SIGNER;
     }
 
-    QTimer::singleShot(500ms, worker(), [this, name, flags] {
+    GUIUtil::ExecInWorker(this, 500ms, worker(), [this, name, flags] {
         auto wallet{node().walletLoader().createWallet(name, m_passphrase, flags, m_warning_message)};
 
         if (wallet) {
@@ -350,7 +350,7 @@ void OpenWalletActivity::open(const std::string& path)
             to the user which wallet is currently being opened. */
         tr("Opening Wallet <b>%1</b>…").arg(name.toHtmlEscaped()));
 
-    QTimer::singleShot(0, worker(), [this, path] {
+    GUIUtil::ExecInWorker(this, 0, worker(), [this, path] {
         auto wallet{node().walletLoader().loadWallet(path, m_warning_message)};
 
         if (wallet) {
@@ -377,7 +377,7 @@ void LoadWalletsActivity::load()
             the user that wallets are currently being loaded.*/
         tr("Loading wallets…"));
 
-    QTimer::singleShot(0, worker(), [this] {
+    GUIUtil::ExecInWorker(this, 0, worker(), [this] {
         for (auto& wallet : node().walletLoader().getWallets()) {
             m_wallet_controller->getOrCreateWallet(std::move(wallet));
         }
@@ -402,7 +402,7 @@ void RestoreWalletActivity::restore(const fs::path& backup_file, const std::stri
             the user that wallets are currently being restored.*/
         tr("Restoring Wallet <b>%1</b>…").arg(name.toHtmlEscaped()));
 
-    QTimer::singleShot(0, worker(), [this, backup_file, wallet_name] {
+    GUIUtil::ExecInWorker(this, /*interval=*/0, worker(), [this, backup_file, wallet_name](){
         auto wallet{node().walletLoader().restoreWallet(backup_file, wallet_name, m_warning_message)};
 
         if (wallet) {
