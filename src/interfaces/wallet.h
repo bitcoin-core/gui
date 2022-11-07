@@ -126,6 +126,9 @@ public:
     //! Save or remove receive request.
     virtual bool setAddressReceiveRequest(const CTxDestination& dest, const std::string& id, const std::string& value) = 0;
 
+    //! Whether the given output is a change
+    virtual bool isChange(const CTxOut& txout) const = 0;
+
     //! Display address on external signer
     virtual util::Result<void> displayAddress(const CTxDestination& dest) = 0;
 
