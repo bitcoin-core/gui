@@ -168,7 +168,8 @@ public:
         std::vector<bilingual_str>& errors,
         CAmount& old_fee,
         CAmount& new_fee,
-        CMutableTransaction& mtx) = 0;
+        CMutableTransaction& mtx,
+        std::optional<uint32_t> reduce_output) = 0;
 
     //! Sign bump transaction.
     virtual bool signBumpTransaction(CMutableTransaction& mtx) = 0;
