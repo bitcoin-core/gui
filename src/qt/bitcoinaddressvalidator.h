@@ -32,4 +32,20 @@ public:
     State validate(QString &input, int &pos) const override;
 };
 
+class ErrorLocator
+{
+public:
+    virtual void locateErrors(const QString& str, std::string& error_message, std::vector<int>* error_locations) const = 0;
+    virtual ~ErrorLocator() {};
+};
+
+/** Bitcoin address error locator.
+ */
+class BitcoinAddressErrorLocator : public ErrorLocator
+{
+public:
+    void locateErrors(const QString& str, std::string& error_message, std::vector<int>* error_locations) const override;
+    ~BitcoinAddressErrorLocator() override {};
+};
+
 #endif // BITCOIN_QT_BITCOINADDRESSVALIDATOR_H
