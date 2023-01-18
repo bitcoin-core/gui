@@ -18,6 +18,7 @@
 #include <core_io.h>
 #include <interfaces/handler.h>
 #include <uint256.h>
+#include <util/string.h>
 
 #include <algorithm>
 #include <functional>
@@ -424,8 +425,15 @@ QString TransactionTableModel::formatTxToAddress(const TransactionRecord *wtx, b
         return lookupAddress(wtx->address, tooltip) + watchAddress;
     case TransactionRecord::SendToOther:
         return QString::fromStdString(wtx->address) + watchAddress;
-    case TransactionRecord::SendToSelf:
-        return lookupAddress(wtx->address, tooltip) + watchAddress;
+    case TransactionRecord::SendToSelf: {
+        std::vector<std::string> addresses = SplitString(wtx->address, ',');
+        QString display_string;
+        for (auto it = addresses.begin(); it != addresses.end(); ++it) {
+            if (it != addresses.begin()) display_string += ", ";
+            display_string += lookupAddress(TrimString(*it), tooltip) + watchAddress;
+        }
+        return display_string;
+    }
     default:
         return tr("(n/a)") + watchAddress;
     }
