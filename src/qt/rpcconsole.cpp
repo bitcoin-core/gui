@@ -529,7 +529,12 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     if (platformStyle->getImagesOnButtons()) {
         ui->openDebugLogfileButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
     }
+
     ui->clearButton->setIcon(platformStyle->SingleColorIcon(":/icons/remove"));
+    //: Main shortcut to reset the RPC console.
+    ui->clearButton->setShortcut(tr("Ctrl+)"));
+    //: Secondary shortcut to reset the RPC console.
+    GUIUtil::AddButtonShortcut(ui->clearButton, tr("Ctrl+0"));
 
     ui->fontBiggerButton->setIcon(platformStyle->SingleColorIcon(":/icons/fontbigger"));
     //: Main shortcut to increase the RPC console font size.
@@ -550,7 +555,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     ui->lineEdit->setMaxLength(16 * 1024 * 1024);
     ui->messagesWidget->installEventFilter(this);
 
-    connect(ui->clearButton, &QAbstractButton::clicked, [this] { clear(); });
+    connect(ui->clearButton, &QAbstractButton::clicked, [this] { clear(/*keep_prompt=*/false); });
     connect(ui->fontBiggerButton, &QAbstractButton::clicked, this, &RPCConsole::fontBigger);
     connect(ui->fontSmallerButton, &QAbstractButton::clicked, this, &RPCConsole::fontSmaller);
     connect(ui->btnClearTrafficGraph, &QPushButton::clicked, ui->trafficGraph, &TrafficGraphWidget::clear);
