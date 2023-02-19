@@ -13,6 +13,7 @@
     <ClCompile Include="..\..\src\wallet\test\util.cpp" />
     <ClCompile Include="..\..\src\qt\test\addressbooktests.cpp" />
     <ClCompile Include="..\..\src\qt\test\apptests.cpp" />
+    <ClCompile Include="..\..\src\qt\test\importdescriptorstests.cpp" />
     <ClCompile Include="..\..\src\qt\test\importmultitests.cpp" />
     <ClCompile Include="..\..\src\qt\test\optiontests.cpp" />
     <ClCompile Include="..\..\src\qt\test\rpcnestedtests.cpp" />
@@ -23,6 +24,7 @@
     <ClCompile Include="..\..\src\wallet\test\wallet_test_fixture.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_addressbooktests.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_apptests.cpp" />
+    <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_importdescriptorstests.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_importmultitests.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_optiontests.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_rpcnestedtests.cpp" />
@@ -96,6 +98,7 @@
   <ItemGroup>
     <MocTestFiles Include="..\..\src\qt\test\addressbooktests.h" />
     <MocTestFiles Include="..\..\src\qt\test\apptests.h" />
+    <MocTestFiles Include="..\..\src\qt\test\importdescriptorstests.h" />
     <MocTestFiles Include="..\..\src\qt\test\importmultitests.h" />
     <MocTestFiles Include="..\..\src\qt\test\optiontests.h" />
     <MocTestFiles Include="..\..\src\qt\test\rpcnestedtests.h" />
