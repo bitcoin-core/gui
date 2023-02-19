@@ -19,6 +19,7 @@
 #ifdef ENABLE_WALLET
 #include <qt/test/addressbooktests.h>
 #include <qt/test/importdescriptorstests.h>
+#include <qt/test/importlegacytests.h>
 #include <qt/test/importmultitests.h>
 #include <qt/test/wallettests.h>
 #endif // ENABLE_WALLET
@@ -112,6 +113,9 @@ int main(int argc, char* argv[])
 
     ImportDescriptorsTests test8(app.node());
     num_test_failures += QTest::qExec(&test8);
+
+    ImportLegacyTests test9(app.node());
+    num_test_failures += QTest::qExec(&test9);
 #endif
 
     if (num_test_failures) {
