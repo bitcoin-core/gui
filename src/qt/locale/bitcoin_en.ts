@@ -5455,7 +5455,7 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Cannot resolve -%s address: &apos;%s&apos;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5475,7 +5475,7 @@ Go to File &gt; Open Wallet to load a wallet.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="-90"/>
+        <location line="-91"/>
         <source>The -txindex upgrade started by a previous version cannot be completed. Restart with the previous version or run a full -reindex.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5594,7 +5594,12 @@ Unable to restore backup of wallet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+6"/>
+        <source>Block verification was interrupted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location line="+5"/>
         <source>Config setting for %s only applied on %s network when in [%s] section.</source>
         <translation type="unfinished"></translation>
     </message>

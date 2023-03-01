@@ -233,6 +233,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 QT_TRANSLATE_NOOP("bitcoin-core", "%s is set very high!"),
 QT_TRANSLATE_NOOP("bitcoin-core", "-maxmempool must be at least %d MB"),
 QT_TRANSLATE_NOOP("bitcoin-core", "A fatal internal error occurred, see debug.log for details"),
+QT_TRANSLATE_NOOP("bitcoin-core", "Block verification was interrupted"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot resolve -%s address: '%s'"),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot set -forcednsseed to true when setting -dnsseed to false."),
 QT_TRANSLATE_NOOP("bitcoin-core", "Cannot set -peerblockfilters without -blockfilterindex."),
