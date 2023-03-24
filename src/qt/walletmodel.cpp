@@ -51,7 +51,7 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
     fHaveWatchOnly = m_wallet->haveWatchOnly();
     addressTableModel = new AddressTableModel(this);
     transactionTableModel = new TransactionTableModel(platformStyle, this);
-    recentRequestsTableModel = new RecentRequestsTableModel(this);
+    recentRequestsTableModel = new RecentRequestsTableModel(platformStyle, this);
 
     subscribeToCoreSignals();
 }

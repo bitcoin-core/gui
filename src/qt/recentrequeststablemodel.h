@@ -5,8 +5,12 @@
 #ifndef BITCOIN_QT_RECENTREQUESTSTABLEMODEL_H
 #define BITCOIN_QT_RECENTREQUESTSTABLEMODEL_H
 
+#include <interfaces/wallet.h>
+
+#include <qt/platformstyle.h>
 #include <qt/sendcoinsrecipient.h>
 
+#include <optional>
 #include <string>
 
 #include <QAbstractTableModel>
@@ -26,12 +30,16 @@ public:
     QDateTime date;
     SendCoinsRecipient recipient;
 
+    bool m_is_active{false}; // memory only
+
     SERIALIZE_METHODS(RecentRequestEntry, obj) {
         unsigned int date_timet;
         SER_WRITE(obj, date_timet = obj.date.toSecsSinceEpoch());
         READWRITE(obj.nVersion, obj.id, date_timet, obj.recipient);
         SER_READ(obj, obj.date = QDateTime::fromSecsSinceEpoch(date_timet));
     }
+
+    [[nodiscard]] QString GetAddressWarnings() const;
 };
 
 class RecentRequestEntryLessThan
@@ -54,14 +62,15 @@ class RecentRequestsTableModel: public QAbstractTableModel
     Q_OBJECT
 
 public:
-    explicit RecentRequestsTableModel(WalletModel *parent);
+    explicit RecentRequestsTableModel(const PlatformStyle* platformStyle, WalletModel* parent);
     ~RecentRequestsTableModel();
 
     enum ColumnIndex {
         Date = 0,
-        Label = 1,
-        Message = 2,
-        Amount = 3,
+        Warnings,
+        Label,
+        Message,
+        Amount,
         NUMBER_OF_COLUMNS
     };
 
@@ -79,9 +88,9 @@ public:
     /*@}*/
 
     const RecentRequestEntry &entry(int row) const { return list[row]; }
-    void addNewRequest(const SendCoinsRecipient &recipient);
-    void addNewRequest(const std::string &recipient);
-    void addNewRequest(RecentRequestEntry &recipient);
+    std::optional<RecentRequestEntry> addNewRequest(const SendCoinsRecipient& recipient);
+    std::optional<RecentRequestEntry> addNewRequest(const interfaces::ReceiveRequest& recipient);
+    std::optional<RecentRequestEntry> addNewRequest(RecentRequestEntry& recipient);
 
 public Q_SLOTS:
     void updateDisplayUnit();
@@ -91,6 +100,7 @@ private:
     QStringList columns;
     QList<RecentRequestEntry> list;
     int64_t nReceiveRequestsMaxId{0};
+    const PlatformStyle* platformStyle;
 
     /** Updates the column title to "Amount (DisplayUnit)" and emits headerDataChanged() signal for table headers to react. */
     void updateAmountColumnTitle();

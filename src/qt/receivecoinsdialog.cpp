@@ -160,14 +160,19 @@ void ReceiveCoinsDialog::on_receiveButton_clicked()
         // Success
         SendCoinsRecipient info(address, label,
             ui->reqAmount->value(), ui->reqMessage->text());
+
+        /* Store request for later reference */
+        std::optional<RecentRequestEntry> entry = model->getRecentRequestsTableModel()->addNewRequest(info);
+
+        // Wallet failed to set address receive request
+        if (!entry.has_value()) break;
+
         ReceiveRequestDialog *dialog = new ReceiveRequestDialog(this);
         dialog->setAttribute(Qt::WA_DeleteOnClose);
         dialog->setModel(model);
-        dialog->setInfo(info);
+        dialog->setInfo(entry.value());
         dialog->show();
 
-        /* Store request for later reference */
-        model->getRecentRequestsTableModel()->addNewRequest(info);
         break;
     }
     case AddressTableModel::EditStatus::WALLET_UNLOCK_FAILURE:
@@ -194,7 +199,7 @@ void ReceiveCoinsDialog::on_recentRequestsView_doubleClicked(const QModelIndex &
     const RecentRequestsTableModel *submodel = model->getRecentRequestsTableModel();
     ReceiveRequestDialog *dialog = new ReceiveRequestDialog(this);
     dialog->setModel(model);
-    dialog->setInfo(submodel->entry(index.row()).recipient);
+    dialog->setInfo(submodel->entry(index.row()));
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
 }

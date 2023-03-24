@@ -5,9 +5,9 @@
 #include <qt/test/wallettests.h>
 #include <qt/test/util.h>
 
-#include <wallet/coincontrol.h>
 #include <interfaces/chain.h>
 #include <interfaces/node.h>
+#include <interfaces/wallet.h>
 #include <key_io.h>
 #include <qt/bitcoinamountfield.h>
 #include <qt/bitcoinunits.h>
@@ -26,6 +26,7 @@
 #include <qt/walletmodel.h>
 #include <test/util/setup_common.h>
 #include <validation.h>
+#include <wallet/coincontrol.h>
 #include <wallet/wallet.h>
 
 #include <chrono>
@@ -366,10 +367,11 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
     QCOMPARE(currentRowCount, initialRowCount+1);
 
     // Check addition to wallet
-    std::vector<std::string> requests = walletModel.wallet().getAddressReceiveRequests();
+    std::vector<interfaces::ReceiveRequest> requests = walletModel.wallet().getAddressReceiveRequests();
     QCOMPARE(requests.size(), size_t{1});
+    QVERIFY(requests[0].m_is_active); // Key was derived from active seed or descriptor
     RecentRequestEntry entry;
-    DataStream{MakeUCharSpan(requests[0])} >> entry;
+    DataStream{MakeUCharSpan(requests[0].m_data)} >> entry;
     QCOMPARE(entry.nVersion, int{1});
     QCOMPARE(entry.id, int64_t{1});
     QVERIFY(entry.date.isValid());

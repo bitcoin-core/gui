@@ -451,6 +451,13 @@ void TestLoadWallet(const std::string& name, DatabaseFormat format, std::functio
     WITH_LOCK(wallet->cs_wallet, f(wallet));
 }
 
+void CompareRecReqVectors(std::vector<interfaces::ReceiveRequest> a, std::vector<interfaces::ReceiveRequest> b)
+{
+    BOOST_REQUIRE(a.size() == b.size());
+    for (size_t i = 0; i < a.size(); ++i)
+        BOOST_CHECK(a[i] == b[i]);
+}
+
 BOOST_FIXTURE_TEST_CASE(LoadReceiveRequests, TestingSetup)
 {
     for (DatabaseFormat format : DATABASE_FORMATS) {
@@ -469,9 +476,10 @@ BOOST_FIXTURE_TEST_CASE(LoadReceiveRequests, TestingSetup)
         TestLoadWallet(name, format, [](std::shared_ptr<CWallet> wallet) EXCLUSIVE_LOCKS_REQUIRED(wallet->cs_wallet) {
             BOOST_CHECK(wallet->IsAddressPreviouslySpent(PKHash()));
             BOOST_CHECK(wallet->IsAddressPreviouslySpent(ScriptHash()));
-            auto requests = wallet->GetAddressReceiveRequests();
-            auto erequests = {"val_rr11", "val_rr20"};
-            BOOST_CHECK_EQUAL_COLLECTIONS(requests.begin(), requests.end(), std::begin(erequests), std::end(erequests));
+            std::vector<interfaces::ReceiveRequest> requests = wallet->GetAddressReceiveRequests();
+            // Key should be marked as not active (m_is_active = false) since it was effectively imported, not derived from active seed
+            std::vector<interfaces::ReceiveRequest> erequests = {{"val_rr11", false}, {"val_rr20", false}};
+            CompareRecReqVectors(requests, erequests);
             WalletBatch batch{wallet->GetDatabase()};
             BOOST_CHECK(batch.WriteAddressPreviouslySpent(PKHash(), false));
             BOOST_CHECK(batch.EraseAddressData(ScriptHash()));
@@ -479,9 +487,9 @@ BOOST_FIXTURE_TEST_CASE(LoadReceiveRequests, TestingSetup)
         TestLoadWallet(name, format, [](std::shared_ptr<CWallet> wallet) EXCLUSIVE_LOCKS_REQUIRED(wallet->cs_wallet) {
             BOOST_CHECK(!wallet->IsAddressPreviouslySpent(PKHash()));
             BOOST_CHECK(!wallet->IsAddressPreviouslySpent(ScriptHash()));
-            auto requests = wallet->GetAddressReceiveRequests();
-            auto erequests = {"val_rr11"};
-            BOOST_CHECK_EQUAL_COLLECTIONS(requests.begin(), requests.end(), std::begin(erequests), std::end(erequests));
+            std::vector<interfaces::ReceiveRequest> requests = wallet->GetAddressReceiveRequests();
+            std::vector<interfaces::ReceiveRequest> erequests = {{"val_rr11", false}};
+            CompareRecReqVectors(requests, erequests);
         });
     }
 }

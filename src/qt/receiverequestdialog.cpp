@@ -42,9 +42,9 @@ void ReceiveRequestDialog::setModel(WalletModel *_model)
     update();
 }
 
-void ReceiveRequestDialog::setInfo(const SendCoinsRecipient &_info)
+void ReceiveRequestDialog::setInfo(const RecentRequestEntry& entry)
 {
-    this->info = _info;
+    this->info = entry.recipient;
     setWindowTitle(tr("Request payment to %1").arg(info.label.isEmpty() ? info.address : info.label));
     QString uri = GUIUtil::formatBitcoinURI(info);
 
@@ -87,6 +87,14 @@ void ReceiveRequestDialog::setInfo(const SendCoinsRecipient &_info)
     } else {
         ui->wallet_tag->hide();
         ui->wallet_content->hide();
+    }
+
+    QString warnings{entry.GetAddressWarnings()};
+    if (warnings.isEmpty()) {
+        ui->warnings_tag->hide();
+        ui->warnings_content->hide();
+    } else {
+        ui->warnings_content->setText(warnings);
     }
 
     ui->btnVerify->setVisible(model->wallet().hasExternalSigner());

@@ -223,7 +223,8 @@ public:
         });
         return result;
     }
-    std::vector<std::string> getAddressReceiveRequests() override {
+    std::vector<interfaces::ReceiveRequest> getAddressReceiveRequests() override
+    {
         LOCK(m_wallet->cs_wallet);
         return m_wallet->GetAddressReceiveRequests();
     }

@@ -5,7 +5,7 @@
 #ifndef BITCOIN_QT_RECEIVEREQUESTDIALOG_H
 #define BITCOIN_QT_RECEIVEREQUESTDIALOG_H
 
-#include <qt/sendcoinsrecipient.h>
+#include <qt/recentrequeststablemodel.h>
 
 #include <QDialog>
 
@@ -24,7 +24,7 @@ public:
     ~ReceiveRequestDialog();
 
     void setModel(WalletModel *model);
-    void setInfo(const SendCoinsRecipient &info);
+    void setInfo(const RecentRequestEntry& entry);
 
 private Q_SLOTS:
     void on_btnCopyURI_clicked();

@@ -7,6 +7,7 @@
 #include <qt/bitcoinunits.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
+#include <qt/platformstyle.h>
 #include <qt/walletmodel.h>
 
 #include <clientversion.h>
@@ -17,19 +18,29 @@
 
 #include <utility>
 
+#include <QIcon>
 #include <QLatin1Char>
 #include <QLatin1String>
 
-RecentRequestsTableModel::RecentRequestsTableModel(WalletModel *parent) :
-    QAbstractTableModel(parent), walletModel(parent)
+[[nodiscard]] QString RecentRequestEntry::GetAddressWarnings() const
+{
+    QString warnings;
+    if (!m_is_active) {
+        warnings += QObject::tr("This address should not be used. It was derived from an inactive seed, was imported, or may have been stored unencrypted.\n");
+    }
+
+    return warnings;
+}
+
+RecentRequestsTableModel::RecentRequestsTableModel(const PlatformStyle* platformStyle, WalletModel* parent) : QAbstractTableModel(parent), walletModel(parent)
 {
     // Load entries from wallet
-    for (const std::string& request : parent->wallet().getAddressReceiveRequests()) {
+    for (const interfaces::ReceiveRequest& request : parent->wallet().getAddressReceiveRequests()) {
         addNewRequest(request);
     }
 
     /* These columns must match the indices in the ColumnIndex enumeration */
-    columns << tr("Date") << tr("Label") << tr("Message") << getAmountTitle();
+    columns << tr("Date") << tr("Warnings") << tr("Label") << tr("Message") << getAmountTitle();
 
     connect(walletModel->getOptionsModel(), &OptionsModel::displayUnitChanged, this, &RecentRequestsTableModel::updateDisplayUnit);
 }
@@ -57,11 +68,13 @@ QVariant RecentRequestsTableModel::data(const QModelIndex &index, int role) cons
     if(!index.isValid() || index.row() >= list.length())
         return QVariant();
 
+    const RecentRequestEntry* rec = &list[index.row()];
     if(role == Qt::DisplayRole || role == Qt::EditRole)
     {
-        const RecentRequestEntry *rec = &list[index.row()];
         switch(index.column())
         {
+        case Warnings:
+            return {};
         case Date:
             return GUIUtil::dateTimeStr(rec->date);
         case Label:
@@ -95,6 +108,16 @@ QVariant RecentRequestsTableModel::data(const QModelIndex &index, int role) cons
     {
         if (index.column() == Amount)
             return (int)(Qt::AlignRight|Qt::AlignVCenter);
+    } else if (role == Qt::DecorationRole) {
+        if (index.column() == Warnings) {
+            if (rec->GetAddressWarnings().isEmpty()) {
+                return {};
+            } else {
+                return platformStyle->TextColorIcon(QIcon(":/icons/warning"));
+            }
+        }
+    } else if (role == Qt::ToolTipRole) {
+        if (index.column() == Warnings) return rec->GetAddressWarnings();
     }
     return QVariant();
 }
@@ -168,7 +191,7 @@ Qt::ItemFlags RecentRequestsTableModel::flags(const QModelIndex &index) const
 }
 
 // called when adding a request from the GUI
-void RecentRequestsTableModel::addNewRequest(const SendCoinsRecipient &recipient)
+std::optional<RecentRequestEntry> RecentRequestsTableModel::addNewRequest(const SendCoinsRecipient& recipient)
 {
     RecentRequestEntry newEntry;
     newEntry.id = ++nReceiveRequestsMaxId;
@@ -179,35 +202,44 @@ void RecentRequestsTableModel::addNewRequest(const SendCoinsRecipient &recipient
     ss << newEntry;
 
     if (!walletModel->wallet().setAddressReceiveRequest(DecodeDestination(recipient.address.toStdString()), ToString(newEntry.id), ss.str()))
-        return;
+        return std::nullopt;
+
+    // If we are using the GUI to get a new receive address,
+    // the key must be active (derived from active seed or descriptor)
+    newEntry.m_is_active = true;
 
     addNewRequest(newEntry);
+    return newEntry;
 }
 
 // called from ctor when loading from wallet
-void RecentRequestsTableModel::addNewRequest(const std::string &recipient)
+std::optional<RecentRequestEntry> RecentRequestsTableModel::addNewRequest(const interfaces::ReceiveRequest& recipient)
 {
-    std::vector<uint8_t> data(recipient.begin(), recipient.end());
+    std::vector<uint8_t> data(recipient.m_data.begin(), recipient.m_data.end());
     DataStream ss{data};
 
     RecentRequestEntry entry;
     ss >> entry;
 
     if (entry.id == 0) // should not happen
-        return;
+        return std::nullopt;
 
     if (entry.id > nReceiveRequestsMaxId)
         nReceiveRequestsMaxId = entry.id;
 
+    entry.m_is_active = recipient.m_is_active;
+
     addNewRequest(entry);
+    return entry;
 }
 
 // actually add to table in GUI
-void RecentRequestsTableModel::addNewRequest(RecentRequestEntry &recipient)
+std::optional<RecentRequestEntry> RecentRequestsTableModel::addNewRequest(RecentRequestEntry& recipient)
 {
     beginInsertRows(QModelIndex(), 0, 0);
     list.prepend(recipient);
     endInsertRows();
+    return recipient;
 }
 
 void RecentRequestsTableModel::sort(int column, Qt::SortOrder order)

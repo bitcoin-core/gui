@@ -2823,12 +2823,13 @@ bool CWallet::IsAddressPreviouslySpent(const CTxDestination& dest) const
     return false;
 }
 
-std::vector<std::string> CWallet::GetAddressReceiveRequests() const
+std::vector<interfaces::ReceiveRequest> CWallet::GetAddressReceiveRequests() const
 {
-    std::vector<std::string> values;
+    std::vector<interfaces::ReceiveRequest> values;
     for (const auto& [dest, entry] : m_address_book) {
         for (const auto& [id, request] : entry.receive_requests) {
-            values.emplace_back(request);
+            bool active{IsDestinationActive(dest)};
+            values.emplace_back(interfaces::ReceiveRequest(request, active));
         }
     }
     return values;

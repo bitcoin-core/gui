@@ -46,6 +46,7 @@ namespace interfaces {
 
 class Handler;
 struct WalletAddress;
+struct ReceiveRequest;
 struct WalletBalances;
 struct WalletTx;
 struct WalletTxOut;
@@ -118,8 +119,8 @@ public:
     //! Get wallet address list.
     virtual std::vector<WalletAddress> getAddresses() const = 0;
 
-    //! Get receive requests.
-    virtual std::vector<std::string> getAddressReceiveRequests() = 0;
+    //! Get receive requests. Bool indicating key is active, string containing serialized destination data
+    virtual std::vector<ReceiveRequest> getAddressReceiveRequests() = 0;
 
     //! Save or remove receive request.
     virtual bool setAddressReceiveRequest(const CTxDestination& dest, const std::string& id, const std::string& value) = 0;
@@ -360,6 +361,17 @@ struct WalletAddress
         : dest(std::move(dest)), is_mine(is_mine), purpose(std::move(purpose)), name(std::move(name))
     {
     }
+};
+
+//! Information about one receive request.
+struct ReceiveRequest {
+    std::string m_data;
+    bool m_is_active;
+
+    ReceiveRequest(std::string data, bool is_active)
+        : m_data(std::move(data)), m_is_active(is_active) {}
+
+    bool operator==(const ReceiveRequest& a) const { return (m_data == a.m_data) && (m_is_active == a.m_is_active); };
 };
 
 //! Collection of wallet balances.
