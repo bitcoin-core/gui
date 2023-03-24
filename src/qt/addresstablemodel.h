@@ -6,6 +6,7 @@
 #define BITCOIN_QT_ADDRESSTABLEMODEL_H
 
 #include <optional>
+#include <qt/platformstyle.h>
 
 #include <QAbstractTableModel>
 #include <QStringList>
@@ -30,12 +31,13 @@ class AddressTableModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    explicit AddressTableModel(WalletModel *parent = nullptr, bool pk_hash_only = false);
+    explicit AddressTableModel(const PlatformStyle* platformStyle, WalletModel* parent = nullptr, bool pk_hash_only = false);
     ~AddressTableModel();
 
     enum ColumnIndex {
-        Label = 0,   /**< User specified label */
-        Address = 1  /**< Bitcoin address */
+        Warnings = 0, /**< Warn user about using this address with tooltip explanation */
+        Label,        /**< User specified label */
+        Address       /**< Bitcoin address */
     };
 
     enum RoleIndex {
@@ -92,6 +94,7 @@ private:
     AddressTablePriv *priv = nullptr;
     QStringList columns;
     EditStatus editStatus = OK;
+    const PlatformStyle* platformStyle;
 
     /** Look up address book data given an address string. */
     bool getAddressData(const QString &address, std::string* name, wallet::AddressPurpose* purpose) const;

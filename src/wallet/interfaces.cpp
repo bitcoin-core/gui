@@ -219,7 +219,7 @@ public:
             if (is_change) return;
             isminetype is_mine = m_wallet->IsMine(dest);
             // In very old wallets, address purpose may not be recorded so we derive it from IsMine
-            result.emplace_back(dest, is_mine, purpose.value_or(is_mine ? AddressPurpose::RECEIVE : AddressPurpose::SEND), label);
+            result.emplace_back(dest, is_mine, purpose.value_or(is_mine ? AddressPurpose::RECEIVE : AddressPurpose::SEND), label, m_wallet->IsDestinationActive(dest));
         });
         return result;
     }

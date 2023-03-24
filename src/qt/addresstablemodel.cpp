@@ -30,10 +30,12 @@ struct AddressTableEntry
     Type type;
     QString label;
     QString address;
+    bool is_active;
 
     AddressTableEntry() = default;
-    AddressTableEntry(Type _type, const QString &_label, const QString &_address):
-        type(_type), label(_label), address(_address) {}
+    AddressTableEntry(Type _type, const QString& _label, const QString& _address, bool is_active) : type(_type), label(_label), address(_address), is_active(is_active) {}
+
+    [[nodiscard]] QString GetAddressWarnings() const;
 };
 
 struct AddressTableEntryLessThan
@@ -65,6 +67,15 @@ static AddressTableEntry::Type translateTransactionType(wallet::AddressPurpose p
     assert(false);
 }
 
+[[nodiscard]] QString AddressTableEntry::GetAddressWarnings() const
+{
+    QString warnings;
+    if (!is_active)
+        warnings += QObject::tr("This address should not be used. It was derived from an inactive seed, was imported, or may have been stored unencrypted.\n");
+
+    return warnings;
+}
+
 // Private implementation
 class AddressTablePriv
 {
@@ -87,8 +98,9 @@ public:
                 AddressTableEntry::Type addressType = translateTransactionType(
                         address.purpose, address.is_mine);
                 cachedAddressTable.append(AddressTableEntry(addressType,
-                                  QString::fromStdString(address.name),
-                                  QString::fromStdString(EncodeDestination(address.dest))));
+                                                            QString::fromStdString(address.name),
+                                                            QString::fromStdString(EncodeDestination(address.dest)),
+                                                            address.is_active));
             }
         }
         // std::lower_bound() and std::upper_bound() require our cachedAddressTable list to be sorted in asc order
@@ -118,7 +130,7 @@ public:
                 break;
             }
             parent->beginInsertRows(QModelIndex(), lowerIndex, lowerIndex);
-            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address));
+            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address, /*TODO:*/ false));
             parent->endInsertRows();
             break;
         case CT_UPDATED:
@@ -162,10 +174,9 @@ public:
     }
 };
 
-AddressTableModel::AddressTableModel(WalletModel *parent, bool pk_hash_only) :
-    QAbstractTableModel(parent), walletModel(parent)
+AddressTableModel::AddressTableModel(const PlatformStyle* platformStyle, WalletModel* parent, bool pk_hash_only) : QAbstractTableModel(parent), walletModel(parent), platformStyle(platformStyle)
 {
-    columns << tr("Label") << tr("Address");
+    columns << tr("Warnings") << tr("Label") << tr("Address");
     priv = new AddressTablePriv(this);
     priv->refreshAddressTable(parent->wallet(), pk_hash_only);
 }
@@ -201,6 +212,8 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
     const auto column = static_cast<ColumnIndex>(index.column());
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
         switch (column) {
+        case Warnings:
+            return {};
         case Label:
             if (rec->label.isEmpty() && role == Qt::DisplayRole) {
                 return tr("(no label)");
@@ -213,6 +226,7 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
         assert(false);
     } else if (role == Qt::FontRole) {
         switch (column) {
+        case Warnings:
         case Label:
             return QFont();
         case Address:
@@ -230,6 +244,16 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
             return {};
         } // no default case, so the compiler can warn about missing cases
         assert(false);
+    } else if (role == Qt::DecorationRole) {
+        if (index.column() == Warnings) {
+            if (rec->GetAddressWarnings().isEmpty()) {
+                return {};
+            } else {
+                return platformStyle->TextColorIcon(QIcon(":/icons/warning"));
+            }
+        }
+    } else if (role == Qt::ToolTipRole) {
+        if (index.column() == Warnings) return rec->GetAddressWarnings();
     }
     return QVariant();
 }

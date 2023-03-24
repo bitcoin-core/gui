@@ -149,7 +149,7 @@ public:
 
     bool isMultiwallet() const;
 
-    void refresh(bool pk_hash_only = false);
+    void refresh(const PlatformStyle* platformStyle, bool pk_hash_only = false);
 
     uint256 getLastBlockProcessed() const;
 

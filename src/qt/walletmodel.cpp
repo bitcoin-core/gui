@@ -49,7 +49,7 @@ WalletModel::WalletModel(std::unique_ptr<interfaces::Wallet> wallet, ClientModel
     timer(new QTimer(this))
 {
     fHaveWatchOnly = m_wallet->haveWatchOnly();
-    addressTableModel = new AddressTableModel(this);
+    addressTableModel = new AddressTableModel(platformStyle, this);
     transactionTableModel = new TransactionTableModel(platformStyle, this);
     recentRequestsTableModel = new RecentRequestsTableModel(platformStyle, this);
 
@@ -600,9 +600,9 @@ bool WalletModel::isMultiwallet() const
     return m_node.walletLoader().getWallets().size() > 1;
 }
 
-void WalletModel::refresh(bool pk_hash_only)
+void WalletModel::refresh(const PlatformStyle* platformStyle, bool pk_hash_only)
 {
-    addressTableModel = new AddressTableModel(this, pk_hash_only);
+    addressTableModel = new AddressTableModel(platformStyle, this, pk_hash_only);
 }
 
 uint256 WalletModel::getLastBlockProcessed() const
