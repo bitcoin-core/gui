@@ -48,6 +48,7 @@ public:
     bool handlePaymentRequest(const SendCoinsRecipient& recipient);
 
     void showOutOfSyncWarning(bool fShow);
+    void refreshAddressTables();
 
 private:
     ClientModel* clientModel{nullptr};

@@ -1418,6 +1418,9 @@ void BitcoinGUI::updateWalletStatus()
     WalletModel * const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
     setHDStatus(walletModel->wallet().privateKeysDisabled(), walletModel->wallet().hdEnabled());
+
+    // Refresh requests table and address book to show warnings on old unencrypted keys
+    walletView->refreshAddressTables();
 }
 #endif // ENABLE_WALLET
 

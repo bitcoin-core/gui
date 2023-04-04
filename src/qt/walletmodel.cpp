@@ -137,11 +137,10 @@ void WalletModel::updateTransaction()
     fForceCheckBalanceChanged = true;
 }
 
-void WalletModel::updateAddressBook(const QString &address, const QString &label,
-        bool isMine, wallet::AddressPurpose purpose, int status)
+void WalletModel::updateAddressBook(const QString& address, const QString& label, bool isMine, wallet::AddressPurpose purpose, int status, bool isActive)
 {
     if(addressTableModel)
-        addressTableModel->updateEntry(address, label, isMine, purpose, status);
+        addressTableModel->updateEntry(address, label, isMine, purpose, status, isActive);
 }
 
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)
@@ -375,20 +374,19 @@ static void NotifyKeyStoreStatusChanged(WalletModel *walletmodel)
     assert(invoked);
 }
 
-static void NotifyAddressBookChanged(WalletModel *walletmodel,
-        const CTxDestination &address, const std::string &label, bool isMine,
-        wallet::AddressPurpose purpose, ChangeType status)
+static void NotifyAddressBookChanged(WalletModel* walletmodel, const CTxDestination& address, const std::string& label, bool isMine, wallet::AddressPurpose purpose, ChangeType status, bool isActive)
 {
     QString strAddress = QString::fromStdString(EncodeDestination(address));
     QString strLabel = QString::fromStdString(label);
 
-    qDebug() << "NotifyAddressBookChanged: " + strAddress + " " + strLabel + " isMine=" + QString::number(isMine) + " purpose=" + QString::number(static_cast<uint8_t>(purpose)) + " status=" + QString::number(status);
+    qDebug() << "NotifyAddressBookChanged: " + strAddress + " " + strLabel + " isMine=" + QString::number(isMine) + " purpose=" + QString::number(static_cast<uint8_t>(purpose)) + " status=" + QString::number(status) + " isActive=" + QString::number(isActive);
     bool invoked = QMetaObject::invokeMethod(walletmodel, "updateAddressBook",
-                              Q_ARG(QString, strAddress),
-                              Q_ARG(QString, strLabel),
-                              Q_ARG(bool, isMine),
-                              Q_ARG(wallet::AddressPurpose, purpose),
-                              Q_ARG(int, status));
+                                             Q_ARG(QString, strAddress),
+                                             Q_ARG(QString, strLabel),
+                                             Q_ARG(bool, isMine),
+                                             Q_ARG(wallet::AddressPurpose, purpose),
+                                             Q_ARG(int, status),
+                                             Q_ARG(bool, isActive));
     assert(invoked);
 }
 
@@ -427,7 +425,7 @@ void WalletModel::subscribeToCoreSignals()
     // Connect signals to wallet
     m_handler_unload = m_wallet->handleUnload(std::bind(&NotifyUnload, this));
     m_handler_status_changed = m_wallet->handleStatusChanged(std::bind(&NotifyKeyStoreStatusChanged, this));
-    m_handler_address_book_changed = m_wallet->handleAddressBookChanged(std::bind(NotifyAddressBookChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    m_handler_address_book_changed = m_wallet->handleAddressBookChanged(std::bind(NotifyAddressBookChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
     m_handler_transaction_changed = m_wallet->handleTransactionChanged(std::bind(NotifyTransactionChanged, this, std::placeholders::_1, std::placeholders::_2));
     m_handler_show_progress = m_wallet->handleShowProgress(std::bind(ShowProgress, this, std::placeholders::_1, std::placeholders::_2));
     m_handler_watch_only_changed = m_wallet->handleWatchOnlyChanged(std::bind(NotifyWatchonlyChanged, this, std::placeholders::_1));
@@ -600,9 +598,14 @@ bool WalletModel::isMultiwallet() const
     return m_node.walletLoader().getWallets().size() > 1;
 }
 
-void WalletModel::refresh(const PlatformStyle* platformStyle, bool pk_hash_only)
+void WalletModel::RefreshAddressTableModel(const PlatformStyle* platformStyle, bool pk_hash_only)
 {
     addressTableModel = new AddressTableModel(platformStyle, this, pk_hash_only);
+}
+
+void WalletModel::RefreshRecentRequestsTableModel(const PlatformStyle* platformStyle)
+{
+    recentRequestsTableModel = new RecentRequestsTableModel(platformStyle, this);
 }
 
 uint256 WalletModel::getLastBlockProcessed() const

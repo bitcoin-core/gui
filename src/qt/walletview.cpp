@@ -200,6 +200,14 @@ void WalletView::showOutOfSyncWarning(bool fShow)
     overviewPage->showOutOfSyncWarning(fShow);
 }
 
+void WalletView::refreshAddressTables()
+{
+    walletModel->RefreshRecentRequestsTableModel(platformStyle);
+    receiveCoinsPage->setModel(walletModel);
+    walletModel->RefreshAddressTableModel(platformStyle);
+    usedReceivingAddressesPage->setModel(walletModel->getAddressTableModel());
+}
+
 void WalletView::encryptWallet()
 {
     auto dlg = new AskPassphraseDialog(AskPassphraseDialog::Encrypt, this);

@@ -105,7 +105,7 @@ private:
 public Q_SLOTS:
     /* Update address list from core.
      */
-    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status);
+    void updateEntry(const QString& address, const QString& label, bool isMine, wallet::AddressPurpose purpose, int status, bool isActive);
 
     friend class AddressTablePriv;
 };

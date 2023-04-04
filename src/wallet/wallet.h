@@ -787,7 +787,7 @@ public:
      */
     boost::signals2::signal<void(const CTxDestination& address,
                                  const std::string& label, bool isMine,
-                                 AddressPurpose purpose, ChangeType status)>
+                                 AddressPurpose purpose, ChangeType status, bool isActive)>
         NotifyAddressBookChanged;
 
     /**

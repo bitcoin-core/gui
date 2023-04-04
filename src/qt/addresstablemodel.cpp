@@ -109,7 +109,7 @@ public:
         std::sort(cachedAddressTable.begin(), cachedAddressTable.end(), AddressTableEntryLessThan());
     }
 
-    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status)
+    void updateEntry(const QString& address, const QString& label, bool isMine, wallet::AddressPurpose purpose, int status, bool isActive)
     {
         // Find address / label in model
         QList<AddressTableEntry>::iterator lower = std::lower_bound(
@@ -130,7 +130,7 @@ public:
                 break;
             }
             parent->beginInsertRows(QModelIndex(), lowerIndex, lowerIndex);
-            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address, /*TODO:*/ false));
+            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address, isActive));
             parent->endInsertRows();
             break;
         case CT_UPDATED:
@@ -357,11 +357,10 @@ QModelIndex AddressTableModel::index(int row, int column, const QModelIndex &par
     }
 }
 
-void AddressTableModel::updateEntry(const QString &address,
-        const QString &label, bool isMine, wallet::AddressPurpose purpose, int status)
+void AddressTableModel::updateEntry(const QString& address, const QString& label, bool isMine, wallet::AddressPurpose purpose, int status, bool isActive)
 {
     // Update address book model from Bitcoin core
-    priv->updateEntry(address, label, isMine, purpose, status);
+    priv->updateEntry(address, label, isMine, purpose, status, isActive);
 }
 
 QString AddressTableModel::addRow(const QString &type, const QString &label, const QString &address, const OutputType address_type)

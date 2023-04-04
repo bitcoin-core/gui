@@ -293,10 +293,12 @@ public:
 
     //! Register handler for address book changed messages.
     using AddressBookChangedFn = std::function<void(const CTxDestination& address,
-        const std::string& label,
-        bool is_mine,
-        wallet::AddressPurpose purpose,
-        ChangeType status)>;
+                                                    const std::string& label,
+                                                    bool is_mine,
+                                                    wallet::AddressPurpose purpose,
+                                                    ChangeType status,
+                                                    bool is_active)>;
+
     virtual std::unique_ptr<Handler> handleAddressBookChanged(AddressBookChangedFn fn) = 0;
 
     //! Register handler for transaction changed messages.

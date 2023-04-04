@@ -540,7 +540,7 @@ public:
     {
         return MakeSignalHandler(m_wallet->NotifyAddressBookChanged.connect(
             [fn](const CTxDestination& address, const std::string& label, bool is_mine,
-                 AddressPurpose purpose, ChangeType status) { fn(address, label, is_mine, purpose, status); }));
+                 AddressPurpose purpose, ChangeType status, bool is_active) { fn(address, label, is_mine, purpose, status, is_active); }));
     }
     std::unique_ptr<Handler> handleTransactionChanged(TransactionChangedFn fn) override
     {

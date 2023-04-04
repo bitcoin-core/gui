@@ -2371,6 +2371,7 @@ bool CWallet::SetAddressBookWithDB(WalletBatch& batch, const CTxDestination& add
     bool fUpdated = false;
     bool is_mine;
     std::optional<AddressPurpose> purpose;
+    bool is_active = IsDestinationActive(address);
     {
         LOCK(cs_wallet);
         std::map<CTxDestination, CAddressBookData>::iterator mi = m_address_book.find(address);
@@ -2386,7 +2387,7 @@ bool CWallet::SetAddressBookWithDB(WalletBatch& batch, const CTxDestination& add
     // In very old wallets, address purpose may not be recorded so we derive it from IsMine
     NotifyAddressBookChanged(address, strName, is_mine,
                              purpose.value_or(is_mine ? AddressPurpose::RECEIVE : AddressPurpose::SEND),
-                             (fUpdated ? CT_UPDATED : CT_NEW));
+                             (fUpdated ? CT_UPDATED : CT_NEW), is_active);
     if (new_purpose && !batch.WritePurpose(EncodeDestination(address), PurposeToString(*new_purpose)))
         return false;
     return batch.WriteName(EncodeDestination(address), strName);
@@ -2415,7 +2416,7 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
         m_address_book.erase(address);
     }
 
-    NotifyAddressBookChanged(address, "", /*is_mine=*/false, AddressPurpose::SEND, CT_DELETED);
+    NotifyAddressBookChanged(address, "", /*is_mine=*/false, AddressPurpose::SEND, CT_DELETED, false);
 
     batch.ErasePurpose(EncodeDestination(address));
     return batch.EraseName(EncodeDestination(address));

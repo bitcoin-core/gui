@@ -149,7 +149,8 @@ public:
 
     bool isMultiwallet() const;
 
-    void refresh(const PlatformStyle* platformStyle, bool pk_hash_only = false);
+    void RefreshAddressTableModel(const PlatformStyle* platformStyle, bool pk_hash_only = false);
+    void RefreshRecentRequestsTableModel(const PlatformStyle* platformStyle);
 
     uint256 getLastBlockProcessed() const;
 
@@ -236,7 +237,7 @@ public Q_SLOTS:
     /* New transaction, or transaction changed status */
     void updateTransaction();
     /* New, updated or removed address book entry */
-    void updateAddressBook(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status);
+    void updateAddressBook(const QString& address, const QString& label, bool isMine, wallet::AddressPurpose purpose, int status, bool isActive);
     /* Watch-only added */
     void updateWatchOnlyFlag(bool fHaveWatchonly);
     /* Current, immature or unconfirmed balance might have changed - emit 'balanceChanged' if so */
