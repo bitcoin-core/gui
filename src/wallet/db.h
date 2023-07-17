@@ -195,6 +195,7 @@ public:
 enum class DatabaseFormat {
     BERKELEY,
     SQLITE,
+    ENCRYPTED_SQLITE,
 };
 
 struct DatabaseOptions {
