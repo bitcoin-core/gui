@@ -124,11 +124,12 @@ Q_SIGNALS:
     void created(WalletModel* wallet_model);
 
 private:
-    void askPassphrase();
+    void askPassphrase(SecureString* passphrase_out, std::function<void()> next_func, QString warning_text = "");
     void createWallet();
     void finish();
 
     SecureString m_passphrase;
+    SecureString m_db_passphrase;
     CreateWalletDialog* m_create_wallet_dialog{nullptr};
     AskPassphraseDialog* m_passphrase_dialog{nullptr};
 };

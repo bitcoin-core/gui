@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>364</width>
-    <height>249</height>
+    <height>316</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,6 +119,16 @@
         </property>
         <property name="text">
          <string>External signer</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="encrypt_db_checkbox">
+        <property name="toolTip">
+         <string>Encrypt the wallet's database. The database will be encrypted with a passphrase of your choice. Wallets with an encrypted database cannot be loaded automatically on startup.</string>
+        </property>
+        <property name="text">
+         <string>Encrypt Database</string>
         </property>
        </widget>
       </item>

@@ -92,6 +92,8 @@ CreateWalletDialog::CreateWalletDialog(QWidget* parent) :
         ui->descriptor_checkbox->setChecked(false);
         ui->external_signer_checkbox->setEnabled(false);
         ui->external_signer_checkbox->setChecked(false);
+        ui->encrypt_db_checkbox->setEnabled(false);
+        ui->encrypt_db_checkbox->setChecked(false);
 #endif
 
 #ifndef USE_BDB
@@ -142,6 +144,11 @@ QString CreateWalletDialog::walletName() const
 bool CreateWalletDialog::isEncryptWalletChecked() const
 {
     return ui->encrypt_wallet_checkbox->isChecked();
+}
+
+bool CreateWalletDialog::isEncryptDBChecked() const
+{
+    return ui->encrypt_db_checkbox->isChecked();
 }
 
 bool CreateWalletDialog::isDisablePrivateKeysChecked() const

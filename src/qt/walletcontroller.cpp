@@ -220,17 +220,17 @@ CreateWalletActivity::~CreateWalletActivity()
     delete m_passphrase_dialog;
 }
 
-void CreateWalletActivity::askPassphrase()
+void CreateWalletActivity::askPassphrase(SecureString* passphrase_out, std::function<void()> next_func, QString warning_text)
 {
-    m_passphrase_dialog = new AskPassphraseDialog(AskPassphraseDialog::Encrypt, m_parent_widget, &m_passphrase);
+    m_passphrase_dialog = new AskPassphraseDialog(AskPassphraseDialog::Encrypt, m_parent_widget, passphrase_out, warning_text);
     m_passphrase_dialog->setWindowModality(Qt::ApplicationModal);
     m_passphrase_dialog->show();
 
     connect(m_passphrase_dialog, &QObject::destroyed, [this] {
         m_passphrase_dialog = nullptr;
     });
-    connect(m_passphrase_dialog, &QDialog::accepted, [this] {
-        createWallet();
+    connect(m_passphrase_dialog, &QDialog::accepted, [next_func] {
+        next_func();
     });
     connect(m_passphrase_dialog, &QDialog::rejected, [this] {
         Q_EMIT finished();
@@ -262,7 +262,7 @@ void CreateWalletActivity::createWallet()
     }
 
     QTimer::singleShot(500ms, worker(), [this, name, flags] {
-        auto wallet{node().walletLoader().createWallet(name, m_passphrase, flags, m_warning_message)};
+        auto wallet{node().walletLoader().createWallet(name, m_passphrase, m_db_passphrase, flags, m_warning_message)};
 
         if (wallet) {
             m_wallet_model = m_wallet_controller->getOrCreateWallet(std::move(*wallet));
@@ -314,7 +314,24 @@ void CreateWalletActivity::create()
     });
     connect(m_create_wallet_dialog, &QDialog::accepted, [this] {
         if (m_create_wallet_dialog->isEncryptWalletChecked()) {
-            askPassphrase();
+            if (m_create_wallet_dialog->isEncryptDBChecked()) {
+                // When both are checked, we need to first get the passphrase for wallet encryption
+                // then the passphrase for db encryption, then make the wallet, hence this chain of binds
+                askPassphrase(
+                    &m_passphrase,
+                    std::bind(
+                        &CreateWalletActivity::askPassphrase,
+                        this,
+                        &m_db_passphrase,
+                        [this]() { createWallet(); },
+                        tr("Enter the new passphrase for encrypting all records in the wallet database.")
+                    )
+                );
+            } else {
+                askPassphrase(&m_passphrase, std::bind(&CreateWalletActivity::createWallet, this));
+            }
+        } else if (m_create_wallet_dialog->isEncryptDBChecked()) {
+            askPassphrase(&m_db_passphrase, std::bind(&CreateWalletActivity::createWallet, this), tr("Enter the new passphrase for encrypting all records in the wallet database."));
         } else {
             createWallet();
         }
