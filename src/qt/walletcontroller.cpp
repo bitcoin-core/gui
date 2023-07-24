@@ -339,7 +339,33 @@ void OpenWalletActivity::finish()
     Q_EMIT finished();
 }
 
-void OpenWalletActivity::open(const std::string& path)
+void OpenWalletActivity::askPassphrase(const std::string& name)
+{
+    m_passphrase_dialog = new AskPassphraseDialog(AskPassphraseDialog::Unlock, m_parent_widget, &m_db_passphrase);
+    m_passphrase_dialog->setWindowModality(Qt::ApplicationModal);
+    m_passphrase_dialog->show();
+
+    connect(m_passphrase_dialog, &QObject::destroyed, [this] {
+        m_passphrase_dialog = nullptr;
+    });
+    connect(m_passphrase_dialog, &QDialog::accepted, [this, &name] {
+        openWallet(name);
+    });
+    connect(m_passphrase_dialog, &QDialog::rejected, [this] {
+        Q_EMIT finished();
+    });
+}
+
+void OpenWalletActivity::open(const std::string& name)
+{
+    if (node().walletLoader().isWalletDBEncrypted(name)) {
+        askPassphrase(name);
+    } else {
+        openWallet(name);
+    }
+}
+
+void OpenWalletActivity::openWallet(const std::string& path)
 {
     QString name = path.empty() ? QString("["+tr("default wallet")+"]") : QString::fromStdString(path);
 

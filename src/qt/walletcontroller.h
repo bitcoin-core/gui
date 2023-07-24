@@ -147,6 +147,11 @@ Q_SIGNALS:
 
 private:
     void finish();
+    void openWallet(const std::string& path);
+    void askPassphrase(const std::string& name);
+
+    SecureString m_db_passphrase;
+    AskPassphraseDialog* m_passphrase_dialog{nullptr};
 };
 
 class LoadWalletsActivity : public WalletControllerActivity
