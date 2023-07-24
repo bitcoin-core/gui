@@ -590,7 +590,7 @@ public:
     void setMockTime(int64_t time) override { return SetMockTime(time); }
 
     //! WalletLoader methods
-    util::Result<std::unique_ptr<Wallet>> createWallet(const std::string& name, const SecureString& passphrase, uint64_t wallet_creation_flags, std::vector<bilingual_str>& warnings) override
+    util::Result<std::unique_ptr<Wallet>> createWallet(const std::string& name, const SecureString& passphrase, const SecureString& db_passphrase, uint64_t wallet_creation_flags, std::vector<bilingual_str>& warnings) override
     {
         DatabaseOptions options;
         DatabaseStatus status;
@@ -598,6 +598,7 @@ public:
         options.require_create = true;
         options.create_flags = wallet_creation_flags;
         options.create_passphrase = passphrase;
+        options.db_passphrase = db_passphrase;
         bilingual_str error;
         std::unique_ptr<Wallet> wallet{MakeWallet(m_context, CreateWallet(m_context, name, /*load_on_start=*/true, options, status, error, warnings))};
         if (wallet) {

@@ -321,7 +321,7 @@ class WalletLoader : public ChainClient
 {
 public:
     //! Create new wallet.
-    virtual util::Result<std::unique_ptr<Wallet>> createWallet(const std::string& name, const SecureString& passphrase, uint64_t wallet_creation_flags, std::vector<bilingual_str>& warnings) = 0;
+    virtual util::Result<std::unique_ptr<Wallet>> createWallet(const std::string& name, const SecureString& passphrase, const SecureString& db_passphrase, uint64_t wallet_creation_flags, std::vector<bilingual_str>& warnings) = 0;
 
     //! Load existing wallet.
     virtual util::Result<std::unique_ptr<Wallet>> loadWallet(const std::string& name, std::vector<bilingual_str>& warnings, const SecureString& db_passphrase) = 0;
