@@ -324,7 +324,7 @@ public:
     virtual util::Result<std::unique_ptr<Wallet>> createWallet(const std::string& name, const SecureString& passphrase, uint64_t wallet_creation_flags, std::vector<bilingual_str>& warnings) = 0;
 
     //! Load existing wallet.
-    virtual util::Result<std::unique_ptr<Wallet>> loadWallet(const std::string& name, std::vector<bilingual_str>& warnings) = 0;
+    virtual util::Result<std::unique_ptr<Wallet>> loadWallet(const std::string& name, std::vector<bilingual_str>& warnings, const SecureString& db_passphrase) = 0;
 
     //! Return default wallet directory.
     virtual std::string getWalletDir() = 0;
@@ -343,6 +343,9 @@ public:
     //! loaded at startup or by RPC.
     using LoadWalletFn = std::function<void(std::unique_ptr<Wallet> wallet)>;
     virtual std::unique_ptr<Handler> handleLoadWallet(LoadWalletFn fn) = 0;
+
+    //! Return whether the named wallet has an encrypted database
+    virtual bool isWalletDBEncrypted(const std::string& name) = 0;
 
     //! Return pointer to internal context, useful for testing.
     virtual wallet::WalletContext* context() { return nullptr; }

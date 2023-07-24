@@ -606,12 +606,13 @@ public:
             return util::Error{error};
         }
     }
-    util::Result<std::unique_ptr<Wallet>> loadWallet(const std::string& name, std::vector<bilingual_str>& warnings) override
+    util::Result<std::unique_ptr<Wallet>> loadWallet(const std::string& name, std::vector<bilingual_str>& warnings, const SecureString& db_passphrase) override
     {
         DatabaseOptions options;
         DatabaseStatus status;
         ReadDatabaseArgs(*m_context.args, options);
         options.require_existing = true;
+        options.db_passphrase = db_passphrase;
         bilingual_str error;
         std::unique_ptr<Wallet> wallet{MakeWallet(m_context, LoadWallet(m_context, name, /*load_on_start=*/true, options, status, error, warnings))};
         if (wallet) {
@@ -656,6 +657,10 @@ public:
         return HandleLoadWallet(m_context, std::move(fn));
     }
     WalletContext* context() override  { return &m_context; }
+    bool isWalletDBEncrypted(const std::string& name) override
+    {
+        return IsEncryptedSQLiteFile(SQLiteDataFile(GetWalletDir() / fs::PathFromString(name)));
+    }
 
     WalletContext m_context;
     const std::vector<std::string> m_wallet_filenames;

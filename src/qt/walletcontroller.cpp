@@ -351,7 +351,7 @@ void OpenWalletActivity::open(const std::string& path)
         tr("Opening Wallet <b>%1</b>…").arg(name.toHtmlEscaped()));
 
     QTimer::singleShot(0, worker(), [this, path] {
-        auto wallet{node().walletLoader().loadWallet(path, m_warning_message)};
+        auto wallet{node().walletLoader().loadWallet(path, m_warning_message, m_db_passphrase)};
 
         if (wallet) {
             m_wallet_model = m_wallet_controller->getOrCreateWallet(std::move(*wallet));
