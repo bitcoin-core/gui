@@ -84,8 +84,6 @@ void AskPassphraseDialog::setModel(WalletModel *_model)
 void AskPassphraseDialog::accept()
 {
     SecureString oldpass, newpass1, newpass2;
-    if (!model && mode != Encrypt)
-        return;
     oldpass.reserve(MAX_PASSPHRASE_SIZE);
     newpass1.reserve(MAX_PASSPHRASE_SIZE);
     newpass2.reserve(MAX_PASSPHRASE_SIZE);
@@ -151,29 +149,36 @@ void AskPassphraseDialog::accept()
         }
         } break;
     case Unlock:
-        try {
-            if (!model->setWalletLocked(false, oldpass)) {
-                // Check if the passphrase has a null character (see #27067 for details)
-                if (oldpass.find('\0') == std::string::npos) {
-                    QMessageBox::critical(this, tr("Wallet unlock failed"),
-                                          tr("The passphrase entered for the wallet decryption was incorrect."));
+        if (m_passphrase_out) {
+            m_passphrase_out->assign(oldpass);
+            QDialog::accept(); // Success
+        } else {
+            try {
+                assert(model);
+                if (!model->setWalletLocked(false, oldpass)) {
+                    // Check if the passphrase has a null character (see #27067 for details)
+                    if (oldpass.find('\0') == std::string::npos) {
+                        QMessageBox::critical(this, tr("Wallet unlock failed"),
+                                              tr("The passphrase entered for the wallet decryption was incorrect."));
+                    } else {
+                        QMessageBox::critical(this, tr("Wallet unlock failed"),
+                                              tr("The passphrase entered for the wallet decryption is incorrect. "
+                                                 "It contains a null character (ie - a zero byte). "
+                                                 "If the passphrase was set with a version of this software prior to 25.0, "
+                                                 "please try again with only the characters up to — but not including — "
+                                                 "the first null character. If this is successful, please set a new "
+                                                 "passphrase to avoid this issue in the future."));
+                    }
                 } else {
-                    QMessageBox::critical(this, tr("Wallet unlock failed"),
-                                          tr("The passphrase entered for the wallet decryption is incorrect. "
-                                             "It contains a null character (ie - a zero byte). "
-                                             "If the passphrase was set with a version of this software prior to 25.0, "
-                                             "please try again with only the characters up to — but not including — "
-                                             "the first null character. If this is successful, please set a new "
-                                             "passphrase to avoid this issue in the future."));
+                    QDialog::accept(); // Success
                 }
-            } else {
-                QDialog::accept(); // Success
+            } catch (const std::runtime_error& e) {
+                QMessageBox::critical(this, tr("Wallet unlock failed"), e.what());
             }
-        } catch (const std::runtime_error& e) {
-            QMessageBox::critical(this, tr("Wallet unlock failed"), e.what());
         }
         break;
     case ChangePass:
+        assert(model);
         if(newpass1 == newpass2)
         {
             if(model->changePassphrase(oldpass, newpass1))
