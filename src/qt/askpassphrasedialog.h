@@ -28,7 +28,7 @@ public:
         ChangePass, /**< Ask old passphrase + new passphrase twice */
     };
 
-    explicit AskPassphraseDialog(Mode mode, QWidget *parent, SecureString* passphrase_out = nullptr);
+    explicit AskPassphraseDialog(Mode mode, QWidget *parent, SecureString* passphrase_out = nullptr, QString warning_text = "");
     ~AskPassphraseDialog();
 
     void accept() override;

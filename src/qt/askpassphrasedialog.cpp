@@ -19,7 +19,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureString* passphrase_out) :
+AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureString* passphrase_out, QString warning_text) :
     QDialog(parent, GUIUtil::dialog_flags),
     ui(new Ui::AskPassphraseDialog),
     mode(_mode),
@@ -43,13 +43,20 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
     switch(mode)
     {
         case Encrypt: // Ask passphrase x2
-            ui->warningLabel->setText(tr("Enter the new passphrase for the wallet.<br/>Please use a passphrase of <b>ten or more random characters</b>, or <b>eight or more words</b>."));
+            if (warning_text.isEmpty()) {
+                warning_text = tr("Enter the new passphrase for encrypting the private keys in the wallet.");
+            }
+            ui->warningLabel->setText(warning_text + tr("<br/>Please use a passphrase of <b>ten or more random characters</b>, or <b>eight or more words</b>."));
             ui->passLabel1->hide();
             ui->passEdit1->hide();
             setWindowTitle(tr("Encrypt wallet"));
             break;
         case Unlock: // Ask passphrase
-            ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet."));
+            if (warning_text.isEmpty()) {
+                ui->warningLabel->setText(tr("This operation needs your wallet passphrase to unlock the wallet."));
+            } else {
+                ui->warningLabel->setText(warning_text);
+            }
             ui->passLabel2->hide();
             ui->passEdit2->hide();
             ui->passLabel3->hide();
@@ -58,7 +65,11 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
             break;
         case ChangePass: // Ask old passphrase + new passphrase x2
             setWindowTitle(tr("Change passphrase"));
-            ui->warningLabel->setText(tr("Enter the old passphrase and new passphrase for the wallet."));
+            if (warning_text.isEmpty()) {
+                ui->warningLabel->setText(tr("Enter the old passphrase and new passphrase for the wallet."));
+            } else {
+                ui->warningLabel->setText(warning_text);
+            }
             break;
     }
     textChanged();
