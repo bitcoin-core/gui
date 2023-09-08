@@ -8,6 +8,7 @@
 #include <consensus/amount.h>
 #include <net.h>
 #include <netaddress.h>
+#include <outputtype.h>
 #include <util/check.h>
 #include <util/fs.h>
 
@@ -40,6 +41,7 @@ QT_BEGIN_NAMESPACE
 class QAbstractButton;
 class QAbstractItemView;
 class QAction;
+class QComboBox;
 class QDateTime;
 class QDialog;
 class QFont;
@@ -439,6 +441,13 @@ namespace GUIUtil
     QString WalletDisplayName(const std::string& name);
     QString WalletDisplayName(const QString& name);
 
+    struct OutputTypeInfo {
+        const QString description;
+        const bool requiresTaprootEnabled;
+    };
+    std::map<OutputType, OutputTypeInfo> outputTypeDescriptionsMap();
+
+    void AddItemsToAddressTypeCombo(QComboBox* addressType, bool taprootEnabled, const std::map<OutputType, QString>& outputTypeTooltipsMap, std::optional<OutputType> defaultType = std::nullopt);
 } // namespace GUIUtil
 
 #endif // BITCOIN_QT_GUIUTIL_H

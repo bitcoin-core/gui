@@ -86,19 +86,15 @@ void ReceiveCoinsDialog::setModel(WalletModel *_model)
             &QItemSelectionModel::selectionChanged, this,
             &ReceiveCoinsDialog::recentRequestsView_selectionChanged);
 
+        /** Tooltip for each address type that will be displayed on the combo*/
+        std::map<OutputType, QString> addressTypeTooltipMap{
+            {OutputType::LEGACY, QObject::tr("Not recommended due to higher fees and less protection against typos.")},
+            {OutputType::P2SH_SEGWIT, QObject::tr("Generates an address compatible with older wallets.")},
+            {OutputType::BECH32, QObject::tr("Generates a native segwit address (BIP-173). Some old wallets don't support it.")},
+            {OutputType::BECH32M, QObject::tr("Bech32m (BIP-350) is an upgrade to Bech32, wallet support is still limited.")}};
+
         // Populate address type dropdown and select default
-        auto add_address_type = [&](OutputType type, const QString& text, const QString& tooltip) {
-            const auto index = ui->addressType->count();
-            ui->addressType->addItem(text, (int) type);
-            ui->addressType->setItemData(index, tooltip, Qt::ToolTipRole);
-            if (model->wallet().getDefaultAddressType() == type) ui->addressType->setCurrentIndex(index);
-        };
-        add_address_type(OutputType::LEGACY, tr("Base58 (Legacy)"), tr("Not recommended due to higher fees and less protection against typos."));
-        add_address_type(OutputType::P2SH_SEGWIT, tr("Base58 (P2SH-SegWit)"), tr("Generates an address compatible with older wallets."));
-        add_address_type(OutputType::BECH32, tr("Bech32 (SegWit)"), tr("Generates a native segwit address (BIP-173). Some old wallets don't support it."));
-        if (model->wallet().taprootEnabled()) {
-            add_address_type(OutputType::BECH32M, tr("Bech32m (Taproot)"), tr("Bech32m (BIP-350) is an upgrade to Bech32, wallet support is still limited."));
-        }
+        GUIUtil::AddItemsToAddressTypeCombo(ui->addressType, model->wallet().taprootEnabled(), addressTypeTooltipMap, model->wallet().getDefaultAddressType());
 
         // Set the button to be enabled or disabled based on whether the wallet can give out new addresses.
         ui->receiveButton->setEnabled(model->wallet().canGetAddresses());

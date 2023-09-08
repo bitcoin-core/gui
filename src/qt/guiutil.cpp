@@ -37,6 +37,7 @@
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QClipboard>
+#include <QComboBox>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDialog>
@@ -86,6 +87,14 @@ void ForceActivation();
 using namespace std::chrono_literals;
 
 namespace GUIUtil {
+
+std::map<OutputType, OutputTypeInfo> outputTypeDescriptionsMap(){
+    return {
+        {OutputType::LEGACY, {QObject::tr("Base58 (Legacy)"), false}},
+        {OutputType::P2SH_SEGWIT, {QObject::tr("Base58 (P2SH-SegWit)"), false}},
+        {OutputType::BECH32, {QObject::tr("Bech32 (SegWit)"), false}},
+        {OutputType::BECH32M, {QObject::tr("Bech32m (Taproot)"), true}}};
+}
 
 QString dateTimeStr(const QDateTime &date)
 {
@@ -1017,4 +1026,32 @@ QString WalletDisplayName(const std::string& name)
 {
     return WalletDisplayName(QString::fromStdString(name));
 }
+
+void AddItemsToAddressTypeCombo(QComboBox* addressType, bool taprootEnabled, const std::map<OutputType, QString>& outputTypeTooltipsMap, std::optional<OutputType> defaultType)
+{
+    auto add_address_type = [&](OutputType type, QString description) {
+        const auto index{addressType->count()};
+        // getting the tooltip (provided by the caller) that will be displayed on the item in the combo
+        QString tooltip{};
+        auto it{outputTypeTooltipsMap.find(type)};
+        // if can't find it no tooltip will be displayed
+        if (it != outputTypeTooltipsMap.end()) tooltip = it->second;
+        addressType->addItem(description, static_cast<int>(type));
+        addressType->setItemData(index, tooltip, Qt::ToolTipRole);
+        // setting default selected value for the combo if it has been passed
+        if (defaultType.has_value() && defaultType.value() == type) addressType->setCurrentIndex(index);
+    };
+
+    // Adding all output types defined in the map to the combo
+    for (const auto& pair : outputTypeDescriptionsMap()) {
+        OutputType type{pair.first};
+        OutputTypeInfo typeInfo{pair.second};
+        // if it requires taproot check it with arg taprootEnabled
+        // eg call from receivecoindialog.cpp
+        if ((!typeInfo.requiresTaprootEnabled) || (typeInfo.requiresTaprootEnabled == taprootEnabled)) {
+            add_address_type(type, typeInfo.description);
+        }
+    }
+}
+
 } // namespace GUIUtil
