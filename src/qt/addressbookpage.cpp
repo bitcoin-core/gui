@@ -50,14 +50,21 @@ protected:
         }
 
         auto address = model->index(row, AddressTableModel::Address, parent);
+        auto addressType = model->index(row, AddressTableModel::Type, parent);
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         const auto pattern = filterRegularExpression();
 #else
         const auto pattern = filterRegExp();
 #endif
-        return (model->data(address).toString().contains(pattern) ||
-                model->data(label).toString().contains(pattern));
+        auto filterBy = model->data(address).toString().contains(pattern) ||
+                        model->data(label).toString().contains(pattern);
+
+        if (m_type == AddressTableModel::Receive) {
+            filterBy = filterBy || model->data(addressType).toString().contains(pattern);
+        }
+
+        return filterBy;
     }
 };
 
@@ -99,11 +106,13 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         ui->labelExplanation->setText(tr("These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins."));
         ui->deleteAddress->setVisible(true);
         ui->newAddress->setVisible(true);
+        ui->searchLineEdit->setPlaceholderText("Enter address or label to search");
         break;
     case ReceivingTab:
         ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.\nSigning is only possible with addresses of the type 'legacy'."));
         ui->deleteAddress->setVisible(false);
         ui->newAddress->setVisible(false);
+        ui->searchLineEdit->setPlaceholderText("Enter address, address type or label to search");
         break;
     }
 
@@ -144,8 +153,11 @@ void AddressBookPage::setModel(AddressTableModel *_model)
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Label, QHeaderView::Stretch);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Label, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Address, QHeaderView::ResizeToContents);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Type, QHeaderView::ResizeToContents);
+    // Show the "Address type" column only on the Receiving tab
+    ui->tableView->setColumnHidden(AddressTableModel::ColumnIndex::Type, (tab == SendingTab));
 
     connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
         this, &AddressBookPage::selectionChanged);
@@ -289,6 +301,7 @@ void AddressBookPage::on_exportButton_clicked()
     // name, column, role
     writer.setModel(proxyModel);
     writer.addColumn("Label", AddressTableModel::Label, Qt::EditRole);
+    writer.addColumn("Address Type", AddressTableModel::Type, Qt::EditRole);
     writer.addColumn("Address", AddressTableModel::Address, Qt::EditRole);
 
     if(!writer.write()) {
