@@ -30,10 +30,13 @@ struct AddressTableEntry
     Type type;
     QString label;
     QString address;
+    QString addressType;
 
     AddressTableEntry() = default;
-    AddressTableEntry(Type _type, const QString &_label, const QString &_address):
-        type(_type), label(_label), address(_address) {}
+    AddressTableEntry(Type _type, const QString &_label, const QString &_address, const OutputType &_addresstype):
+        type(_type), label(_label), address(_address) {
+            addressType = GUIUtil::outputTypeDescriptionsMap().at(_addresstype).description;
+    }
 };
 
 struct AddressTableEntryLessThan
@@ -87,7 +90,8 @@ public:
                         address.purpose, address.is_mine);
                 cachedAddressTable.append(AddressTableEntry(addressType,
                                   QString::fromStdString(address.name),
-                                  QString::fromStdString(EncodeDestination(address.dest))));
+                                  QString::fromStdString(EncodeDestination(address.dest)),
+                                  wallet.getOutputType(address.dest)));
             }
         }
         // std::lower_bound() and std::upper_bound() require our cachedAddressTable list to be sorted in asc order
@@ -96,7 +100,7 @@ public:
         std::sort(cachedAddressTable.begin(), cachedAddressTable.end(), AddressTableEntryLessThan());
     }
 
-    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status)
+    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status, const OutputType &addresstype)
     {
         // Find address / label in model
         QList<AddressTableEntry>::iterator lower = std::lower_bound(
@@ -117,7 +121,7 @@ public:
                 break;
             }
             parent->beginInsertRows(QModelIndex(), lowerIndex, lowerIndex);
-            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address));
+            cachedAddressTable.insert(lowerIndex, AddressTableEntry(newEntryType, label, address, addresstype));
             parent->endInsertRows();
             break;
         case CT_UPDATED:
@@ -164,7 +168,7 @@ public:
 AddressTableModel::AddressTableModel(WalletModel *parent, bool pk_hash_only) :
     QAbstractTableModel(parent), walletModel(parent)
 {
-    columns << tr("Label") << tr("Address");
+    columns << tr("Label") << tr("Address Type") << tr("Address");
     priv = new AddressTablePriv(this);
     priv->refreshAddressTable(parent->wallet(), pk_hash_only);
 }
@@ -208,6 +212,8 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
             }
         case Address:
             return rec->address;
+        case Type:
+            return rec->addressType;
         } // no default case, so the compiler can warn about missing cases
         assert(false);
     } else if (role == Qt::FontRole) {
@@ -216,6 +222,8 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
             return QFont();
         case Address:
             return GUIUtil::fixedPitchFont();
+        case Type:
+            return QFont();
         } // no default case, so the compiler can warn about missing cases
         assert(false);
     } else if (role == TypeRole) {
@@ -332,11 +340,10 @@ QModelIndex AddressTableModel::index(int row, int column, const QModelIndex &par
     }
 }
 
-void AddressTableModel::updateEntry(const QString &address,
-        const QString &label, bool isMine, wallet::AddressPurpose purpose, int status)
+void AddressTableModel::updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status, const OutputType &addressType)
 {
     // Update address book model from Bitcoin core
-    priv->updateEntry(address, label, isMine, purpose, status);
+    priv->updateEntry(address, label, isMine, purpose, status, addressType);
 }
 
 QString AddressTableModel::addRow(const QString &type, const QString &label, const QString &address, const OutputType address_type)
