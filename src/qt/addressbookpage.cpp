@@ -28,15 +28,31 @@
 class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
 {
     const QString m_type;
+    const bool m_nestedFilterEnabled;
 
 public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
+    AddressBookSortFilterProxyModel(const QString& type, QObject* parent, bool enableNestedFilter)
         : QSortFilterProxyModel(parent)
         , m_type(type)
+        , m_nestedFilterEnabled(enableNestedFilter)
     {
         setDynamicSortFilter(true);
         setFilterCaseSensitivity(Qt::CaseInsensitive);
         setSortCaseSensitivity(Qt::CaseInsensitive);
+
+        if (m_nestedFilterEnabled) {
+            nextedFilterProxyModel.reset(new AddressBookSortFilterProxyModel(type, this, false));
+            nextedFilterProxyModel->setSourceModel(this);
+        }
+    }
+
+    AddressBookSortFilterProxyModel* nestedProxyModel() const noexcept{
+        if (!m_nestedFilterEnabled) return const_cast<AddressBookSortFilterProxyModel*>(this);
+        return nextedFilterProxyModel.get();
+    }
+
+    bool isNestedFilterEnabled() const {
+        return m_nestedFilterEnabled;
     }
 
 protected:
@@ -66,6 +82,9 @@ protected:
 
         return filterBy;
     }
+
+private:
+    std::unique_ptr<AddressBookSortFilterProxyModel> nextedFilterProxyModel{nullptr};
 };
 
 AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
@@ -144,12 +163,12 @@ void AddressBookPage::setModel(AddressTableModel *_model)
         return;
 
     auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel.reset(new AddressBookSortFilterProxyModel(type, this, false));
     proxyModel->setSourceModel(_model);
 
-    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
+    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel.get(), &QSortFilterProxyModel::setFilterWildcard);
 
-    ui->tableView->setModel(proxyModel);
+    ui->tableView->setModel(proxyModel->nestedProxyModel());
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
@@ -299,7 +318,7 @@ void AddressBookPage::on_exportButton_clicked()
     CSVModelWriter writer(filename);
 
     // name, column, role
-    writer.setModel(proxyModel);
+    writer.setModel(proxyModel.get());
     writer.addColumn("Label", AddressTableModel::Label, Qt::EditRole);
     writer.addColumn("Address Type", AddressTableModel::Type, Qt::EditRole);
     writer.addColumn("Address", AddressTableModel::Address, Qt::EditRole);

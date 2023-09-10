@@ -53,7 +53,7 @@ private:
     Mode mode;
     Tabs tab;
     QString returnValue;
-    AddressBookSortFilterProxyModel *proxyModel;
+    std::unique_ptr<AddressBookSortFilterProxyModel> proxyModel{nullptr};
     QMenu *contextMenu;
     QString newAddressToSelect;
     void updateWindowsTitleWithWalletName();
