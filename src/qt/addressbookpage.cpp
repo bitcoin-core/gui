@@ -35,6 +35,24 @@ public:
         setSortCaseSensitivity(Qt::CaseInsensitive);
     }
 
+    AddressBookSortFilterProxyModel(const QString& type, QObject* parent, AddressBookSortFilterProxyModel* nestedProxy)
+        : AddressBookSortFilterProxyModel(type, parent)
+    {
+        if (nestedProxy) {
+            nextedFilterProxyModel.reset(nestedProxy);
+            nextedFilterProxyModel->setSourceModel(this);
+        }
+    }
+
+    AddressBookSortFilterProxyModel* nestedProxyModel() const noexcept{
+        if (!nextedFilterProxyModel) return const_cast<AddressBookSortFilterProxyModel*>(this);
+        return nextedFilterProxyModel.get();
+    }
+
+    bool isNestedFilterEnabled() const {
+        return nextedFilterProxyModel!=nullptr;
+    }
+
 protected:
     bool filterAcceptsRow(int row, const QModelIndex& parent) const override
     {
@@ -62,6 +80,9 @@ protected:
 
         return filterBy;
     }
+
+private:
+    std::unique_ptr<AddressBookSortFilterProxyModel> nextedFilterProxyModel{nullptr};
 };
 
 AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
@@ -140,12 +161,12 @@ void AddressBookPage::setModel(AddressTableModel *_model)
         return;
 
     auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel.reset(new AddressBookSortFilterProxyModel(type, this, new AddressBookSortFilterProxyModel(type, this)));
     proxyModel->setSourceModel(_model);
 
-    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
+    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel.get(), &QSortFilterProxyModel::setFilterWildcard);
 
-    ui->tableView->setModel(proxyModel);
+    ui->tableView->setModel(proxyModel->nestedProxyModel());
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
@@ -295,7 +316,7 @@ void AddressBookPage::on_exportButton_clicked()
     CSVModelWriter writer(filename);
 
     // name, column, role
-    writer.setModel(proxyModel);
+    writer.setModel(proxyModel.get());
     writer.addColumn("Label", AddressTableModel::Label, Qt::EditRole);
     writer.addColumn("Address Type", AddressTableModel::Type, Qt::EditRole);
     writer.addColumn("Address", AddressTableModel::Address, Qt::EditRole);
