@@ -5,6 +5,8 @@
 #ifndef BITCOIN_QT_ADDRESSBOOKPAGE_H
 #define BITCOIN_QT_ADDRESSBOOKPAGE_H
 
+#include <outputtype.h>
+
 #include <QDialog>
 
 class AddressBookSortFilterProxyModel;
@@ -57,6 +59,13 @@ private:
     QMenu *contextMenu;
     QString newAddressToSelect;
     void updateWindowsTitleWithWalletName();
+    void initializeAddressTypeCombo();
+    /** Default selected item of the address type combo to display all address types */
+    QString showAllTypes() const;
+    QString showAllTypesToolTip() const;
+    /** Tooltip for each address type that will be displayed on the combo*/
+    std::map<OutputType, QString> addressTypeTooltipMap();
+    void setupAddressTypeCombo();
 
 private Q_SLOTS:
     /** Delete currently selected address entry */
@@ -78,9 +87,16 @@ private Q_SLOTS:
     void contextualMenu(const QPoint &point);
     /** New entry/entries were added to address table */
     void selectNewAddress(const QModelIndex &parent, int begin, int /*end*/);
+    /** Address type combo selection changed */
+    void handleAddressTypeChanged(int index);
 
 Q_SIGNALS:
     void sendCoins(QString addr);
+    /** Emitted when the addressType combobox is changed (handled by handleAddressTypeChange).
+     * This signal is used as a workaround to connect the combobox and the proxy model filter,
+     * preventing the compiler error "Signal and slot arguments are not compatible."*/
+    void addressTypeChanged(const QString &addressType);
+
 };
 
 #endif // BITCOIN_QT_ADDRESSBOOKPAGE_H
