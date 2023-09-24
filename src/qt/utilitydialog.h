@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2020 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -7,6 +7,8 @@
 
 #include <QDialog>
 #include <QWidget>
+
+class NetworkStyle;
 
 QT_BEGIN_NAMESPACE
 class QMainWindow;
@@ -22,7 +24,7 @@ class HelpMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit HelpMessageDialog(QWidget *parent, bool about);
+    explicit HelpMessageDialog(QWidget* parent, bool about, const NetworkStyle* network_style = nullptr);
     ~HelpMessageDialog();
 
     void printToConsole();
@@ -31,6 +33,8 @@ public:
 private:
     Ui::HelpMessageDialog *ui;
     QString text;
+    void setAboutWindowTitle(const NetworkStyle* network_style = nullptr);
+    void setChainTypeIconOnAboutLogo(const NetworkStyle* network_style = nullptr);
 
 private Q_SLOTS:
     void on_okButton_accepted();

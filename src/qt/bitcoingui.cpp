@@ -1,4 +1,4 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -105,7 +105,7 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
     updateWindowTitle();
 
     rpcConsole = new RPCConsole(node, _platformStyle, nullptr);
-    helpMessageDialog = new HelpMessageDialog(this, false);
+    helpMessageDialog = new HelpMessageDialog(/*parent=*/this, /*about=*/false, /*network_style=*/m_network_style);
 #ifdef ENABLE_WALLET
     if(enableWallet)
     {
@@ -936,7 +936,7 @@ void BitcoinGUI::aboutClicked()
     if(!clientModel)
         return;
 
-    auto dlg = new HelpMessageDialog(this, /*about=*/true);
+    auto dlg = new HelpMessageDialog(/*parent=*/this, /*about=*/true, /*network_style=*/m_network_style);
     GUIUtil::ShowModalDialogAsynchronously(dlg);
 }
 
