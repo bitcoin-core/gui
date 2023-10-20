@@ -5,13 +5,13 @@
 #include <qt/test/wallettests.h>
 #include <qt/test/util.h>
 
-#include <wallet/coincontrol.h>
 #include <interfaces/chain.h>
 #include <interfaces/node.h>
 #include <key_io.h>
 #include <qt/bitcoinamountfield.h>
 #include <qt/bitcoinunits.h>
 #include <qt/clientmodel.h>
+#include <qt/deniabilitydialog.h>
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
 #include <qt/platformstyle.h>
@@ -25,8 +25,10 @@
 #include <qt/transactionview.h>
 #include <qt/walletmodel.h>
 #include <script/solver.h>
+#include <test/util/mining.h>
 #include <test/util/setup_common.h>
 #include <validation.h>
+#include <wallet/coincontrol.h>
 #include <wallet/test/util.h>
 #include <wallet/wallet.h>
 
@@ -38,13 +40,15 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
+#include <QDialogButtonBox>
+#include <QListView>
 #include <QObject>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QTableWidget>
+#include <QTextEdit>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QTextEdit>
-#include <QListView>
-#include <QDialogButtonBox>
 
 using wallet::AddWallet;
 using wallet::CWallet;
@@ -69,6 +73,24 @@ void ConfirmSend(QString* text = nullptr, QMessageBox::StandardButton confirm_ty
                 QAbstractButton* button = dialog->button(confirm_type);
                 button->setEnabled(true);
                 button->click();
+            }
+        }
+    });
+}
+
+//! Press buttons in modal message confirmation dialog.
+void ConfirmMessageBox(bool* clicked, QMessageBox::StandardButton confirm_type)
+{
+    QTimer::singleShot(0, [clicked, confirm_type]() {
+        for (QWidget* widget : QApplication::topLevelWidgets()) {
+            if (widget->inherits("QMessageBox")) {
+                QMessageBox* dialog = qobject_cast<QMessageBox*>(widget);
+                QAbstractButton* button = dialog->button(confirm_type);
+                button->setEnabled(true);
+                button->click();
+                if (clicked) {
+                    *clicked = true;
+                }
             }
         }
     });
@@ -236,11 +258,13 @@ struct MiniGUI {
 public:
     SendCoinsDialog sendCoinsDialog;
     TransactionView transactionView;
+    DeniabilityDialog deniabilityDialog;
     OptionsModel optionsModel;
     std::unique_ptr<ClientModel> clientModel;
     std::unique_ptr<WalletModel> walletModel;
 
-    MiniGUI(interfaces::Node& node, const PlatformStyle* platformStyle) : sendCoinsDialog(platformStyle), transactionView(platformStyle), optionsModel(node) {
+    MiniGUI(interfaces::Node& node, const PlatformStyle* platformStyle) : sendCoinsDialog(platformStyle), transactionView(platformStyle), deniabilityDialog(platformStyle), optionsModel(node)
+    {
         bilingual_str error;
         QVERIFY(optionsModel.Init(error));
         clientModel = std::make_unique<ClientModel>(node, &optionsModel);
@@ -254,6 +278,8 @@ public:
         RemoveWallet(context, wallet, /* load_on_start= */ std::nullopt);
         sendCoinsDialog.setModel(walletModel.get());
         transactionView.setModel(walletModel.get());
+        deniabilityDialog.setModel(walletModel.get());
+        deniabilityDialog.setClientModel(clientModel.get());
     }
 
 };
@@ -271,7 +297,7 @@ public:
 //     QT_QPA_PLATFORM=xcb     src/qt/test/test_bitcoin-qt  # Linux
 //     QT_QPA_PLATFORM=windows src/qt/test/test_bitcoin-qt  # Windows
 //     QT_QPA_PLATFORM=cocoa   src/qt/test/test_bitcoin-qt  # macOS
-void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
+void TestGUI(interfaces::Node& node, TestChain100Setup& test, const std::shared_ptr<CWallet>& wallet)
 {
     // Create widgets for sending coins and listing transactions.
     std::unique_ptr<const PlatformStyle> platformStyle(PlatformStyle::instantiate("other"));
@@ -280,6 +306,7 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
     WalletModel& walletModel = *mini_gui.walletModel;
     SendCoinsDialog& sendCoinsDialog = mini_gui.sendCoinsDialog;
     TransactionView& transactionView = mini_gui.transactionView;
+    DeniabilityDialog& deniabilityDialog = mini_gui.deniabilityDialog;
 
     // Update walletModel cached balance which will trigger an update for the 'labelBalance' QLabel.
     walletModel.pollBalanceChanged();
@@ -393,6 +420,140 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
 
     // Check removal from wallet
     QCOMPARE(walletModel.wallet().getAddressReceiveRequests().size(), size_t{0});
+
+    // Test the Deniability Dialog
+
+    // Validate the main UI elements
+    QPushButton* startButton = deniabilityDialog.findChild<QPushButton*>("startButton");
+    QVERIFY(startButton);
+    QPushButton* stopButton = deniabilityDialog.findChild<QPushButton*>("stopButton");
+    QVERIFY(stopButton);
+
+    QRadioButton* hourlyRadioButton = deniabilityDialog.findChild<QRadioButton*>("hourlyRadioButton");
+    QVERIFY(hourlyRadioButton);
+    QRadioButton* dailyRadioButton = deniabilityDialog.findChild<QRadioButton*>("dailyRadioButton");
+    QVERIFY(dailyRadioButton);
+    QRadioButton* weeklyRadioButton = deniabilityDialog.findChild<QRadioButton*>("weeklyRadioButton");
+    QVERIFY(weeklyRadioButton);
+
+    BitcoinAmountField* budgetSpinner = deniabilityDialog.findChild<BitcoinAmountField*>("budgetSpinner");
+    QVERIFY(budgetSpinner);
+
+    QTableWidget* tableWidgetCoins = deniabilityDialog.findChild<QTableWidget*>("tableWidgetCoins");
+    QVERIFY(tableWidgetCoins);
+
+    QLabel* statusLabel = deniabilityDialog.findChild<QLabel*>("statusLabel");
+    QVERIFY(statusLabel);
+
+    // Check the initial state
+    QVERIFY(!startButton->isEnabled());
+    QVERIFY(!stopButton->isEnabled());
+    QVERIFY(hourlyRadioButton->isEnabled());
+    QVERIFY(dailyRadioButton->isEnabled());
+    QVERIFY(weeklyRadioButton->isEnabled());
+    // FIXME: AmountSpinBox doesn't correctly intercept isEnabled()
+    // QVERIFY(budgetSpinner->isEnabled());
+
+    QVERIFY(!hourlyRadioButton->isChecked());
+    QVERIFY(dailyRadioButton->isChecked());
+    QVERIFY(!weeklyRadioButton->isChecked());
+    QVERIFY(budgetSpinner->value() == 0);
+
+    // update coins to the latest wallet state
+    deniabilityDialog.updateCoins();
+
+    // Validate the wallet supports deniabilization
+    QVERIFY(deniabilityDialog.walletSupportsDeniabilization());
+    // Validate a deniabilization candidate was found
+    QVERIFY(deniabilityDialog.hasDeniabilizationCandidates());
+
+    // Validate one coin has been populated in the candidate table
+    QVERIFY(tableWidgetCoins->rowCount() == 1);
+    QTableWidgetItem* itemCheck = tableWidgetCoins->item(0, 0);
+    QVERIFY(itemCheck);
+    // We expect the candidate to be uncheck (since it's from a block reward)
+    QVERIFY(itemCheck->checkState() == Qt::Unchecked);
+    itemCheck->setCheckState(Qt::CheckState::Checked);
+    Q_EMIT tableWidgetCoins->itemClicked(itemCheck);
+
+    // Test the budget spinner enabling the start button
+    const CAmount budget = 10000;
+    budgetSpinner->setValue(budget);
+    QVERIFY(startButton->isEnabled());
+
+    // Test starting the deniabilization process
+    CAmount balance = walletModel.wallet().getBalance();
+    const uint expectedTxSize = 304; // 2 utxo inputs, 2 txout (LEGACY output type)
+    CAmount expectedTxFee = walletModel.wallet().getRequiredFee(expectedTxSize);
+
+    // We expect to get a confirmation message box and we want to OK it
+    bool clickedOk = false;
+    ConfirmMessageBox(&clickedOk, QMessageBox::Ok);
+    startButton->click();
+    qApp->processEvents();
+    // Verify we did get the confirmation message box
+    QVERIFY(clickedOk);
+
+    // Verify only the stop button is enabled
+    QVERIFY(stopButton->isEnabled());
+    QVERIFY(!startButton->isEnabled());
+    QVERIFY(!hourlyRadioButton->isEnabled());
+    QVERIFY(!dailyRadioButton->isEnabled());
+    QVERIFY(!weeklyRadioButton->isEnabled());
+    // FIXME: AmountSpinBox doesn't correctly intercept isEnabled()()
+    // QVERIFY(!budgetSpinner->isEnabled());
+
+    // Verify a deniabilization transaction was processed and the before and after balances match (minus the tx fee)
+    CAmount balanceAfterTx = walletModel.wallet().getBalance();
+    QCOMPARE(balance, balanceAfterTx + expectedTxFee);
+
+    // Verify the budget was updated correctly
+    QCOMPARE(budgetSpinner->value(), budget - expectedTxFee);
+
+    // Verify status shows we're waiting for the tx to be confirmed
+    std::string statusTextAfterTx = statusLabel->text().toStdString();
+    QCOMPARE(statusTextAfterTx, std::string("Waiting for the deniabilization transaction to be confirmed..."));
+
+    // Stop the deniabilization processing
+    stopButton->click();
+    qApp->processEvents();
+
+    // Verify stop is disabled and everything else is re-enabled
+    QVERIFY(!stopButton->isEnabled());
+    QVERIFY(startButton->isEnabled());
+    QVERIFY(hourlyRadioButton->isEnabled());
+    QVERIFY(dailyRadioButton->isEnabled());
+    QVERIFY(weeklyRadioButton->isEnabled());
+    // FIXME: AmountSpinBox doesn't correctly intercept isEnabled()()
+    // QVERIFY(budgetSpinner->isEnabled());
+
+    // Bump the min fee to test fee bumping
+    wallet->m_min_fee = CFeeRate(10000);
+    CAmount expectedBumpedTxFee = walletModel.wallet().getRequiredFee(expectedTxSize);
+
+    // Restart the deniabilizaiton process
+    startButton->click();
+    qApp->processEvents();
+
+    CAmount balanceAfterFeeBumpTx = walletModel.wallet().getBalance();
+    QCOMPARE(balance, balanceAfterFeeBumpTx + expectedBumpedTxFee);
+
+    // Verify the budget was updated correctly
+    QCOMPARE(budgetSpinner->value(), budget - expectedBumpedTxFee);
+
+    // mine a block to confirm the transaction
+    MineBlock(test.m_node, GetScriptForRawPubKey(test.coinbaseKey.GetPubKey()));
+    {
+        LOCK(wallet->cs_wallet);
+        wallet->SetLastBlockProcessed(106, WITH_LOCK(node.context()->chainman->GetMutex(), return node.context()->chainman->ActiveChain().Tip()->GetBlockHash()));
+    }
+    SyncUpWallet(wallet, node);
+    // a mined block would trigger a coin update, but only if the UI is visible (which it's not in this case), so we update manually
+    deniabilityDialog.updateCoins();
+
+    // Verify the status was updated and we're showing the next cycle time
+    std::string statusTextAfterConfirm = statusLabel->text().toStdString();
+    QVERIFY(statusTextAfterConfirm.find("Next deniabilization cycle in") == 0);
 }
 
 void TestGUIWatchOnly(interfaces::Node& node, TestChain100Setup& test)
@@ -405,6 +566,7 @@ void TestGUIWatchOnly(interfaces::Node& node, TestChain100Setup& test)
     mini_gui.initModelForWallet(node, wallet, platformStyle.get());
     WalletModel& walletModel = *mini_gui.walletModel;
     SendCoinsDialog& sendCoinsDialog = mini_gui.sendCoinsDialog;
+    DeniabilityDialog& deniabilityDialog = mini_gui.deniabilityDialog;
 
     // Update walletModel cached balance which will trigger an update for the 'labelBalance' QLabel.
     walletModel.pollBalanceChanged();
@@ -443,6 +605,52 @@ void TestGUIWatchOnly(interfaces::Node& node, TestChain100Setup& test)
     PartiallySignedTransaction psbt;
     std::string err;
     QVERIFY(DecodeRawPSBT(psbt, MakeByteSpan(*decoded_psbt), err));
+
+    // Test the Deniability Dialog
+
+    // Validate the main UI elements
+    QPushButton* startButton = deniabilityDialog.findChild<QPushButton*>("startButton");
+    QVERIFY(startButton);
+    QPushButton* stopButton = deniabilityDialog.findChild<QPushButton*>("stopButton");
+    QVERIFY(stopButton);
+
+    QRadioButton* hourlyRadioButton = deniabilityDialog.findChild<QRadioButton*>("hourlyRadioButton");
+    QVERIFY(hourlyRadioButton);
+    QRadioButton* dailyRadioButton = deniabilityDialog.findChild<QRadioButton*>("dailyRadioButton");
+    QVERIFY(dailyRadioButton);
+    QRadioButton* weeklyRadioButton = deniabilityDialog.findChild<QRadioButton*>("weeklyRadioButton");
+    QVERIFY(weeklyRadioButton);
+
+    BitcoinAmountField* budgetSpinner = deniabilityDialog.findChild<BitcoinAmountField*>("budgetSpinner");
+    QVERIFY(budgetSpinner);
+
+    QTableWidget* tableWidgetCoins = deniabilityDialog.findChild<QTableWidget*>("tableWidgetCoins");
+    QVERIFY(tableWidgetCoins);
+
+    // Check the initial state (we expect everything to be disabled with watch-only wallets)
+    QVERIFY(!startButton->isEnabled());
+    QVERIFY(!stopButton->isEnabled());
+    QVERIFY(!hourlyRadioButton->isEnabled());
+    QVERIFY(!dailyRadioButton->isEnabled());
+    QVERIFY(!weeklyRadioButton->isEnabled());
+    // FIXME: AmountSpinBox doesn't correctly intercept isEnabled()()
+    // QVERIFY(!budgetSpinner->isEnabled());
+
+    // update coins to the latest wallet state
+    deniabilityDialog.updateCoins();
+
+    // Validate the wallet doesn't supports deniabilization (since it's a watch-only wallet)
+    QVERIFY(!deniabilityDialog.walletSupportsDeniabilization());
+    // Validate there's no deniabilization candidates
+    QVERIFY(!deniabilityDialog.hasDeniabilizationCandidates());
+
+    // Validate one coin has been populated in the table
+    QVERIFY(tableWidgetCoins->rowCount() == 1);
+    QTableWidgetItem* itemCheck = tableWidgetCoins->item(0, 0);
+    QVERIFY(itemCheck);
+    // We expect the item to be unchecked and disabled (since it's watch-only)
+    QCOMPARE(itemCheck->checkState(), Qt::Unchecked);
+    QVERIFY(!(itemCheck->flags() & Qt::ItemIsEnabled));
 }
 
 void TestGUI(interfaces::Node& node)
@@ -458,7 +666,7 @@ void TestGUI(interfaces::Node& node)
 
     // "Full" GUI tests, use descriptor wallet
     const std::shared_ptr<CWallet>& desc_wallet = SetupDescriptorsWallet(node, test);
-    TestGUI(node, desc_wallet);
+    TestGUI(node, test, desc_wallet);
 
     // Legacy watch-only wallet test
     // Verify PSBT creation.

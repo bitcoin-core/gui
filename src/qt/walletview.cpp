@@ -7,6 +7,7 @@
 #include <qt/addressbookpage.h>
 #include <qt/askpassphrasedialog.h>
 #include <qt/clientmodel.h>
+#include <qt/deniabilitydialog.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
@@ -57,6 +58,9 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     vbox->addLayout(hbox_buttons);
     transactionsPage->setLayout(vbox);
 
+    deniabilityPage = new DeniabilityDialog(platformStyle);
+    deniabilityPage->setModel(walletModel);
+
     receiveCoinsPage = new ReceiveCoinsDialog(platformStyle);
     receiveCoinsPage->setModel(walletModel);
 
@@ -73,6 +77,7 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(deniabilityPage);
 
     connect(overviewPage, &OverviewPage::transactionClicked, this, &WalletView::transactionClicked);
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
@@ -91,6 +96,8 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     connect(sendCoinsPage, &SendCoinsDialog::message, this, &WalletView::message);
     // Pass through messages from transactionView
     connect(transactionView, &TransactionView::message, this, &WalletView::message);
+    // Pass through messages from DeniabilityDialog
+    connect(deniabilityPage, &DeniabilityDialog::message, this, &WalletView::message);
 
     connect(this, &WalletView::setPrivacy, overviewPage, &OverviewPage::setPrivacy);
     connect(this, &WalletView::setPrivacy, this, &WalletView::disableTransactionView);
@@ -120,6 +127,7 @@ void WalletView::setClientModel(ClientModel *_clientModel)
     overviewPage->setClientModel(_clientModel);
     sendCoinsPage->setClientModel(_clientModel);
     walletModel->setClientModel(_clientModel);
+    deniabilityPage->setClientModel(_clientModel);
 }
 
 void WalletView::processNewTransaction(const QModelIndex& parent, int start, int /*end*/)
@@ -132,6 +140,8 @@ void WalletView::processNewTransaction(const QModelIndex& parent, int start, int
     TransactionTableModel *ttm = walletModel->getTransactionTableModel();
     if (!ttm || ttm->processingQueuedTransactions())
         return;
+
+    deniabilityPage->updateCoinsIfVisible();
 
     QString date = ttm->index(start, TransactionTableModel::Date, parent).data().toString();
     qint64 amount = ttm->index(start, TransactionTableModel::Amount, parent).data(Qt::EditRole).toLongLong();
@@ -151,6 +161,12 @@ void WalletView::gotoOverviewPage()
 void WalletView::gotoHistoryPage()
 {
     setCurrentWidget(transactionsPage);
+}
+
+void WalletView::gotoDeniabilityPage()
+{
+    setCurrentWidget(deniabilityPage);
+    deniabilityPage->updateCoins();
 }
 
 void WalletView::gotoReceiveCoinsPage()
