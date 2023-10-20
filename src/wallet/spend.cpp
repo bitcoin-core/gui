@@ -1666,7 +1666,7 @@ void SpoofTransactionFingerprint(CMutableTransaction& tx, FastRandomContext& rng
     const Fingerprint& fingerprint = s_walletFingerprints[fingerprintIndex];
 
     if (fingerprint.standardVersion) {
-        Assert(tx.version == TX_MAX_STANDARD_VERSION);
+        Assert(tx.version == 2);
     } else {
         tx.version = 1;
     }
