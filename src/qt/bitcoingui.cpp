@@ -277,6 +277,13 @@ void BitcoinGUI::createActions()
     historyAction->setShortcut(QKeySequence(QStringLiteral("Alt+4")));
     tabGroup->addAction(historyAction);
 
+    deniabilityAction = new QAction(platformStyle->SingleColorIcon(":/icons/crosseye"), tr("&Deniability"), this);
+    deniabilityAction->setStatusTip(tr("Improve coin ownership privacy"));
+    deniabilityAction->setToolTip(deniabilityAction->statusTip());
+    deniabilityAction->setCheckable(true);
+    deniabilityAction->setShortcut(QKeySequence(QStringLiteral("Alt+5")));
+    tabGroup->addAction(deniabilityAction);
+
 #ifdef ENABLE_WALLET
     // These showNormalIfMinimized are needed because Send Coins and Receive Coins
     // can be triggered from the tray menu, and need to show the GUI to be useful.
@@ -288,6 +295,8 @@ void BitcoinGUI::createActions()
     connect(receiveCoinsAction, &QAction::triggered, this, &BitcoinGUI::gotoReceiveCoinsPage);
     connect(historyAction, &QAction::triggered, [this]{ showNormalIfMinimized(); });
     connect(historyAction, &QAction::triggered, this, &BitcoinGUI::gotoHistoryPage);
+    connect(deniabilityAction, &QAction::triggered, [this] { showNormalIfMinimized(); });
+    connect(deniabilityAction, &QAction::triggered, this, &BitcoinGUI::gotoDeniabilityPage);
 #endif // ENABLE_WALLET
 
     quitAction = new QAction(tr("E&xit"), this);
@@ -597,6 +606,7 @@ void BitcoinGUI::createToolBars()
         toolbar->addAction(sendCoinsAction);
         toolbar->addAction(receiveCoinsAction);
         toolbar->addAction(historyAction);
+        toolbar->addAction(deniabilityAction);
         overviewAction->setChecked(true);
 
 #ifdef ENABLE_WALLET
@@ -818,6 +828,7 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     sendCoinsAction->setEnabled(enabled);
     receiveCoinsAction->setEnabled(enabled);
     historyAction->setEnabled(enabled);
+    deniabilityAction->setEnabled(enabled);
     encryptWalletAction->setEnabled(enabled);
     backupWalletAction->setEnabled(enabled);
     changePassphraseAction->setEnabled(enabled);
@@ -977,6 +988,12 @@ void BitcoinGUI::gotoHistoryPage()
 {
     historyAction->setChecked(true);
     if (walletFrame) walletFrame->gotoHistoryPage();
+}
+
+void BitcoinGUI::gotoDeniabilityPage()
+{
+    deniabilityAction->setChecked(true);
+    if (walletFrame) walletFrame->gotoDeniabilityPage();
 }
 
 void BitcoinGUI::gotoReceiveCoinsPage()
@@ -1294,6 +1311,7 @@ void BitcoinGUI::changeEvent(QEvent *e)
         sendCoinsAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/send")));
         receiveCoinsAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/receiving_addresses")));
         historyAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/history")));
+        deniabilityAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/crosseye")));
     }
 
     QMainWindow::changeEvent(e);
