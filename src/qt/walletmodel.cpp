@@ -599,6 +599,11 @@ bool WalletModel::isMultiwallet() const
     return m_node.walletLoader().getWallets().size() > 1;
 }
 
+bool WalletModel::isAvoidReuseEnabled() const
+{
+    return m_wallet->isAvoidReuseEnabled();
+}
+
 void WalletModel::refresh(bool pk_hash_only)
 {
     addressTableModel = new AddressTableModel(this, pk_hash_only);

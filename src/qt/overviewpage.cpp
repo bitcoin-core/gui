@@ -226,6 +226,15 @@ void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
     ui->labelImmature->setVisible(showImmature || showWatchOnlyImmature);
     ui->labelImmatureText->setVisible(showImmature || showWatchOnlyImmature);
     ui->labelWatchImmature->setVisible(!walletModel->wallet().privateKeysDisabled() && showWatchOnlyImmature); // show watch-only immature balance
+
+    // only show used balance when on wallet with 'avoid_reuse' flag
+    bool showUsed = walletModel->isAvoidReuseEnabled();
+
+    if (showUsed) {
+        ui->labelUsed->setText(BitcoinUnits::formatWithPrivacy(unit, balances.used, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    }
+    ui->labelUsedText->setVisible(showUsed);
+    ui->labelUsed->setVisible(showUsed);
 }
 
 // show/hide watch-only labels
@@ -352,4 +361,5 @@ void OverviewPage::setMonospacedFont(bool use_embedded_font)
     ui->labelWatchPending->setFont(f);
     ui->labelWatchImmature->setFont(f);
     ui->labelWatchTotal->setFont(f);
+    ui->labelUsed->setFont(f);
 }
