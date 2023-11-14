@@ -18,6 +18,7 @@
 #include <qt/platformstyle.h>
 #include <qt/rpcconsole.h>
 #include <qt/utilitydialog.h>
+#include <qt/toolsdialog.h>
 
 #ifdef ENABLE_WALLET
 #include <qt/walletcontroller.h>
@@ -368,12 +369,17 @@ void BitcoinGUI::createActions()
     m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab"));
     m_mask_values_action->setCheckable(true);
 
+    getRawTransactionAction = new QAction(tr("&Verify external txid"), this);
+    getRawTransactionAction->setMenuRole(QAction::NoRole);
+    getRawTransactionAction->setStatusTip(tr("getrawtransaction RPC"));
+
     connect(quitAction, &QAction::triggered, this, &BitcoinGUI::quitRequested);
     connect(aboutAction, &QAction::triggered, this, &BitcoinGUI::aboutClicked);
     connect(aboutQtAction, &QAction::triggered, qApp, QApplication::aboutQt);
     connect(optionsAction, &QAction::triggered, this, &BitcoinGUI::optionsClicked);
     connect(showHelpMessageAction, &QAction::triggered, this, &BitcoinGUI::showHelpMessageClicked);
     connect(openRPCConsoleAction, &QAction::triggered, this, &BitcoinGUI::showDebugWindow);
+    connect(getRawTransactionAction, &QAction::triggered, this, &BitcoinGUI::getRawTransactionClicked);
     // prevents an open debug window from becoming stuck/unusable on client shutdown
     connect(quitAction, &QAction::triggered, rpcConsole, &QWidget::hide);
 
@@ -554,6 +560,9 @@ void BitcoinGUI::createMenuBar()
             showDebugWindow();
         });
     }
+
+    QMenu *tools = appMenuBar->addMenu(tr("&Tools"));
+    tools->addAction(getRawTransactionAction);
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(showHelpMessageAction);
@@ -930,6 +939,12 @@ void BitcoinGUI::showDebugWindowActivateConsole()
 void BitcoinGUI::showHelpMessageClicked()
 {
     GUIUtil::bringToFront(helpMessageDialog);
+}
+
+void BitcoinGUI::getRawTransactionClicked()
+{
+    auto dlg = new ToolsDialog(this, ToolsDialog::GetRawTransactionMode, &m_node);
+    GUIUtil::ShowModalDialogAsynchronously(dlg);
 }
 
 #ifdef ENABLE_WALLET
