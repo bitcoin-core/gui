@@ -51,6 +51,19 @@ static void print_buf_plain(const unsigned char *buf, size_t len) {
 #  define SECP256K1_INLINE inline
 # endif
 
+/** Assert statically that expr is an integer constant expression, and run stmt.
+ *
+ * Useful for example to enforce that magnitude arguments are constant.
+ */
+#define ASSERT_INT_CONST_AND_DO(expr, stmt) do { \
+    switch(42) { \
+        case /* ERROR: integer argument is not constant */ expr: \
+            break; \
+        default: ; \
+    } \
+    stmt; \
+} while(0)
+
 typedef struct {
     void (*fn)(const char *text, void* data);
     const void* data;
@@ -133,14 +146,6 @@ static const secp256k1_callback default_error_callback = {
 
 static SECP256K1_INLINE void *checked_malloc(const secp256k1_callback* cb, size_t size) {
     void *ret = malloc(size);
-    if (ret == NULL) {
-        secp256k1_callback_call(cb, "Out of memory");
-    }
-    return ret;
-}
-
-static SECP256K1_INLINE void *checked_realloc(const secp256k1_callback* cb, void *ptr, size_t size) {
-    void *ret = realloc(ptr, size);
     if (ret == NULL) {
         secp256k1_callback_call(cb, "Out of memory");
     }

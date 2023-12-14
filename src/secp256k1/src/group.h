@@ -44,6 +44,14 @@ typedef struct {
 
 #define SECP256K1_GE_STORAGE_CONST_GET(t) SECP256K1_FE_STORAGE_CONST_GET(t.x), SECP256K1_FE_STORAGE_CONST_GET(t.y)
 
+/** Maximum allowed magnitudes for group element coordinates
+ *  in affine (x, y) and jacobian (x, y, z) representation. */
+#define SECP256K1_GE_X_MAGNITUDE_MAX  4
+#define SECP256K1_GE_Y_MAGNITUDE_MAX  3
+#define SECP256K1_GEJ_X_MAGNITUDE_MAX 4
+#define SECP256K1_GEJ_Y_MAGNITUDE_MAX 4
+#define SECP256K1_GEJ_Z_MAGNITUDE_MAX 1
+
 /** Set a group element equal to the point with given X and Y coordinates */
 static void secp256k1_ge_set_xy(secp256k1_ge *r, const secp256k1_fe *x, const secp256k1_fe *y);
 
@@ -106,7 +114,8 @@ static void secp256k1_gej_set_ge(secp256k1_gej *r, const secp256k1_ge *a);
 /** Check two group elements (jacobian) for equality in variable time. */
 static int secp256k1_gej_eq_var(const secp256k1_gej *a, const secp256k1_gej *b);
 
-/** Compare the X coordinate of a group element (jacobian). */
+/** Compare the X coordinate of a group element (jacobian).
+  * The magnitude of the group element's X coordinate must not exceed 31. */
 static int secp256k1_gej_eq_x_var(const secp256k1_fe *x, const secp256k1_gej *a);
 
 /** Set r equal to the inverse of a (i.e., mirrored around the X axis) */

@@ -4,18 +4,18 @@ AC_PREREQ([2.60])
 # the API. All changes in experimental modules are treated as
 # backwards-compatible and therefore at most increase the minor version.
 define(_PKG_VERSION_MAJOR, 0)
-define(_PKG_VERSION_MINOR, 3)
-define(_PKG_VERSION_PATCH, 3)
-define(_PKG_VERSION_IS_RELEASE, false)
+define(_PKG_VERSION_MINOR, 4)
+define(_PKG_VERSION_PATCH, 0)
+define(_PKG_VERSION_IS_RELEASE, true)
 
 # The library version is based on libtool versioning of the ABI. The set of
 # rules for updating the version can be found here:
 # https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 # All changes in experimental modules are treated as if they don't affect the
 # interface and therefore only increase the revision.
-define(_LIB_VERSION_CURRENT, 2)
-define(_LIB_VERSION_REVISION, 3)
-define(_LIB_VERSION_AGE, 0)
+define(_LIB_VERSION_CURRENT, 3)
+define(_LIB_VERSION_REVISION, 0)
+define(_LIB_VERSION_AGE, 1)
 
 AC_INIT([libsecp256k1],m4_join([.], _PKG_VERSION_MAJOR, _PKG_VERSION_MINOR, _PKG_VERSION_PATCH)m4_if(_PKG_VERSION_IS_RELEASE, [true], [], [-dev]),[https://github.com/bitcoin-core/secp256k1/issues],[libsecp256k1],[https://github.com/bitcoin-core/secp256k1])
 
@@ -127,12 +127,6 @@ AC_DEFUN([SECP_TRY_APPEND_DEFAULT_CFLAGS], [
       SECP_TRY_APPEND_CFLAGS([-wd4267], $1) # Disable warning C4267 "'var' : conversion from 'size_t' to 'type', possible loss of data".
       # Eliminate deprecation warnings for the older, less secure functions.
       CPPFLAGS="-D_CRT_SECURE_NO_WARNINGS $CPPFLAGS"
-      # We pass -ignore:4217 to the MSVC linker to suppress warning 4217 when
-      # importing variables from a statically linked secp256k1.
-      # (See the libtool manual, section "Windows DLLs" for background.)
-      # Unfortunately, libtool tries to be too clever and strips "-Xlinker arg"
-      # into "arg", so this will be " -Xlinker -ignore:4217" after stripping.
-      LDFLAGS="-Xlinker -Xlinker -Xlinker -ignore:4217 $LDFLAGS" 
     fi
 ])
 SECP_TRY_APPEND_DEFAULT_CFLAGS(SECP_CFLAGS)
@@ -407,7 +401,7 @@ if test x"$enable_module_schnorrsig" = x"yes"; then
 fi
 
 if test x"$enable_module_ellswift" = x"yes"; then
-  AC_DEFINE(ENABLE_MODULE_ELLSWIFT, 1, [Define this symbol to enable the ElligatorSwift module])
+  SECP_CONFIG_DEFINES="$SECP_CONFIG_DEFINES -DENABLE_MODULE_ELLSWIFT=1"
 fi
 
 # Test if extrakeys is set after the schnorrsig module to allow the schnorrsig

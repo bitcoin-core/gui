@@ -280,7 +280,7 @@ static void MutateTxAddInput(CMutableTransaction& tx, const std::string& strInpu
     }
 
     // append to transaction input list
-    CTxIn txin(txid, vout, CScript(), nSequenceIn);
+    CTxIn txin(Txid::FromUint256(txid), vout, CScript(), nSequenceIn);
     tx.vin.push_back(txin);
 }
 
@@ -562,6 +562,16 @@ static CAmount AmountFromValue(const UniValue& value)
     return amount;
 }
 
+static std::vector<unsigned char> ParseHexUV(const UniValue& v, const std::string& strName)
+{
+    std::string strHex;
+    if (v.isStr())
+        strHex = v.getValStr();
+    if (!IsHex(strHex))
+        throw std::runtime_error(strName + " must be hexadecimal string (not '" + strHex + "')");
+    return ParseHex(strHex);
+}
+
 static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
 {
     int nHashType = SIGHASH_ALL;
@@ -619,7 +629,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
             if (nOut < 0)
                 throw std::runtime_error("vout cannot be negative");
 
-            COutPoint out(txid, nOut);
+            COutPoint out(Txid::FromUint256(txid), nOut);
             std::vector<unsigned char> pkData(ParseHexUV(prevOut["scriptPubKey"], "scriptPubKey"));
             CScript scriptPubKey(pkData.begin(), pkData.end());
 

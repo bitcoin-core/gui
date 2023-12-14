@@ -22,16 +22,17 @@
 #include <node/blockstorage.h>
 #include <node/caches.h>
 #include <node/chainstate.h>
+#include <random.h>
 #include <scheduler.h>
 #include <script/sigcache.h>
 #include <util/chaintype.h>
+#include <util/fs.h>
 #include <util/thread.h>
 #include <validation.h>
 #include <validationinterface.h>
 
 #include <cassert>
 #include <cstdint>
-#include <filesystem>
 #include <functional>
 #include <iosfwd>
 #include <memory>
@@ -49,8 +50,8 @@ int main(int argc, char* argv[])
             << "           BREAK IN FUTURE VERSIONS. DO NOT USE ON YOUR ACTUAL DATADIR." << std::endl;
         return 1;
     }
-    std::filesystem::path abs_datadir = std::filesystem::absolute(argv[1]);
-    std::filesystem::create_directories(abs_datadir);
+    fs::path abs_datadir{fs::absolute(argv[1])};
+    fs::create_directories(abs_datadir);
 
 
     // SETUP: Context
@@ -81,9 +82,10 @@ int main(int argc, char* argv[])
     class KernelNotifications : public kernel::Notifications
     {
     public:
-        void blockTip(SynchronizationState, CBlockIndex&) override
+        kernel::InterruptResult blockTip(SynchronizationState, CBlockIndex&) override
         {
             std::cout << "Block tip changed" << std::endl;
+            return {};
         }
         void headerTip(SynchronizationState, int64_t height, int64_t timestamp, bool presync) override
         {
@@ -96,6 +98,15 @@ int main(int argc, char* argv[])
         void warning(const bilingual_str& warning) override
         {
             std::cout << "Warning: " << warning.original << std::endl;
+        }
+        void flushError(const std::string& debug_message) override
+        {
+            std::cerr << "Error flushing block data to disk: " << debug_message << std::endl;
+        }
+        void fatalError(const std::string& debug_message, const bilingual_str& user_message) override
+        {
+            std::cerr << "Error: " << debug_message << std::endl;
+            std::cerr << (user_message.empty() ? "A fatal internal error occurred." : user_message.original) << std::endl;
         }
     };
     auto notifications = std::make_unique<KernelNotifications>();
@@ -112,8 +123,9 @@ int main(int argc, char* argv[])
     const node::BlockManager::Options blockman_opts{
         .chainparams = chainman_opts.chainparams,
         .blocks_dir = abs_datadir / "blocks",
+        .notifications = chainman_opts.notifications,
     };
-    ChainstateManager chainman{chainman_opts, blockman_opts};
+    ChainstateManager chainman{kernel_context.interrupt, chainman_opts, blockman_opts};
 
     node::CacheSizes cache_sizes;
     cache_sizes.block_tree_db = 2 << 20;
@@ -152,7 +164,7 @@ int main(int argc, char* argv[])
         << "\t" << "Reindexing: " << std::boolalpha << node::fReindex.load() << std::noboolalpha << std::endl
         << "\t" << "Snapshot Active: " << std::boolalpha << chainman.IsSnapshotActive() << std::noboolalpha << std::endl
         << "\t" << "Active Height: " << chainman.ActiveHeight() << std::endl
-        << "\t" << "Active IBD: " << std::boolalpha << chainman.ActiveChainstate().IsInitialBlockDownload() << std::noboolalpha << std::endl;
+        << "\t" << "Active IBD: " << std::boolalpha << chainman.IsInitialBlockDownload() << std::noboolalpha << std::endl;
         CBlockIndex* tip = chainman.ActiveTip();
         if (tip) {
             std::cout << "\t" << tip->ToString() << std::endl;
@@ -277,8 +289,7 @@ epilogue:
     // Without this precise shutdown sequence, there will be a lot of nullptr
     // dereferencing and UB.
     scheduler.stop();
-    if (chainman.m_load_block.joinable()) chainman.m_load_block.join();
-    StopScriptCheckWorkerThreads();
+    if (chainman.m_thread_load.joinable()) chainman.m_thread_load.join();
 
     GetMainSignals().FlushBackgroundCallbacks();
     {

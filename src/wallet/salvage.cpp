@@ -11,6 +11,8 @@
 #include <wallet/wallet.h>
 #include <wallet/walletdb.h>
 
+#include <db_cxx.h>
+
 namespace wallet {
 /* End of headers, beginning of key/value data */
 static const char *HEADER_END = "HEADER=END";
@@ -144,7 +146,7 @@ bool RecoverDatabaseFile(const ArgsManager& args, const fs::path& file_path, bil
                 warnings.push_back(Untranslated("Salvage: WARNING: Number of keys in data does not match number of values."));
                 break;
             }
-            salvagedData.push_back(make_pair(ParseHex(keyHex), ParseHex(valueHex)));
+            salvagedData.emplace_back(ParseHex(keyHex), ParseHex(valueHex));
         }
     }
 
@@ -175,7 +177,7 @@ bool RecoverDatabaseFile(const ArgsManager& args, const fs::path& file_path, bil
         return false;
     }
 
-    DbTxn* ptxn = env->TxnBegin();
+    DbTxn* ptxn = env->TxnBegin(DB_TXN_WRITE_NOSYNC);
     CWallet dummyWallet(nullptr, "", std::make_unique<DummyDatabase>());
     for (KeyValPair& row : salvagedData)
     {

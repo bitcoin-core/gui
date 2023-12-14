@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019-2021 The Bitcoin Core developers
+# Copyright (c) 2019-present The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 """Run fuzz test targets.
@@ -16,12 +16,14 @@ import sys
 
 
 def get_fuzz_env(*, target, source_dir):
+    symbolizer = os.environ.get('LLVM_SYMBOLIZER_PATH', "/usr/bin/llvm-symbolizer")
     return {
         'FUZZ': target,
         'UBSAN_OPTIONS':
         f'suppressions={source_dir}/test/sanitizer_suppressions/ubsan:print_stacktrace=1:halt_on_error=1:report_error_type=1',
-        'ASAN_OPTIONS':  # symbolizer disabled due to https://github.com/google/sanitizers/issues/1364#issuecomment-761072085
-        'symbolize=0:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1',
+        'UBSAN_SYMBOLIZER_PATH':symbolizer,
+        "ASAN_OPTIONS": "detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1",
+        'ASAN_SYMBOLIZER_PATH':symbolizer,
     }
 
 
@@ -70,7 +72,8 @@ def main():
     )
     parser.add_argument(
         '--m_dir',
-        help='Merge inputs from this directory into the corpus_dir.',
+        action="append",
+        help="Merge inputs from these directories into the corpus_dir.",
     )
     parser.add_argument(
         '-g',
@@ -177,7 +180,7 @@ def main():
                 test_list=test_list_selection,
                 src_dir=config['environment']['SRCDIR'],
                 build_dir=config["environment"]["BUILDDIR"],
-                merge_dir=args.m_dir,
+                merge_dirs=[Path(m_dir) for m_dir in args.m_dir],
             )
             return
 
@@ -193,6 +196,42 @@ def main():
         )
 
 
+def transform_process_message_target(targets, src_dir):
+    """Add a target per process message, and also keep ("process_message", {}) to allow for
+    cross-pollination, or unlimited search"""
+
+    p2p_msg_target = "process_message"
+    if (p2p_msg_target, {}) in targets:
+        lines = subprocess.run(
+            ["git", "grep", "--function-context", "g_all_net_message_types{", src_dir / "src" / "protocol.cpp"],
+            check=True,
+            stdout=subprocess.PIPE,
+            text=True,
+        ).stdout.splitlines()
+        lines = [l.split("::", 1)[1].split(",")[0].lower() for l in lines if l.startswith("src/protocol.cpp-    NetMsgType::")]
+        assert len(lines)
+        targets += [(p2p_msg_target, {"LIMIT_TO_MESSAGE_TYPE": m}) for m in lines]
+    return targets
+
+
+def transform_rpc_target(targets, src_dir):
+    """Add a target per RPC command, and also keep ("rpc", {}) to allow for cross-pollination,
+    or unlimited search"""
+
+    rpc_target = "rpc"
+    if (rpc_target, {}) in targets:
+        lines = subprocess.run(
+            ["git", "grep", "--function-context", "RPC_COMMANDS_SAFE_FOR_FUZZING{", src_dir / "src" / "test" / "fuzz" / "rpc.cpp"],
+            check=True,
+            stdout=subprocess.PIPE,
+            text=True,
+        ).stdout.splitlines()
+        lines = [l.split("\"", 1)[1].split("\"")[0] for l in lines if l.startswith("src/test/fuzz/rpc.cpp-    \"")]
+        assert len(lines)
+        targets += [(rpc_target, {"LIMIT_TO_RPC_COMMAND": r}) for r in lines]
+    return targets
+
+
 def generate_corpus(*, fuzz_pool, src_dir, build_dir, corpus_dir, targets):
     """Generates new corpus.
 
@@ -200,49 +239,65 @@ def generate_corpus(*, fuzz_pool, src_dir, build_dir, corpus_dir, targets):
     {corpus_dir}.
     """
     logging.info("Generating corpus to {}".format(corpus_dir))
+    targets = [(t, {}) for t in targets]  # expand to add dictionary for target-specific env variables
+    targets = transform_process_message_target(targets, Path(src_dir))
+    targets = transform_rpc_target(targets, Path(src_dir))
 
-    def job(command, t):
-        logging.debug("Running '{}'\n".format(" ".join(command)))
+    def job(command, t, t_env):
+        logging.debug(f"Running '{command}'")
         logging.debug("Command '{}' output:\n'{}'\n".format(
-            ' '.join(command),
+            command,
             subprocess.run(
                 command,
-                env=get_fuzz_env(target=t, source_dir=src_dir),
+                env={
+                    **t_env,
+                    **get_fuzz_env(target=t, source_dir=src_dir),
+                },
                 check=True,
                 stderr=subprocess.PIPE,
                 text=True,
-            ).stderr))
+            ).stderr,
+        ))
 
     futures = []
-    for target in targets:
-        target_corpus_dir = os.path.join(corpus_dir, target)
+    for target, t_env in targets:
+        target_corpus_dir = corpus_dir / target
         os.makedirs(target_corpus_dir, exist_ok=True)
         command = [
             os.path.join(build_dir, 'src', 'test', 'fuzz', 'fuzz'),
             "-runs=100000",
             target_corpus_dir,
         ]
-        futures.append(fuzz_pool.submit(job, command, target))
+        futures.append(fuzz_pool.submit(job, command, target, t_env))
 
     for future in as_completed(futures):
         future.result()
 
 
-def merge_inputs(*, fuzz_pool, corpus, test_list, src_dir, build_dir, merge_dir):
-    logging.info("Merge the inputs from the passed dir into the corpus_dir. Passed dir {}".format(merge_dir))
+def merge_inputs(*, fuzz_pool, corpus, test_list, src_dir, build_dir, merge_dirs):
+    logging.info(f"Merge the inputs from the passed dir into the corpus_dir. Passed dirs {merge_dirs}")
     jobs = []
     for t in test_list:
         args = [
             os.path.join(build_dir, 'src', 'test', 'fuzz', 'fuzz'),
-            '-merge=1',
+            '-rss_limit_mb=8000',
+            '-set_cover_merge=1',
+            # set_cover_merge is used instead of -merge=1 to reduce the overall
+            # size of the qa-assets git repository a bit, but more importantly,
+            # to cut the runtime to iterate over all fuzz inputs [0].
+            # [0] https://github.com/bitcoin-core/qa-assets/issues/130#issuecomment-1761760866
             '-shuffle=0',
             '-prefer_small=1',
-            '-use_value_profile=1',  # Also done by oss-fuzz https://github.com/google/oss-fuzz/issues/1406#issuecomment-387790487
+            '-use_value_profile=0',
+            # use_value_profile is enabled by oss-fuzz [0], but disabled for
+            # now to avoid bloating the qa-assets git repository [1].
+            # [0] https://github.com/google/oss-fuzz/issues/1406#issuecomment-387790487
+            # [1] https://github.com/bitcoin-core/qa-assets/issues/130#issuecomment-1749075891
             os.path.join(corpus, t),
-            os.path.join(merge_dir, t),
-        ]
+        ] + [str(m_dir / t) for m_dir in merge_dirs]
         os.makedirs(os.path.join(corpus, t), exist_ok=True)
-        os.makedirs(os.path.join(merge_dir, t), exist_ok=True)
+        for m_dir in merge_dirs:
+            (m_dir / t).mkdir(exist_ok=True)
 
         def job(t, args):
             output = 'Run {} with args {}\n'.format(t, " ".join(args))

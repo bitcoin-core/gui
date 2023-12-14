@@ -20,7 +20,7 @@ void initialize_coincontrol()
     g_setup = testing_setup.get();
 }
 
-FUZZ_TARGET_INIT(coincontrol, initialize_coincontrol)
+FUZZ_TARGET(coincontrol, .init = initialize_coincontrol)
 {
     FuzzedDataProvider fuzzed_data_provider(buffer.data(), buffer.size());
     const auto& node = g_setup->m_node;
@@ -60,7 +60,7 @@ FUZZ_TARGET_INIT(coincontrol, initialize_coincontrol)
             },
             [&] {
                 const CTxOut tx_out{ConsumeMoney(fuzzed_data_provider), ConsumeScript(fuzzed_data_provider)};
-                (void)coin_control.SelectExternal(out_point, tx_out);
+                (void)coin_control.Select(out_point).SetTxOut(tx_out);
             },
             [&] {
                 (void)coin_control.UnSelect(out_point);
@@ -76,10 +76,7 @@ FUZZ_TARGET_INIT(coincontrol, initialize_coincontrol)
                 (void)coin_control.SetInputWeight(out_point, weight);
             },
             [&] {
-                // Condition to avoid the assertion in GetInputWeight
-                if (coin_control.HasInputWeight(out_point)) {
-                    (void)coin_control.GetInputWeight(out_point);
-                }
+                (void)coin_control.GetInputWeight(out_point);
             });
     }
 }

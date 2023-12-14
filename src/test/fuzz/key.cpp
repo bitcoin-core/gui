@@ -13,10 +13,11 @@
 #include <script/script.h>
 #include <script/sign.h>
 #include <script/signingprovider.h>
-#include <script/standard.h>
+#include <script/solver.h>
 #include <streams.h>
 #include <test/fuzz/FuzzedDataProvider.h>
 #include <test/fuzz/fuzz.h>
+#include <test/fuzz/util.h>
 #include <util/chaintype.h>
 #include <util/strencodings.h>
 
@@ -35,7 +36,7 @@ void initialize_key()
     SelectParams(ChainType::REGTEST);
 }
 
-FUZZ_TARGET_INIT(key, initialize_key)
+FUZZ_TARGET(key, .init = initialize_key)
 {
     const CKey key = [&] {
         CKey k;
@@ -185,7 +186,7 @@ FUZZ_TARGET_INIT(key, initialize_key)
         const CTxDestination tx_destination = GetDestinationForKey(pubkey, output_type);
         assert(output_type == OutputType::LEGACY);
         assert(IsValidDestination(tx_destination));
-        assert(CTxDestination{PKHash{pubkey}} == tx_destination);
+        assert(PKHash{pubkey} == *std::get_if<PKHash>(&tx_destination));
 
         const CScript script_for_destination = GetScriptForDestination(tx_destination);
         assert(script_for_destination.size() == 25);
@@ -308,14 +309,11 @@ FUZZ_TARGET_INIT(key, initialize_key)
     }
 }
 
-FUZZ_TARGET_INIT(ellswift_roundtrip, initialize_key)
+FUZZ_TARGET(ellswift_roundtrip, .init = initialize_key)
 {
     FuzzedDataProvider fdp{buffer.data(), buffer.size()};
 
-    auto key_bytes = fdp.ConsumeBytes<uint8_t>(32);
-    key_bytes.resize(32);
-    CKey key;
-    key.Set(key_bytes.begin(), key_bytes.end(), true);
+    CKey key = ConsumePrivateKey(fdp, /*compressed=*/true);
     if (!key.IsValid()) return;
 
     auto ent32 = fdp.ConsumeBytes<std::byte>(32);
@@ -327,22 +325,16 @@ FUZZ_TARGET_INIT(ellswift_roundtrip, initialize_key)
     assert(key.VerifyPubKey(decoded_pubkey));
 }
 
-FUZZ_TARGET_INIT(bip324_ecdh, initialize_key)
+FUZZ_TARGET(bip324_ecdh, .init = initialize_key)
 {
     FuzzedDataProvider fdp{buffer.data(), buffer.size()};
 
     // We generate private key, k1.
-    auto rnd32 = fdp.ConsumeBytes<uint8_t>(32);
-    rnd32.resize(32);
-    CKey k1;
-    k1.Set(rnd32.begin(), rnd32.end(), true);
+    CKey k1 = ConsumePrivateKey(fdp, /*compressed=*/true);
     if (!k1.IsValid()) return;
 
     // They generate private key, k2.
-    rnd32 = fdp.ConsumeBytes<uint8_t>(32);
-    rnd32.resize(32);
-    CKey k2;
-    k2.Set(rnd32.begin(), rnd32.end(), true);
+    CKey k2 = ConsumePrivateKey(fdp, /*compressed=*/true);
     if (!k2.IsValid()) return;
 
     // We construct an ellswift encoding for our key, k1_ellswift.

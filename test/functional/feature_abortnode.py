@@ -25,7 +25,7 @@ class AbortNodeTest(BitcoinTestFramework):
         self.generate(self.nodes[0], 3, sync_fun=self.no_op)
 
         # Deleting the undo file will result in reorg failure
-        (self.nodes[0].chain_path / "blocks" / "rev00000.dat").unlink()
+        (self.nodes[0].blocks_path / "rev00000.dat").unlink()
 
         # Connecting to a node with a more work chain will trigger a reorg
         # attempt.
@@ -36,7 +36,7 @@ class AbortNodeTest(BitcoinTestFramework):
 
             # Check that node0 aborted
             self.log.info("Waiting for crash")
-            self.nodes[0].wait_until_stopped(timeout=5, expect_error=True)
+            self.nodes[0].wait_until_stopped(timeout=5, expect_error=True, expected_stderr="Error: A fatal internal error occurred, see debug.log for details")
         self.log.info("Node crashed - now verifying restart fails")
         self.nodes[0].assert_start_raises_init_error()
 

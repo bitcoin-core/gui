@@ -18,7 +18,6 @@ from test_framework.util import (
     assert_equal,
     assert_fee_amount,
     assert_raises_rpc_error,
-    find_vout_for_address,
 )
 from test_framework.wallet_util import test_address
 from test_framework.wallet import MiniWallet
@@ -310,8 +309,7 @@ class WalletTest(BitcoinTestFramework):
         node_0_bal += amount
         assert_equal(self.nodes[0].getbalance(), node_0_bal)
 
-        for key in ["totalFee", "feeRate"]:
-            assert_raises_rpc_error(-8, "Unknown named parameter key", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, key=1)
+        assert_raises_rpc_error(-8, "Unknown named parameter feeRate", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, feeRate=1)
 
         # Test setting explicit fee rate just below the minimum.
         self.log.info("Test sendmany raises 'fee rate too low' if fee_rate of 0.99999999 is passed")
@@ -328,7 +326,7 @@ class WalletTest(BitcoinTestFramework):
         for invalid_value in ["", 0.000000001, 1e-09, 1.111111111, 1111111111111111, "31.999999999999999999999"]:
             assert_raises_rpc_error(-3, msg, self.nodes[2].sendmany, amounts={address: 1.0}, fee_rate=invalid_value)
         # Test fee_rate values that cannot be represented in sat/vB.
-        for invalid_value in [0.0001, 0.00000001, 0.00099999, 31.99999999, "0.0001", "0.00000001", "0.00099999", "31.99999999"]:
+        for invalid_value in [0.0001, 0.00000001, 0.00099999, 31.99999999]:
             assert_raises_rpc_error(-3, msg, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=invalid_value)
         # Test fee_rate out of range (negative number).
         assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendmany, amounts={address: 10}, fee_rate=-1)
@@ -472,10 +470,9 @@ class WalletTest(BitcoinTestFramework):
             # Import address and private key to check correct behavior of spendable unspents
             # 1. Send some coins to generate new UTXO
             address_to_import = self.nodes[2].getnewaddress()
-            txid = self.nodes[0].sendtoaddress(address_to_import, 1)
+            utxo = self.create_outpoints(self.nodes[0], outputs=[{address_to_import: 1}])[0]
             self.sync_mempools(self.nodes[0:3])
-            vout = find_vout_for_address(self.nodes[2], txid, address_to_import)
-            self.nodes[2].lockunspent(False, [{"txid": txid, "vout": vout}])
+            self.nodes[2].lockunspent(False, [utxo])
             self.generate(self.nodes[0], 1, sync_fun=lambda: self.sync_all(self.nodes[0:3]))
 
             self.log.info("Test sendtoaddress with fee_rate param (explicit fee rate in sat/vB)")
@@ -505,9 +502,6 @@ class WalletTest(BitcoinTestFramework):
             fee = prebalance - postbalance - amount
             assert_fee_amount(fee, tx_size, Decimal(fee_rate_btc_kvb))
 
-            for key in ["totalFee", "feeRate"]:
-                assert_raises_rpc_error(-8, "Unknown named parameter key", self.nodes[2].sendtoaddress, address=address, amount=1, fee_rate=1, key=1)
-
             # Test setting explicit fee rate just below the minimum.
             self.log.info("Test sendtoaddress raises 'fee rate too low' if fee_rate of 0.99999999 is passed")
             assert_raises_rpc_error(-6, "Fee rate (0.999 sat/vB) is lower than the minimum fee rate setting (1.000 sat/vB)",
@@ -523,7 +517,7 @@ class WalletTest(BitcoinTestFramework):
             for invalid_value in ["", 0.000000001, 1e-09, 1.111111111, 1111111111111111, "31.999999999999999999999"]:
                 assert_raises_rpc_error(-3, msg, self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate=invalid_value)
             # Test fee_rate values that cannot be represented in sat/vB.
-            for invalid_value in [0.0001, 0.00000001, 0.00099999, 31.99999999, "0.0001", "0.00000001", "0.00099999", "31.99999999"]:
+            for invalid_value in [0.0001, 0.00000001, 0.00099999, 31.99999999]:
                 assert_raises_rpc_error(-3, msg, self.nodes[2].sendtoaddress, address=address, amount=10, fee_rate=invalid_value)
             # Test fee_rate out of range (negative number).
             assert_raises_rpc_error(-3, OUT_OF_RANGE, self.nodes[2].sendtoaddress, address=address, amount=1.0, fee_rate=-1)
