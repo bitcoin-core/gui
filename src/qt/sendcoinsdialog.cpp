@@ -145,7 +145,9 @@ void SendCoinsDialog::setClientModel(ClientModel *_clientModel)
 void SendCoinsDialog::setModel(WalletModel *_model)
 {
     this->model = _model;
-
+    
+      setWindowTitle(tr("Send Coins - %1").arg(model->getWalletName()));
+  
     if(_model && _model->getOptionsModel())
     {
         for(int i = 0; i < ui->entries->count(); ++i)
