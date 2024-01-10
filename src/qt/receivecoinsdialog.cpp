@@ -72,6 +72,9 @@ void ReceiveCoinsDialog::setModel(WalletModel *_model)
 {
     this->model = _model;
 
+        setWindowTitle(tr("Request payments - %1").arg(model->getWalletName()));
+
+
     if(_model && _model->getOptionsModel())
     {
         _model->getRecentRequestsTableModel()->sort(RecentRequestsTableModel::Date, Qt::DescendingOrder);
