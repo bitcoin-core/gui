@@ -2,6 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#if defined(HAVE_CONFIG_H)
+#include <config/bitcoin-config.h> /* for USE_QRCODE */
+#endif
+
 #include <qt/deniabilitydialog.h>
 #include <qt/forms/ui_deniabilitydialog.h>
 
