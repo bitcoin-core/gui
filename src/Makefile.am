@@ -358,6 +358,7 @@ BITCOIN_CORE_H = \
   wallet/sqlite.h \
   wallet/transaction.h \
   wallet/types.h \
+  wallet/util_spend.h \
   wallet/wallet.h \
   wallet/walletdb.h \
   wallet/wallettool.h \
