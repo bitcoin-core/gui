@@ -27,6 +27,7 @@
 #include <wallet/receive.h>
 #include <wallet/rpc/wallet.h>
 #include <wallet/spend.h>
+#include <wallet/util_spend.h>
 #include <wallet/wallet.h>
 
 #include <memory>
@@ -274,21 +275,13 @@ public:
         LOCK(m_wallet->cs_wallet);
         return m_wallet->ListLockedCoins(outputs);
     }
-    util::Result<CTransactionRef> createTransaction(const std::vector<CRecipient>& recipients,
+    util::Result<CreatedTransactionResult> createTransaction(const std::vector<CRecipient>& recipients,
         const CCoinControl& coin_control,
         bool sign,
-        int& change_pos,
-        CAmount& fee) override
+        std::optional<unsigned int> change_pos) override
     {
         LOCK(m_wallet->cs_wallet);
-        auto res = CreateTransaction(*m_wallet, recipients, change_pos == -1 ? std::nullopt : std::make_optional(change_pos),
-                                     coin_control, sign);
-        if (!res) return util::Error{util::ErrorString(res)};
-        const auto& txr = *res;
-        fee = txr.fee;
-        change_pos = txr.change_pos ? *txr.change_pos : -1;
-
-        return txr.tx;
+        return CreateTransaction(*m_wallet, recipients, change_pos, coin_control, sign);
     }
     void commitTransaction(CTransactionRef tx,
         WalletValueMap value_map,

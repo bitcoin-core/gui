@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+struct CreatedTransactionResult;
 class CFeeRate;
 class CKey;
 enum class FeeReason;
@@ -142,11 +143,10 @@ public:
     virtual void listLockedCoins(std::vector<COutPoint>& outputs) = 0;
 
     //! Create transaction.
-    virtual util::Result<CTransactionRef> createTransaction(const std::vector<wallet::CRecipient>& recipients,
+    virtual util::Result<CreatedTransactionResult> createTransaction(const std::vector<wallet::CRecipient>& recipients,
         const wallet::CCoinControl& coin_control,
         bool sign,
-        int& change_pos,
-        CAmount& fee) = 0;
+        std::optional<unsigned int> change_pos) = 0;
 
     //! Commit transaction.
     virtual void commitTransaction(CTransactionRef tx,
