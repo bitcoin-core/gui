@@ -35,7 +35,8 @@ public:
 
     enum ColumnIndex {
         Label = 0,   /**< User specified label */
-        Address = 1  /**< Bitcoin address */
+        Type = 1,    /**< Address type */
+        Address = 2  /**< Bitcoin address */
     };
 
     enum RoleIndex {
@@ -104,8 +105,7 @@ private:
 public Q_SLOTS:
     /* Update address list from core.
      */
-    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status);
-
+    void updateEntry(const QString &address, const QString &label, bool isMine, wallet::AddressPurpose purpose, int status, const OutputType &address_type);
     friend class AddressTablePriv;
 };
 

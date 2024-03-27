@@ -24,15 +24,31 @@
 class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
 {
     const QString m_type;
+    const bool m_nestedFilterEnabled;
 
 public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
+    AddressBookSortFilterProxyModel(const QString& type, QObject* parent, bool enableNestedFilter)
         : QSortFilterProxyModel(parent)
         , m_type(type)
+        , m_nestedFilterEnabled(enableNestedFilter)
     {
         setDynamicSortFilter(true);
         setFilterCaseSensitivity(Qt::CaseInsensitive);
         setSortCaseSensitivity(Qt::CaseInsensitive);
+
+        if (m_nestedFilterEnabled) {
+            nextedFilterProxyModel.reset(new AddressBookSortFilterProxyModel(type, this, false));
+            nextedFilterProxyModel->setSourceModel(this);
+        }
+    }
+
+    AddressBookSortFilterProxyModel* nestedProxyModel() const noexcept{
+        if (!m_nestedFilterEnabled) return const_cast<AddressBookSortFilterProxyModel*>(this);
+        return nextedFilterProxyModel.get();
+    }
+
+    bool isNestedFilterEnabled() const {
+        return m_nestedFilterEnabled;
     }
 
 protected:
@@ -46,15 +62,25 @@ protected:
         }
 
         auto address = model->index(row, AddressTableModel::Address, parent);
+        auto addressType = model->index(row, AddressTableModel::Type, parent);
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
         const auto pattern = filterRegularExpression();
 #else
         const auto pattern = filterRegExp();
 #endif
-        return (model->data(address).toString().contains(pattern) ||
-                model->data(label).toString().contains(pattern));
+        auto filterBy = model->data(address).toString().contains(pattern) ||
+                        model->data(label).toString().contains(pattern);
+
+        if (m_type == AddressTableModel::Receive) {
+            filterBy = filterBy || model->data(addressType).toString().contains(pattern);
+        }
+
+        return filterBy;
     }
+
+private:
+    std::unique_ptr<AddressBookSortFilterProxyModel> nextedFilterProxyModel{nullptr};
 };
 
 AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
@@ -95,11 +121,13 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         ui->labelExplanation->setText(tr("These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins."));
         ui->deleteAddress->setVisible(true);
         ui->newAddress->setVisible(true);
+        ui->searchLineEdit->setPlaceholderText("Enter address or label to search");
         break;
     case ReceivingTab:
         ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.\nSigning is only possible with addresses of the type 'legacy'."));
         ui->deleteAddress->setVisible(false);
         ui->newAddress->setVisible(false);
+        ui->searchLineEdit->setPlaceholderText("Enter address, address type or label to search");
         break;
     }
 
@@ -131,17 +159,20 @@ void AddressBookPage::setModel(AddressTableModel *_model)
         return;
 
     auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel.reset(new AddressBookSortFilterProxyModel(type, this, true));
     proxyModel->setSourceModel(_model);
 
-    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
+    connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel.get(), &QSortFilterProxyModel::setFilterWildcard);
 
-    ui->tableView->setModel(proxyModel);
+    ui->tableView->setModel(proxyModel->nestedProxyModel());
     ui->tableView->sortByColumn(0, Qt::AscendingOrder);
 
     // Set column widths
-    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Label, QHeaderView::Stretch);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Label, QHeaderView::ResizeToContents);
     ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Address, QHeaderView::ResizeToContents);
+    ui->tableView->horizontalHeader()->setSectionResizeMode(AddressTableModel::Type, QHeaderView::ResizeToContents);
+    // Show the "Address type" column only on the Receiving tab
+    ui->tableView->setColumnHidden(AddressTableModel::ColumnIndex::Type, (tab == SendingTab));
 
     connect(ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
         this, &AddressBookPage::selectionChanged);
@@ -151,6 +182,8 @@ void AddressBookPage::setModel(AddressTableModel *_model)
 
     selectionChanged();
     this->updateWindowsTitleWithWalletName();
+
+    this->setupAddressTypeCombo();
 }
 
 void AddressBookPage::on_copyAddress_clicked()
@@ -179,7 +212,7 @@ void AddressBookPage::onEditAction()
         EditAddressDialog::EditSendingAddress :
         EditAddressDialog::EditReceivingAddress, this);
     dlg->setModel(model);
-    QModelIndex origIndex = proxyModel->mapToSource(indexes.at(0));
+    QModelIndex origIndex = proxyModel->nestedProxyModel()->mapToSource(indexes.at(0));
     dlg->loadRow(origIndex.row());
     GUIUtil::ShowModalDialogAsynchronously(dlg);
 }
@@ -283,8 +316,9 @@ void AddressBookPage::on_exportButton_clicked()
     CSVModelWriter writer(filename);
 
     // name, column, role
-    writer.setModel(proxyModel);
+    writer.setModel(proxyModel->nestedProxyModel());
     writer.addColumn("Label", AddressTableModel::Label, Qt::EditRole);
+    writer.addColumn("Address Type", AddressTableModel::Type, Qt::EditRole);
     writer.addColumn("Address", AddressTableModel::Address, Qt::EditRole);
 
     if(!writer.write()) {
@@ -306,7 +340,7 @@ void AddressBookPage::contextualMenu(const QPoint &point)
 
 void AddressBookPage::selectNewAddress(const QModelIndex &parent, int begin, int /*end*/)
 {
-    QModelIndex idx = proxyModel->mapFromSource(model->index(begin, AddressTableModel::Address, parent));
+    QModelIndex idx = proxyModel.get()->mapFromSource(model->index(begin, AddressTableModel::Address, parent));
     if(idx.isValid() && (idx.data(Qt::EditRole).toString() == newAddressToSelect))
     {
         // Select row of newly created address, once
@@ -327,4 +361,51 @@ void AddressBookPage::updateWindowsTitleWithWalletName()
         case ReceivingTab: setWindowTitle(tr("Receiving addresses - %1").arg(walletName)); break;
         }
     }
+}
+
+std::map<OutputType, QString> AddressBookPage::addressTypeTooltipMap() {
+    return {{OutputType::LEGACY, QObject::tr("Not recommended due to higher fees and less protection against typos.")},
+        {OutputType::P2SH_SEGWIT, QObject::tr("An address compatible with older wallets.")},
+        {OutputType::BECH32, QObject::tr("Native segwit address (BIP-173). Some old wallets don't support it.")},
+        {OutputType::BECH32M, QObject::tr("Bech32m (BIP-350) is an upgrade to Bech32, wallet support is still limited.")}};
+}
+
+QString AddressBookPage::showAllTypes() const{
+    return QObject::tr("All");
+}
+
+QString AddressBookPage::showAllTypesToolTip() const{
+    return QObject::tr("Select an address type to filter by.");
+}
+
+void AddressBookPage::handleAddressTypeChanged(int index)
+{
+    QString selectedValue = ui->addressType->currentText();
+    // If show all types is selected then clear the selected value
+    // that will be sent to the filter so it shows everything
+    if (selectedValue == showAllTypes()) selectedValue.clear();
+    // Emit a signal with the selected value
+    Q_EMIT addressTypeChanged(selectedValue);
+    // Forcing the resize as if it was selected an item with
+    // shorter content and right after a longer one, the
+    // columns are not resizing properly, this fixes it
+    ui->tableView->resizeColumnsToContents();
+}
+
+void AddressBookPage::initializeAddressTypeCombo()
+{
+    const auto index = ui->addressType->count();
+    ui->addressType->addItem(showAllTypes(), index);
+    ui->addressType->setItemData(index, showAllTypesToolTip(), Qt::ToolTipRole);
+    ui->addressType->setCurrentIndex(index);
+}
+
+void AddressBookPage::setupAddressTypeCombo()
+{
+    this->initializeAddressTypeCombo();
+    ui->labelAddressType->setVisible(tab == ReceivingTab);
+    ui->addressType->setVisible(tab == ReceivingTab);
+    GUIUtil::AddItemsToAddressTypeCombo(ui->addressType, true, this->addressTypeTooltipMap());
+    connect(ui->addressType, qOverload<int>(&QComboBox::currentIndexChanged), this, &AddressBookPage::handleAddressTypeChanged);
+    connect(this, &AddressBookPage::addressTypeChanged, proxyModel->nestedProxyModel(), &QSortFilterProxyModel::setFilterFixedString);
 }
