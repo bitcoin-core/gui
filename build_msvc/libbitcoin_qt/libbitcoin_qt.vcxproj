@@ -17,6 +17,7 @@
     <ClCompile Include="..\..\src\qt\bitcoingui.cpp" />
     <ClCompile Include="..\..\src\qt\bitcoinstrings.cpp" />
     <ClCompile Include="..\..\src\qt\bitcoinunits.cpp" />
+    <ClCompile Include="..\..\src\qt\bumpfeechoosechangedialog.cpp" />
     <ClCompile Include="..\..\src\qt\clientmodel.cpp" />
     <ClCompile Include="..\..\src\qt\coincontroldialog.cpp" />
     <ClCompile Include="..\..\src\qt\coincontroltreewidget.cpp" />
@@ -73,6 +74,7 @@
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bitcoinamountfield.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bitcoingui.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bitcoinunits.cpp" />
+    <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_bumpfeechoosechangedialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_clientmodel.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_coincontroldialog.cpp" />
     <ClCompile Include="$(GeneratedFilesOutDir)\moc\moc_coincontroltreewidget.cpp" />
