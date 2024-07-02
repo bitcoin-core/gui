@@ -108,6 +108,7 @@ private Q_SLOTS:
     void updateWatchOnlyColumn(bool fHaveWatchOnly);
     void abandonTx();
     void bumpFee(bool checked);
+    bool detailsAlreadyShown(const QModelIndex &idx);
 
 Q_SIGNALS:
     void doubleClicked(const QModelIndex&);
