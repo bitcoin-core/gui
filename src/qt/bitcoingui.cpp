@@ -360,6 +360,7 @@ void BitcoinGUI::createActions()
     m_migrate_wallet_action = new QAction(tr("Migrate Wallet"), this);
     m_migrate_wallet_action->setEnabled(false);
     m_migrate_wallet_action->setStatusTip(tr("Migrate a wallet"));
+    m_migrate_wallet_menu = new QMenu(this);
 
     showHelpMessageAction = new QAction(tr("&Command-line options"), this);
     showHelpMessageAction->setMenuRole(QAction::NoRole);
@@ -396,15 +397,15 @@ void BitcoinGUI::createActions()
         connect(openAction, &QAction::triggered, this, &BitcoinGUI::openClicked);
         connect(m_open_wallet_menu, &QMenu::aboutToShow, [this] {
             m_open_wallet_menu->clear();
-            for (const std::pair<const std::string, bool>& i : m_wallet_controller->listWalletDir()) {
-                const std::string& path = i.first;
-                QString name = path.empty() ? QString("["+tr("default wallet")+"]") : QString::fromStdString(path);
+            for (const auto& [path, info] : m_wallet_controller->listWalletDir()) {
+                const auto& [loaded, _] = info;
+                QString name = GUIUtil::WalletDisplayName(path);
                 // An single ampersand in the menu item's text sets a shortcut for this item.
                 // Single & are shown when && is in the string. So replace & with &&.
                 name.replace(QChar('&'), QString("&&"));
                 QAction* action = m_open_wallet_menu->addAction(name);
 
-                if (i.second) {
+                if (loaded) {
                     // This wallet is already loaded
                     action->setEnabled(false);
                     continue;
@@ -455,10 +456,33 @@ void BitcoinGUI::createActions()
         connect(m_close_all_wallets_action, &QAction::triggered, [this] {
             m_wallet_controller->closeAllWallets(this);
         });
-        connect(m_migrate_wallet_action, &QAction::triggered, [this] {
-            auto activity = new MigrateWalletActivity(m_wallet_controller, this);
-            connect(activity, &MigrateWalletActivity::migrated, this, &BitcoinGUI::setCurrentWallet);
-            activity->migrate(walletFrame->currentWalletModel());
+        connect(m_migrate_wallet_menu, &QMenu::aboutToShow, [this] {
+            m_migrate_wallet_menu->clear();
+            for (const auto& [wallet_name, info] : m_wallet_controller->listWalletDir()) {
+                const auto& [loaded, format] = info;
+                QString name = GUIUtil::WalletDisplayName(wallet_name);
+                // Menu items remove single &. Single & are shown when && is in
+                // the string, but only the first occurrence. So replace only
+                // the first & with &&.
+                name.replace(name.indexOf(QChar('&')), 1, QString("&&"));
+                QAction* action = m_migrate_wallet_menu->addAction(name);
+
+                if (format != "bdb") {
+                    // This wallet is already migrated
+                    action->setEnabled(false);
+                    continue;
+                }
+
+                connect(action, &QAction::triggered, [this, wallet_name] {
+                    auto activity = new MigrateWalletActivity(m_wallet_controller, this);
+                    connect(activity, &MigrateWalletActivity::migrated, this, &BitcoinGUI::setCurrentWallet);
+                    activity->migrate(wallet_name);
+                });
+            }
+            if (m_migrate_wallet_menu->isEmpty()) {
+                QAction* action = m_migrate_wallet_menu->addAction(tr("No wallets available"));
+                action->setEnabled(false);
+            }
         });
         connect(m_mask_values_action, &QAction::toggled, this, &BitcoinGUI::setPrivacy);
         connect(m_mask_values_action, &QAction::toggled, this, &BitcoinGUI::enableHistoryAction);
@@ -691,6 +715,8 @@ void BitcoinGUI::setWalletController(WalletController* wallet_controller, bool s
     m_open_wallet_action->setEnabled(true);
     m_open_wallet_action->setMenu(m_open_wallet_menu);
     m_restore_wallet_action->setEnabled(true);
+    m_migrate_wallet_action->setEnabled(true);
+    m_migrate_wallet_action->setMenu(m_migrate_wallet_menu);
 
     GUIUtil::ExceptionSafeConnect(wallet_controller, &WalletController::walletAdded, this, &BitcoinGUI::addWallet);
     connect(wallet_controller, &WalletController::walletRemoved, this, &BitcoinGUI::removeWallet);
@@ -771,7 +797,6 @@ void BitcoinGUI::setCurrentWallet(WalletModel* wallet_model)
         }
     }
     updateWindowTitle();
-    m_migrate_wallet_action->setEnabled(wallet_model->wallet().isLegacy());
 }
 
 void BitcoinGUI::setCurrentWalletBySelectorIndex(int index)
@@ -805,7 +830,6 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     openAction->setEnabled(enabled);
     m_close_wallet_action->setEnabled(enabled);
     m_close_all_wallets_action->setEnabled(enabled);
-    m_migrate_wallet_action->setEnabled(enabled);
 }
 
 void BitcoinGUI::createTrayIcon()
