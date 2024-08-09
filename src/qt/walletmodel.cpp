@@ -137,8 +137,10 @@ void WalletModel::updateTransaction()
 void WalletModel::updateAddressBook(const QString &address, const QString &label,
         bool isMine, wallet::AddressPurpose purpose, int status)
 {
-    if(addressTableModel)
-        addressTableModel->updateEntry(address, label, isMine, purpose, status);
+    if (addressTableModel) {
+        CTxDestination destination = DecodeDestination(address.toStdString());
+        addressTableModel->updateEntry(address, label, isMine, purpose, status, m_wallet->getOutputType(destination));
+    }
 }
 
 void WalletModel::updateWatchOnlyFlag(bool fHaveWatchonly)

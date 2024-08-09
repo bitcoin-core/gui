@@ -166,6 +166,13 @@ public:
         }
         return false;
     }
+    OutputType getOutputType(const CTxDestination& dest) override
+    {
+        CScript script = GetScriptForDestination(dest);
+        std::unique_ptr<SigningProvider> provider = m_wallet->GetSolvingProvider(script);
+        std::unique_ptr<Descriptor> desc = provider ? InferDescriptor(script, *provider) : InferDescriptor(script, FlatSigningProvider());
+        return desc->GetOutputType().value_or(OutputType::UNKNOWN);
+    }
     SigningResult signMessage(const std::string& message, const PKHash& pkhash, std::string& str_sig) override
     {
         return m_wallet->SignMessage(message, pkhash, str_sig);
