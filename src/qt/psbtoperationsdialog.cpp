@@ -83,6 +83,10 @@ void PSBTOperationsDialog::signTransaction()
 
     WalletModel::UnlockContext ctx(m_wallet_model->requestUnlock());
 
+    // For multisigs we indicate when a participant successfully signs the PSBT
+    // even when additional signatures are required for the PSBT to be complete.
+    // Simply check the number of partial signatures before and after signing.
+    const size_t n_partial_sigs_before{m_transaction_data.inputs.at(0).partial_sigs.size()};
     const auto err{m_wallet_model->wallet().fillPSBT(SIGHASH_ALL, /*sign=*/true, /*bip32derivs=*/true, &n_signed, m_transaction_data, complete)};
 
     if (err) {
@@ -93,13 +97,26 @@ void PSBTOperationsDialog::signTransaction()
 
     updateTransactionDisplay();
 
+    const size_t n_partial_sigs_after{m_transaction_data.inputs.at(0).partial_sigs.size()};
+    // We also indicate when the participant successfully signed every tx input.
+    // To keep things simple we only check if this is not true, in which case
+    // fallback to the old (vague) behavior where it's unclear if the PSBT was
+    // successfully partially signed.
+    const bool all_inputs_n_partial_sigs_equal{std::all_of(m_transaction_data.inputs.begin(), m_transaction_data.inputs.end(),
+        [&](const PSBTInput& input) { return n_partial_sigs_after == input.partial_sigs.size(); })};
+
     if (!complete && !ctx.isValid()) {
         showStatus(tr("Cannot sign inputs while wallet is locked."), StatusLevel::WARN);
-    } else if (!complete && n_signed < 1) {
-        showStatus(tr("Could not sign any more inputs."), StatusLevel::WARN);
     } else if (!complete) {
-        showStatus(tr("Signed %1 inputs, but more signatures are still required.").arg(n_signed),
-            StatusLevel::INFO);
+        if (all_inputs_n_partial_sigs_equal && n_partial_sigs_after - n_partial_sigs_before > 0) {
+            showStatus(tr("Added %1 partial signature to each input, but more signatures are still required.").arg(n_partial_sigs_after - n_partial_sigs_before),
+                StatusLevel::INFO);
+        } else if (n_signed < 1) {
+            showStatus(tr("Could not sign any more inputs."), StatusLevel::WARN);
+        } else {
+            showStatus(tr("Signed %1 inputs, but more signatures are still required.").arg(n_signed),
+                StatusLevel::INFO);
+        }
     } else {
         showStatus(tr("Signed transaction successfully. Transaction is ready to broadcast."),
             StatusLevel::INFO);
@@ -217,9 +234,17 @@ QString PSBTOperationsDialog::renderTransaction(const PartiallySignedTransaction
     }
 
     size_t num_unsigned = CountPSBTUnsignedInputs(psbtx);
+    const size_t num_partial_sigs{psbtx.inputs.at(0).partial_sigs.size()};
+    const bool all_inputs_n_partial_sigs_equal{std::all_of(psbtx.inputs.begin(), psbtx.inputs.end(),
+        [&](const PSBTInput& input) { return num_partial_sigs == input.partial_sigs.size(); })};
+
     if (num_unsigned > 0) {
         tx_description.append("<br><br>");
         tx_description.append(tr("Transaction has %1 unsigned inputs.").arg(QString::number(num_unsigned)));
+        if (all_inputs_n_partial_sigs_equal && num_partial_sigs > 0) {
+            tx_description.append(" ");
+            tx_description.append(tr("Each input has %1 partial signatures.").arg(QString::number(num_partial_sigs)));
+        }
     }
 
     return tx_description;
