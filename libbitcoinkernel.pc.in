@@ -9,3 +9,4 @@ Version: @CLIENT_VERSION_STRING@
 Libs: -L${libdir} -lbitcoinkernel
 Libs.private: -L${libdir} @LIBS_PRIVATE@
 Cflags: -I${includedir}
+https://github.com/bitcoin-core/gui/issues/859
