@@ -33,7 +33,6 @@ std::string StringForFeeReason(FeeReason reason)
         {FeeReason::DOUBLE_ESTIMATE, "Double Target 95% Threshold"},
         {FeeReason::CONSERVATIVE, "Conservative Double Target longer horizon"},
         {FeeReason::MEMPOOL_MIN, "Mempool Min Fee"},
-        {FeeReason::PAYTXFEE, "PayTxFee set"},
         {FeeReason::FALLBACK, "Fallback fee"},
         {FeeReason::REQUIRED, "Minimum Required Fee"},
     };
