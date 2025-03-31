@@ -11,19 +11,19 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   string(APPEND CMAKE_OBJCXX_COMPILE_OBJECT " ${APPEND_CPPFLAGS} ${APPEND_CXXFLAGS}")
 endif()
 
-get_target_property(qt_lib_type Qt5::Core TYPE)
+get_target_property(qt_lib_type "Qt${Qt_VERSION_MAJOR}::Core" TYPE)
 
 function(import_plugins target)
   if(qt_lib_type STREQUAL "STATIC_LIBRARY")
-    set(plugins Qt5::QMinimalIntegrationPlugin)
+    set(plugins "Qt${Qt_VERSION_MAJOR}::QMinimalIntegrationPlugin")
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-      list(APPEND plugins Qt5::QXcbIntegrationPlugin)
+      list(APPEND plugins "Qt${Qt_VERSION_MAJOR}::QXcbIntegrationPlugin")
     elseif(WIN32)
-      list(APPEND plugins Qt5::QWindowsIntegrationPlugin Qt5::QWindowsVistaStylePlugin)
+      list(APPEND plugins "Qt${Qt_VERSION_MAJOR}::QWindowsIntegrationPlugin" "Qt${Qt_VERSION_MAJOR}::QWindowsVistaStylePlugin")
     elseif(APPLE)
-      list(APPEND plugins Qt5::QCocoaIntegrationPlugin Qt5::QMacStylePlugin)
+      list(APPEND plugins "Qt${Qt_VERSION_MAJOR}::QCocoaIntegrationPlugin" "Qt${Qt_VERSION_MAJOR}::QMacStylePlugin")
     endif()
-    qt5_import_plugins(${target}
+    cmake_language(CALL "qt${Qt_VERSION_MAJOR}_import_plugins" ${target}
       INCLUDE ${plugins}
       EXCLUDE_BY_TYPE imageformats iconengines
     )
@@ -45,7 +45,7 @@ set(CMAKE_AUTOUIC_SEARCH_PATHS forms)
 # to https://github.com/bitcoin-core/bitcoin-maintainer-tools/blob/main/update-translations.py
 file(GLOB ts_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} locale/*.ts)
 set_source_files_properties(${ts_files} PROPERTIES OUTPUT_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/locale)
-qt5_add_translation(qm_files ${ts_files})
+cmake_language(CALL "qt${Qt_VERSION_MAJOR}_add_translation" qm_files ${ts_files})
 
 configure_file(bitcoin_locale.qrc bitcoin_locale.qrc USE_SOURCE_PERMISSIONS COPYONLY)
 
@@ -128,7 +128,7 @@ set_property(SOURCE macnotificationhandler.mm
 )
 target_link_libraries(bitcoinqt
   PUBLIC
-    Qt5::Widgets
+    "Qt${Qt_VERSION_MAJOR}::Widgets"
   PRIVATE
     core_interface
     bitcoin_cli
@@ -206,18 +206,18 @@ if(ENABLE_WALLET)
   target_link_libraries(bitcoinqt
     PRIVATE
       bitcoin_wallet
-      Qt5::Network
+      "Qt${Qt_VERSION_MAJOR}::Network"
   )
 endif()
 
 if(WITH_DBUS)
-  target_link_libraries(bitcoinqt PRIVATE Qt5::DBus)
+  target_link_libraries(bitcoinqt PRIVATE "Qt${Qt_VERSION_MAJOR}::DBus")
 endif()
 
 if(qt_lib_type STREQUAL "STATIC_LIBRARY")
   # We want to define static plugins to link ourselves, thus preventing
   # automatic linking against a "sane" set of default static plugins.
-  qt5_import_plugins(bitcoinqt
+  cmake_language(CALL "qt${Qt_VERSION_MAJOR}_import_plugins" bitcoinqt
       EXCLUDE_BY_TYPE bearer iconengines imageformats platforms styles
   )
 endif()
@@ -321,8 +321,8 @@ else()
   file(GLOB ui_files ${CMAKE_CURRENT_SOURCE_DIR}/forms/*.ui)
   add_custom_target(translate
     COMMAND ${CMAKE_COMMAND} -E env XGETTEXT=${XGETTEXT_EXECUTABLE} COPYRIGHT_HOLDERS=${COPYRIGHT_HOLDERS} ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/share/qt/extract_strings_qt.py ${translatable_sources}
-    COMMAND Qt5::lupdate -no-obsolete -I ${PROJECT_SOURCE_DIR}/src -locations relative ${CMAKE_CURRENT_SOURCE_DIR}/bitcoinstrings.cpp ${ui_files} ${qt_translatable_sources} -ts ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.ts
-    COMMAND Qt5::lconvert -drop-translations -o ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.xlf -i ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.ts
+    COMMAND "Qt${Qt_VERSION_MAJOR}::lupdate" -no-obsolete -I ${PROJECT_SOURCE_DIR}/src -locations relative ${CMAKE_CURRENT_SOURCE_DIR}/bitcoinstrings.cpp ${ui_files} ${qt_translatable_sources} -ts ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.ts
+    COMMAND "Qt${Qt_VERSION_MAJOR}::lconvert" -drop-translations -o ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.xlf -i ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.ts
     COMMAND ${SED_EXECUTABLE} -i.old -e "s|source-language=\"en\" target-language=\"en\"|source-language=\"en\"|" -e "/<target xml:space=\"preserve\"><\\/target>/d" ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.xlf
     COMMAND ${CMAKE_COMMAND} -E rm ${CMAKE_CURRENT_SOURCE_DIR}/locale/bitcoin_en.xlf.old
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src

@@ -174,9 +174,15 @@ if(BUILD_GUI)
   if(BUILD_GUI_TESTS)
     list(APPEND qt_components Test)
   endif()
-  find_package(Qt 5.11.3 MODULE REQUIRED
-    COMPONENTS ${qt_components}
-  )
+  if("${BUILD_GUI}" STREQUAL "qt6")
+    find_package(Qt 6.2.4 MODULE REQUIRED
+      COMPONENTS ${qt_components}
+    )
+  else()
+    find_package(Qt 5.11.3 MODULE REQUIRED
+      COMPONENTS ${qt_components}
+    )
+  endif()
   unset(qt_components)
 endif()
 
