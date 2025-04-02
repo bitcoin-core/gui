@@ -1261,6 +1261,8 @@ public:
 
     uint64_t GetTotalBytesRecv() const;
     uint64_t GetTotalBytesSent() const EXCLUSIVE_LOCKS_REQUIRED(!m_total_bytes_sent_mutex);
+    void SetTotalBytesRecv(uint64_t bytes);
+    void SetTotalBytesSent(uint64_t bytes);
 
     /** Get a unique deterministic randomizer. */
     CSipHasher GetDeterministicRandomizer(uint64_t id) const;
