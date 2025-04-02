@@ -157,6 +157,12 @@ public:
     //! Get total bytes sent.
     virtual int64_t getTotalBytesSent() = 0;
 
+    //! Set total bytes recv
+    virtual void setTotalBytesRecv(uint64_t bytes) = 0;
+
+    //! Set total bytes sent
+    virtual void setTotalBytesSent(uint64_t bytes) = 0;
+
     //! Get mempool size.
     virtual size_t getMempoolSize() = 0;
 
