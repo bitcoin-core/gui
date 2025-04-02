@@ -97,6 +97,12 @@ using MillisecondsDouble = std::chrono::duration<double, std::chrono::millisecon
 int64_t GetTime();
 
 /**
+ * Convenience wrapper for getting current time in milliseconds.
+ * Internally uses std::chrono::system_clock for consistency with other time functions.
+ */
+int64_t GetTimeMillis();
+
+/**
  * DEPRECATED
  * Use SetMockTime with chrono type
  *
