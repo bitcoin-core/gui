@@ -75,6 +75,13 @@ void MockableSteadyClock::ClearMockTime()
 
 int64_t GetTime() { return GetTime<std::chrono::seconds>().count(); }
 
+int64_t GetTimeMillis()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+}
+
 std::string FormatISO8601DateTime(int64_t nTime)
 {
     const std::chrono::sys_seconds secs{std::chrono::seconds{nTime}};
@@ -114,6 +121,13 @@ std::optional<int64_t> ParseISO8601DateTime(std::string_view str)
     const auto time{std::chrono::hours{*hour} + std::chrono::minutes{*min} + std::chrono::seconds{*sec}};
     const auto tp{std::chrono::sys_days{ymd} + time};
     return int64_t{TicksSinceEpoch<std::chrono::seconds>(tp)};
+}
+
+std::string FormatISO8601Time(int64_t nTime) {
+    const std::chrono::sys_seconds secs{std::chrono::seconds{nTime}};
+    const auto days{std::chrono::floor<std::chrono::days>(secs)};
+    const std::chrono::hh_mm_ss hms{secs - days};
+    return strprintf("%02i:%02i:%02iZ", hms.hours().count(), hms.minutes().count(), hms.seconds().count());
 }
 
 struct timeval MillisToTimeval(int64_t nTimeout)

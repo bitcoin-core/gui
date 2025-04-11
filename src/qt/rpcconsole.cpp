@@ -53,7 +53,6 @@
 using util::Join;
 
 const int CONSOLE_HISTORY = 50;
-const int INITIAL_TRAFFIC_GRAPH_MINS = 30;
 const QSize FONT_RANGE(4, 40);
 const char fontSizeSettingsKey[] = "consoleFontSize";
 
@@ -566,7 +565,6 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     connect(ui->clearButton, &QAbstractButton::clicked, [this] { clear(); });
     connect(ui->fontBiggerButton, &QAbstractButton::clicked, this, &RPCConsole::fontBigger);
     connect(ui->fontSmallerButton, &QAbstractButton::clicked, this, &RPCConsole::fontSmaller);
-    connect(ui->btnClearTrafficGraph, &QPushButton::clicked, ui->trafficGraph, &TrafficGraphWidget::clear);
 
     // disable the wallet selector by default
     ui->WalletSelector->setVisible(false);
@@ -578,7 +576,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     // based timer interface
     m_node.rpcSetTimerInterfaceIfUnset(rpcTimerInterface);
 
-    setTrafficGraphRange(INITIAL_TRAFFIC_GRAPH_MINS);
+    setTrafficGraphRange(1); // 1 is the lowest setting (0 bumps up)
     updateDetailWidget();
 
     consoleFontSize = settings.value(fontSizeSettingsKey, QFont().pointSize()).toInt();
@@ -1164,21 +1162,60 @@ void RPCConsole::scrollToEnd()
     scrollbar->setValue(scrollbar->maximum());
 }
 
-void RPCConsole::on_sldGraphRange_valueChanged(int value)
+void RPCConsole::on_sldGraphRange_valueChanged(int slider_value)
 {
-    const int multiplier = 5; // each position on the slider represents 5 min
-    int mins = value * multiplier;
-    setTrafficGraphRange(mins);
+    static int64_t last_click_time = 0;
+    static bool last_click_was_up = false;
+    unsigned int value = (slider_value + 100) / 200 + 1; // minimum of 1, 0 reserve for scale bump
+    if (!slider_in_use) {
+        // Avoid accidental boucing of direction
+        int64_t now = GetTimeMillis();
+        bool this_click_is_up = false;
+        bool bouncing = false;
+        if (slider_value > set_slider_value) this_click_is_up = true;
+        if (now - last_click_time < 250 && this_click_is_up != last_click_was_up) {
+            bouncing = true;
+            ui->sldGraphRange->blockSignals(true);
+            ui->sldGraphRange->setValue(set_slider_value);
+            ui->sldGraphRange->blockSignals(false);
+        }
+        last_click_time = now;
+        last_click_was_up = this_click_is_up;
+        set_slider_value = slider_value;
+        if (bouncing) return;
+    }
+    set_slider_value = slider_value;
+    setTrafficGraphRange(value);
 }
 
-void RPCConsole::setTrafficGraphRange(int mins)
+void RPCConsole::setTrafficGraphRange(unsigned int value)
 {
-    ui->trafficGraph->setGraphRange(std::chrono::minutes{mins});
-    ui->lblGraphRange->setText(GUIUtil::formatDurationStr(std::chrono::minutes{mins}));
+    std::chrono::minutes mins = ui->trafficGraph->setGraphRange(value);
+    if (value)
+        set_slider_value = (value - 1) * 200;
+    else {
+        // When bumping, calculate the proper slider position based on the traffic graph's new value
+        unsigned int new_graph_value = ui->trafficGraph->getCurrentRangeIndex() + 1; // +1 because the index is 0-based
+        set_slider_value = (new_graph_value - 1) * 200;
+        ui->sldGraphRange->blockSignals(true);
+        ui->sldGraphRange->setValue(set_slider_value);
+        ui->sldGraphRange->blockSignals(false);
+    }
+    ui->lblGraphRange->setText(GUIUtil::formatDurationStr(mins));
 }
+
+void RPCConsole::on_sldGraphRange_sliderReleased()
+{
+    ui->sldGraphRange->setValue(set_slider_value);
+    slider_in_use = false;
+}
+
+void RPCConsole::on_sldGraphRange_sliderPressed() { slider_in_use = true; }
 
 void RPCConsole::updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut)
 {
+    if (!slider_in_use && ui->trafficGraph->GraphRangeBump())
+        setTrafficGraphRange(0); // bump it up
     ui->lblBytesIn->setText(GUIUtil::formatBytes(totalBytesIn));
     ui->lblBytesOut->setText(GUIUtil::formatBytes(totalBytesOut));
 }
