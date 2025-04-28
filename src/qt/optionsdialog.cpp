@@ -33,6 +33,9 @@
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QTimer>
+#include <QProgressDialog>
+
+#include <interfaces/handler.h>
 
 int setFontChoice(QComboBox* cb, const OptionsModel::FontChoice& fc)
 {
@@ -408,29 +411,46 @@ void OptionsDialog::on_showTrayIcon_stateChanged(int state)
 
 void OptionsDialog::on_loadSnapshotButton_clicked()
 {
-    QString snapshotFile = QFileDialog::getOpenFileName(this,
-        tr("Select Snapshot File"), "",
-        tr("Bitcoin Snapshot Files (*.dat);;All Files (*)"));
-
-    if (snapshotFile.isEmpty())
-        return;
-
-    QMessageBox::StandardButton reply = QMessageBox::question(this,
+    QString filename = QFileDialog::getOpenFileName(this,
         tr("Load Snapshot"),
-        tr("Loading a snapshot will require restarting Bitcoin. The current blockchain data will be replaced with the snapshot data. Are you sure you want to proceed?"),
-        QMessageBox::Yes|QMessageBox::No);
+        tr("Bitcoin Snapshot Files (*.dat);;"));
 
-    if (reply == QMessageBox::Yes) {
-        SnapshotModel snapshotModel(model->node(), snapshotFile);
-        if (snapshotModel.processPath()) {
-            QMessageBox::information(this,
-                tr("Snapshot loaded successfully"),
-                tr("The snapshot has been loaded successfully. You can now start the client with the new snapshot."));
-        } else {
-            QMessageBox::critical(this,
-                tr("Error"),
-                tr("Failed to load the snapshot. Please ensure the file is a valid snapshot and try again."));
-        }
+    if (filename.isEmpty()) return;
+
+    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm snapshot load"),
+        tr("Are you sure you want to load this snapshot? This will delete your current blockchain data."),
+        QMessageBox::Yes | QMessageBox::Cancel,
+        QMessageBox::Cancel);
+
+    if (retval != QMessageBox::Yes) return;
+
+    QProgressDialog* progress = new QProgressDialog(tr("Loading snapshot..."), tr("Cancel"), 0, 100, this);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(0);
+    progress->setValue(0);
+    progress->show();
+
+    // Store the handler in the member variable to keep it alive
+    m_snapshot_load_handler = model->node().handleSnapshotLoadProgress(
+        [progress](double p) {
+            progress->setValue(static_cast<int>(p * 100));
+            QApplication::processEvents();
+        });
+
+    SnapshotModel snapshotModel(model->node(), filename);
+    bool success = snapshotModel.processPath();
+
+    // Clean up the progress dialog
+    progress->close();
+    progress->deleteLater();
+
+    // Clean up the handler
+    m_snapshot_load_handler.reset();
+
+    if (success) {
+        QMessageBox::information(this, tr("Success"), tr("Snapshot loaded successfully"));
+    } else {
+        QMessageBox::critical(this, tr("Error"), tr("Error loading snapshot"));
     }
 }
 
