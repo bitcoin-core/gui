@@ -10,6 +10,7 @@
 #include <logging.h>                   // For BCLog::CategoryMask
 #include <net.h>                       // For NodeId
 #include <net_types.h>                 // For banmap_t
+#include <node/utxo_snapshot.h>        // For SnapshotMetadata
 #include <netaddress.h>                // For Network
 #include <netbase.h>                   // For ConnectionDirection
 #include <support/allocators/secure.h> // For SecureString
@@ -204,6 +205,9 @@ public:
 
     //! List rpc commands.
     virtual std::vector<std::string> listRpcCommands() = 0;
+
+    //! Load and activate a snapshot file
+    virtual bool loadSnapshot(AutoFile& coins_file, const node::SnapshotMetadata& metadata, bool in_memory) = 0;
 
     //! Set RPC timer interface if unset.
     virtual void rpcSetTimerInterfaceIfUnset(RPCTimerInterface* iface) = 0;

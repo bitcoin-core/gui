@@ -355,6 +355,11 @@ public:
         return ::tableRPC.execute(req);
     }
     std::vector<std::string> listRpcCommands() override { return ::tableRPC.listCommands(); }
+    bool loadSnapshot(AutoFile& coins_file, const SnapshotMetadata& metadata, bool in_memory) override
+    {
+        auto activation_result{chainman().ActivateSnapshot(coins_file, metadata, in_memory)};
+        return activation_result.has_value();
+    }
     void rpcSetTimerInterfaceIfUnset(RPCTimerInterface* iface) override { RPCSetTimerInterfaceIfUnset(iface); }
     void rpcUnsetTimerInterface(RPCTimerInterface* iface) override { RPCUnsetTimerInterface(iface); }
     std::optional<Coin> getUnspentOutput(const COutPoint& output) override
