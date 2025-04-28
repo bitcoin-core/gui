@@ -12,6 +12,7 @@
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
+#include <qt/snapshotmodel.h>
 
 #include <common/system.h>
 #include <interfaces/node.h>
@@ -25,6 +26,7 @@
 #include <QApplication>
 #include <QDataWidgetMapper>
 #include <QDir>
+#include <QFileDialog>
 #include <QFontDialog>
 #include <QIntValidator>
 #include <QLocale>
@@ -120,6 +122,10 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     connect(ui->connectSocksTor, &QPushButton::toggled, ui->proxyIpTor, &QWidget::setEnabled);
     connect(ui->connectSocksTor, &QPushButton::toggled, ui->proxyPortTor, &QWidget::setEnabled);
     connect(ui->connectSocksTor, &QPushButton::toggled, this, &OptionsDialog::updateProxyValidationState);
+
+    QPushButton* loadSnapshotButton = new QPushButton(tr("Load Snapshot..."), this);
+    ui->verticalLayout_Main->insertWidget(ui->verticalLayout_Main->indexOf(ui->enableServer) + 1, loadSnapshotButton);
+    connect(loadSnapshotButton, &QPushButton::clicked, this, &OptionsDialog::on_loadSnapshotButton_clicked);
 
     /* Window elements init */
 #ifdef Q_OS_MACOS
@@ -397,6 +403,34 @@ void OptionsDialog::on_showTrayIcon_stateChanged(int state)
     } else {
         ui->minimizeToTray->setChecked(false);
         ui->minimizeToTray->setEnabled(false);
+    }
+}
+
+void OptionsDialog::on_loadSnapshotButton_clicked()
+{
+    QString snapshotFile = QFileDialog::getOpenFileName(this,
+        tr("Select Snapshot File"), "",
+        tr("Bitcoin Snapshot Files (*.dat);;All Files (*)"));
+
+    if (snapshotFile.isEmpty())
+        return;
+
+    QMessageBox::StandardButton reply = QMessageBox::question(this,
+        tr("Load Snapshot"),
+        tr("Loading a snapshot will require restarting Bitcoin. The current blockchain data will be replaced with the snapshot data. Are you sure you want to proceed?"),
+        QMessageBox::Yes|QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        SnapshotModel snapshotModel(model->node(), snapshotFile);
+        if (snapshotModel.processPath()) {
+            QMessageBox::information(this,
+                tr("Snapshot loaded successfully"),
+                tr("The snapshot has been loaded successfully. You can now start the client with the new snapshot."));
+        } else {
+            QMessageBox::critical(this,
+                tr("Error"),
+                tr("Failed to load the snapshot. Please ensure the file is a valid snapshot and try again."));
+        }
     }
 }
 

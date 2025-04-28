@@ -58,6 +58,8 @@ private Q_SLOTS:
     void on_openBitcoinConfButton_clicked();
     void on_okButton_clicked();
     void on_cancelButton_clicked();
+    void on_loadSnapshotButton_clicked();
+
 
     void on_showTrayIcon_stateChanged(int state);
 
