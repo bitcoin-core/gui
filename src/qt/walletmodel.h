@@ -144,6 +144,8 @@ public:
 
     bool isMultiwallet() const;
 
+    bool isAvoidReuseEnabled() const;
+
     void refresh(bool pk_hash_only = false);
 
     uint256 getLastBlockProcessed() const;
