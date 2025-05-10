@@ -20,6 +20,10 @@ namespace Ui {
 class OptionsDialog;
 }
 
+namespace interfaces {
+class Handler;
+}
+
 /** Proxy address widget validator, checks for a valid proxy address.
  */
 class ProxyAddressValidator : public QValidator
@@ -58,6 +62,8 @@ private Q_SLOTS:
     void on_openBitcoinConfButton_clicked();
     void on_okButton_clicked();
     void on_cancelButton_clicked();
+    void on_loadSnapshotButton_clicked();
+
 
     void on_showTrayIcon_stateChanged(int state);
 
@@ -77,6 +83,7 @@ private:
     ClientModel* m_client_model{nullptr};
     OptionsModel* model{nullptr};
     QDataWidgetMapper* mapper{nullptr};
+    std::unique_ptr<interfaces::Handler> m_snapshot_load_handler;
 };
 
 #endif // BITCOIN_QT_OPTIONSDIALOG_H
