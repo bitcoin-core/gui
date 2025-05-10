@@ -5,6 +5,7 @@
 #include <qt/walletmodel.h>
 
 #include <qt/addresstablemodel.h>
+#include <qt/bumpfeechoosechangedialog.h>
 #include <qt/clientmodel.h>
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
@@ -29,6 +30,7 @@
 #include <functional>
 
 #include <QDebug>
+#include <QDialog>
 #include <QMessageBox>
 #include <QSet>
 #include <QTimer>
@@ -465,13 +467,21 @@ WalletModel::UnlockContext::~UnlockContext()
 
 bool WalletModel::bumpFee(uint256 hash, uint256& new_hash)
 {
+    // Ask the user which is the change output
+    auto choose_change_dialog = new BumpfeeChooseChangeDialog(this, nullptr, hash);
+    const auto choose_change_retval = choose_change_dialog->exec();
+    if (choose_change_retval != QDialog::Accepted) {
+        return false;
+    }
+    std::optional<uint32_t> change_pos = choose_change_dialog->GetSelectedOutput();
+
     CCoinControl coin_control;
     coin_control.m_signal_bip125_rbf = true;
     std::vector<bilingual_str> errors;
     CAmount old_fee;
     CAmount new_fee;
     CMutableTransaction mtx;
-    if (!m_wallet->createBumpTransaction(hash, coin_control, errors, old_fee, new_fee, mtx)) {
+    if (!m_wallet->createBumpTransaction(hash, coin_control, errors, old_fee, new_fee, mtx, change_pos)) {
         QMessageBox::critical(nullptr, tr("Fee bump error"), tr("Increasing transaction fee failed") + "<br />(" +
             (errors.size() ? QString::fromStdString(errors[0].translated) : "") +")");
         return false;
