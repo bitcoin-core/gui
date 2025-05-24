@@ -46,7 +46,9 @@
 
 #include <boost/signals2/connection.hpp>
 #include <chrono>
+#include <exception>
 #include <memory>
+#include <string>
 
 #include <QApplication>
 #include <QDebug>
@@ -680,7 +682,13 @@ int GuiMain(int argc, char* argv[])
         }
     } catch (const std::exception& e) {
         PrintExceptionContinue(&e, "Runaway exception");
-        app.handleRunawayException(QString::fromStdString(app.node().getWarnings().translated));
+        std::string message = app.node().getWarnings().translated;
+        const std::string& what = e.what();
+        if (!message.empty() && !what.empty()) {
+            message += "\n\n";
+        }
+        message += what;
+        app.handleRunawayException(QString::fromStdString(message));
     } catch (...) {
         PrintExceptionContinue(nullptr, "Runaway exception");
         app.handleRunawayException(QString::fromStdString(app.node().getWarnings().translated));

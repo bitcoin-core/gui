@@ -9,6 +9,7 @@
 #include <util/threadnames.h>
 
 #include <exception>
+#include <string>
 
 #include <QDebug>
 #include <QMetaObject>
@@ -34,7 +35,15 @@ InitExecutor::~InitExecutor()
 void InitExecutor::handleRunawayException(const std::exception* e)
 {
     PrintExceptionContinue(e, "Runaway exception");
-    Q_EMIT runawayException(QString::fromStdString(m_node.getWarnings().translated));
+    std::string message = m_node.getWarnings().translated;
+    if (e) {
+        const std::string& what = e->what();
+        if (!message.empty() && !what.empty()) {
+            message += "\n\n";
+        }
+        message += what;
+    }
+    Q_EMIT runawayException(QString::fromStdString(message));
 }
 
 void InitExecutor::initialize()
