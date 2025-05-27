@@ -23,6 +23,7 @@ struct UISignals {
     boost::signals2::signal<CClientUIInterface::NotifyNetworkActiveChangedSig> NotifyNetworkActiveChanged;
     boost::signals2::signal<CClientUIInterface::NotifyAlertChangedSig> NotifyAlertChanged;
     boost::signals2::signal<CClientUIInterface::ShowProgressSig> ShowProgress;
+    boost::signals2::signal<CClientUIInterface::SnapshotLoadProgressSig> SnapshotLoadProgress;
     boost::signals2::signal<CClientUIInterface::NotifyBlockTipSig> NotifyBlockTip;
     boost::signals2::signal<CClientUIInterface::NotifyHeaderTipSig> NotifyHeaderTip;
     boost::signals2::signal<CClientUIInterface::BannedListChangedSig> BannedListChanged;
@@ -43,6 +44,7 @@ ADD_SIGNALS_IMPL_WRAPPER(NotifyNumConnectionsChanged);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyNetworkActiveChanged);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyAlertChanged);
 ADD_SIGNALS_IMPL_WRAPPER(ShowProgress);
+ADD_SIGNALS_IMPL_WRAPPER(SnapshotLoadProgress);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyBlockTip);
 ADD_SIGNALS_IMPL_WRAPPER(NotifyHeaderTip);
 ADD_SIGNALS_IMPL_WRAPPER(BannedListChanged);
@@ -55,6 +57,7 @@ void CClientUIInterface::NotifyNumConnectionsChanged(int newNumConnections) { re
 void CClientUIInterface::NotifyNetworkActiveChanged(bool networkActive) { return g_ui_signals.NotifyNetworkActiveChanged(networkActive); }
 void CClientUIInterface::NotifyAlertChanged() { return g_ui_signals.NotifyAlertChanged(); }
 void CClientUIInterface::ShowProgress(const std::string& title, int nProgress, bool resume_possible) { return g_ui_signals.ShowProgress(title, nProgress, resume_possible); }
+void CClientUIInterface::SnapshotLoadProgress(double progress) { return g_ui_signals.SnapshotLoadProgress(progress); }
 void CClientUIInterface::NotifyBlockTip(SynchronizationState s, const CBlockIndex* i) { return g_ui_signals.NotifyBlockTip(s, i); }
 void CClientUIInterface::NotifyHeaderTip(SynchronizationState s, int64_t height, int64_t timestamp, bool presync) { return g_ui_signals.NotifyHeaderTip(s, height, timestamp, presync); }
 void CClientUIInterface::BannedListChanged() { return g_ui_signals.BannedListChanged(); }

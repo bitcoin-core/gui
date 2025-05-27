@@ -10,6 +10,7 @@
 #include <logging.h>
 #include <net.h>
 #include <net_types.h>
+#include <node/utxo_snapshot.h>
 #include <netaddress.h>
 #include <netbase.h>
 #include <support/allocators/secure.h>
@@ -205,6 +206,9 @@ public:
     //! List rpc commands.
     virtual std::vector<std::string> listRpcCommands() = 0;
 
+    //! Load and activate a snapshot file
+    virtual bool loadSnapshot(AutoFile& coins_file, const node::SnapshotMetadata& metadata, bool in_memory) = 0;
+
     //! Set RPC timer interface if unset.
     virtual void rpcSetTimerInterfaceIfUnset(RPCTimerInterface* iface) = 0;
 
@@ -239,6 +243,10 @@ public:
     //! Register handler for progress messages.
     using ShowProgressFn = std::function<void(const std::string& title, int progress, bool resume_possible)>;
     virtual std::unique_ptr<Handler> handleShowProgress(ShowProgressFn fn) = 0;
+
+     //! Register handler for snapshot load progress.
+    using SnapshotLoadProgressFn = std::function<void(double progress)>;
+    virtual std::unique_ptr<Handler> handleSnapshotLoadProgress(SnapshotLoadProgressFn fn) = 0;
 
     //! Register handler for wallet loader constructed messages.
     using InitWalletFn = std::function<void()>;
