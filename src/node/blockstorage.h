@@ -414,7 +414,7 @@ public:
     //! Check if all blocks in the [upper_block, lower_block] range have data available.
     //! The caller is responsible for ensuring that lower_block is an ancestor of upper_block
     //! (part of the same chain).
-    bool CheckBlockDataAvailability(const CBlockIndex& upper_block, const CBlockIndex& lower_block) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
+    bool CheckBlockDataAvailability(const CBlockIndex& upper_block, const CBlockIndex& lower_block, BlockStatus block_status = BLOCK_HAVE_DATA) EXCLUSIVE_LOCKS_REQUIRED(::cs_main);
 
     /**
      * @brief Returns the earliest block with specified `status_mask` flags set after
