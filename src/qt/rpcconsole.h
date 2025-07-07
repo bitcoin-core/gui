@@ -90,6 +90,8 @@ private Q_SLOTS:
     void on_openDebugLogfileButton_clicked();
     /** change the time range of the network traffic graph */
     void on_sldGraphRange_valueChanged(int value);
+    void on_sldGraphRange_sliderReleased();
+    void on_sldGraphRange_sliderPressed();
     /** update traffic statistics */
     void updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut);
     void resizeEvent(QResizeEvent *event) override;
@@ -146,10 +148,9 @@ private:
     } const ts;
 
     void startExecutor();
-    void setTrafficGraphRange(int mins);
+    void setTrafficGraphRange(int value);
 
-    enum ColumnWidths
-    {
+    enum ColumnWidths {
         ADDRESS_COLUMN_WIDTH = 200,
         SUBVERSION_COLUMN_WIDTH = 150,
         PING_COLUMN_WIDTH = 80,
@@ -177,6 +178,8 @@ private:
     bool m_is_executing{false};
     QByteArray m_peer_widget_header_state;
     QByteArray m_banlist_widget_header_state;
+    bool m_slider_in_use{false};
+    int m_set_slider_value{0};
 
     /** Update UI with latest network info from model. */
     void updateNetworkState();
