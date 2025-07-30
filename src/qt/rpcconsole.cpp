@@ -506,6 +506,8 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
         ui->openDebugLogfileButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
     }
     ui->clearButton->setIcon(platformStyle->SingleColorIcon(":/icons/remove"));
+    //: Secondary shortcut to clear both console output and input history
+    GUIUtil::AddButtonShortcut(ui->clearButton, tr("Ctrl+Shift+L"));
 
     ui->fontBiggerButton->setIcon(platformStyle->SingleColorIcon(":/icons/fontbigger"));
     //: Main shortcut to increase the RPC console font size.
@@ -825,6 +827,7 @@ void RPCConsole::setFontSize(int newSize)
 
 void RPCConsole::clear(bool keep_prompt)
 {
+    if (QApplication::keyboardModifiers() & Qt::ShiftModifier) history.clear();
     ui->messagesWidget->clear();
     if (!keep_prompt) ui->lineEdit->clear();
     ui->lineEdit->setFocus();
