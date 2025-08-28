@@ -570,6 +570,32 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QToolButton" name="resetButton">
+           <property name="toolTip">
+            <string>Clear console output and history.</string>
+           </property>
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../bitcoin.qrc">
+             <normaloff>:/icons/transaction_abandoned</normaloff>:/icons/transaction_abandoned</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>22</width>
+             <height>22</height>
+            </size>
+           </property>
+           <property name="shortcut">
+            <string notr="true">Ctrl+Shift+L</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
