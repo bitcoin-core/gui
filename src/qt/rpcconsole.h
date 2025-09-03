@@ -15,6 +15,8 @@
 
 #include <QByteArray>
 #include <QCompleter>
+#include <QMimeData>
+#include <QTextEdit>
 #include <QThread>
 #include <QWidget>
 
@@ -189,6 +191,18 @@ private:
 
 private Q_SLOTS:
     void updateAlerts(const QString& warnings);
+};
+
+class PlainCopyTextEdit : public QTextEdit {
+    Q_OBJECT
+public:
+    using QTextEdit::QTextEdit;
+protected:
+    QMimeData* createMimeDataFromSelection() const override {
+        auto md = new QMimeData();
+        md->setText(textCursor().selectedText());
+        return md;
+    }
 };
 
 #endif // BITCOIN_QT_RPCCONSOLE_H
