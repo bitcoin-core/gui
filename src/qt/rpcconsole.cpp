@@ -93,6 +93,8 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void reply(int category, const QString &command);
+    void clear(bool clear_history);
+    void printHistory();
 
 private:
     interfaces::Node& m_node;
@@ -402,7 +404,21 @@ void RPCExecutor::request(const QString &command, const QString& wallet_name)
                 "   example:    getblock(getblockhash(0) 1)[tx]\n\n"
 
                 "Results without keys can be queried with an integer in brackets using the parenthesized syntax.\n"
-                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n")));
+                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n"
+                "Console commands:\n"
+                "   clear               Clears the screen.\n"
+                "   history-clear       Clears the command history and the screen.\n"
+                "   history             Prints all command history.\n\n"
+            )));
+            return;
+        } else if (executableCommand == "clear\n") {
+            Q_EMIT clear(false);
+            return;
+        } else if (executableCommand == "history-clear\n") {
+            Q_EMIT clear(true);
+            return;
+        } else if (executableCommand == "history\n") {
+            Q_EMIT printHistory();
             return;
         }
         if (!RPCConsole::RPCExecuteCommandLine(m_node, result, executableCommand, nullptr, wallet_name)) {
@@ -506,6 +522,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
         ui->openDebugLogfileButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
     }
     ui->clearButton->setIcon(platformStyle->SingleColorIcon(":/icons/remove"));
+    ui->resetButton->setIcon(platformStyle->SingleColorIcon(":/icons/transaction_abandoned")); // Trash icon
 
     ui->fontBiggerButton->setIcon(platformStyle->SingleColorIcon(":/icons/fontbigger"));
     //: Main shortcut to increase the RPC console font size.
@@ -528,6 +545,7 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
 
     connect(ui->hidePeersDetailButton, &QAbstractButton::clicked, this, &RPCConsole::clearSelectedNode);
     connect(ui->clearButton, &QAbstractButton::clicked, [this] { clear(); });
+    connect(ui->resetButton, &QAbstractButton::clicked, [this] { clear(false, true); });
     connect(ui->fontBiggerButton, &QAbstractButton::clicked, this, &RPCConsole::fontBigger);
     connect(ui->fontSmallerButton, &QAbstractButton::clicked, this, &RPCConsole::fontSmaller);
     connect(ui->btnClearTrafficGraph, &QPushButton::clicked, ui->trafficGraph, &TrafficGraphWidget::clear);
@@ -728,6 +746,9 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         }
 
         wordList << "help-console";
+        wordList << "clear";
+        wordList << "history-clear";
+        wordList << "history";
         wordList.sort();
         autoCompleter = new QCompleter(wordList, this);
         autoCompleter->setModelSorting(QCompleter::CaseSensitivelySortedModel);
@@ -823,8 +844,9 @@ void RPCConsole::setFontSize(int newSize)
     ui->messagesWidget->verticalScrollBar()->setValue(oldPosFactor * ui->messagesWidget->verticalScrollBar()->maximum());
 }
 
-void RPCConsole::clear(bool keep_prompt)
+void RPCConsole::clear(bool keep_prompt, bool clear_history)
 {
+    if (clear_history) history.clear();
     ui->messagesWidget->clear();
     if (!keep_prompt) ui->lineEdit->clear();
     ui->lineEdit->setFocus();
@@ -863,6 +885,7 @@ void RPCConsole::clear(bool keep_prompt)
             they are not space separated from the rest of the text intentionally. */
         tr("Welcome to the %1 RPC console.\n"
            "Use up and down arrows to navigate history, and %2 to clear screen.\n"
+           "Use %9 to clear both the screen and the command history.\n"
            "Use %3 and %4 to increase or decrease the font size.\n"
            "Type %5 for an overview of available commands.\n"
            "For more information on using this console, type %6.\n"
@@ -877,7 +900,9 @@ void RPCConsole::clear(bool keep_prompt)
                  "<b>help</b>",
                  "<b>help-console</b>",
                  "<span class=\"secwarning\">",
-                 "<span>");
+                 "<span>",
+                "<b>" + ui->resetButton->shortcut().toString(QKeySequence::NativeText) + "</b>"
+            );
 
     message(CMD_REPLY, welcome_message, true);
 }
@@ -1087,6 +1112,22 @@ void RPCConsole::startExecutor()
         // Remove "Executing…" message.
         ui->messagesWidget->undo();
         message(category, command);
+        scrollToEnd();
+        m_is_executing = false;
+    });
+    connect(m_executor, &RPCExecutor::clear, this, [this](bool clear_history) {
+        clear(false, clear_history);
+        scrollToEnd();
+        m_is_executing = false;
+    });
+    connect(m_executor, &RPCExecutor::printHistory, this, [this]() {
+        QStringList out;
+        int index = 0;
+        for (const QString& entry : history) {
+            out << QString::number(++index) + ": " + entry;
+        }
+        ui->messagesWidget->undo();
+        message(CMD_REPLY, out.join("\n"));
         scrollToEnd();
         m_is_executing = false;
     });

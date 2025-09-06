@@ -106,7 +106,7 @@ private Q_SLOTS:
     void updateDetailWidget();
 
 public Q_SLOTS:
-    void clear(bool keep_prompt = false);
+    void clear(bool keep_prompt = false, bool clear_history = false);
     void fontBigger();
     void fontSmaller();
     void setFontSize(int newSize);
