@@ -12,6 +12,7 @@
 #include <net_types.h>
 #include <netaddress.h>
 #include <netbase.h>
+#include <interfaces/snapshot.h>
 #include <node/utxo_snapshot.h>
 #include <support/allocators/secure.h>
 #include <util/translation.h>

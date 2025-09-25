@@ -33,6 +33,9 @@ public:
 
     //! Get the last error message from activation attempt.
     virtual std::string getLastError() const = 0;
+
+    //! Get the path of the snapshot.
+    virtual fs::path getPath() const = 0;
 };
 
 } // namespace interfaces
