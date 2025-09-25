@@ -16,6 +16,8 @@
 
 #include <QApplication>
 
+enum class SynchronizationState;
+
 class BitcoinGUI;
 class ClientModel;
 class NetworkStyle;
@@ -48,6 +50,12 @@ public:
     [[nodiscard]] bool createOptionsModel(bool resetSettings);
     /// Initialize prune setting
     void InitPruneSetting(int64_t prune_MiB);
+    /// Set snapshot path for loading after node initialization
+    void setSnapshotPath(const QString& snapshot_path);
+    /// Test method to manually trigger snapshot loading (for debugging)
+    void testLoadSnapshot();
+    /// Force load snapshot regardless of sync status (for debugging)
+    void forceLoadSnapshot();
     /// Create main window
     void createWindow(const NetworkStyle *networkStyle);
     /// Create splash screen
@@ -65,6 +73,10 @@ public:
 
     /// Setup platform style
     void setupPlatformStyle();
+
+    void loadSnapshotIfNeeded();
+    bool areHeadersSynced() const;
+    void onHeaderTipChanged(SynchronizationState sync_state, interfaces::BlockTip tip, bool presync);
 
     interfaces::Node& node() const { assert(m_node); return *m_node; }
 
@@ -103,6 +115,9 @@ private:
     std::unique_ptr<QWidget> shutdownWindow;
     SplashScreen* m_splash = nullptr;
     std::unique_ptr<interfaces::Node> m_node;
+    QString m_snapshot_path;
+    std::unique_ptr<interfaces::Handler> m_header_tip_handler;
+    QTimer* m_sync_check_timer;
 
     void startThread();
 };

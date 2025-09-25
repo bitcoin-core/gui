@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QDateTime>
+#include <QThread>
 
 #include <atomic>
 #include <memory>
@@ -14,6 +15,7 @@
 #include <uint256.h>
 
 #include <netaddress.h>
+#include <util/fs.h>
 
 class BanTableModel;
 class CBlockIndex;
@@ -28,6 +30,26 @@ class Handler;
 class Node;
 struct BlockTip;
 }
+
+/** Worker class for loading snapshots in a separate thread */
+class SnapshotLoadWorker : public QObject
+{
+    Q_OBJECT
+
+public:
+    explicit SnapshotLoadWorker(const fs::path& path, interfaces::Node& node, QObject* parent = nullptr);
+
+public Q_SLOTS:
+    void loadSnapshot();
+
+Q_SIGNALS:
+    void progressUpdated(double progress);
+    void finished(bool success, const QString& errorMessage);
+
+private:
+    fs::path m_path;
+    interfaces::Node& m_node;
+};
 
 QT_BEGIN_NAMESPACE
 class QTimer;
@@ -58,7 +80,7 @@ class ClientModel : public QObject
     Q_OBJECT
 
 public:
-    explicit ClientModel(interfaces::Node& node, OptionsModel *optionsModel, QObject *parent = nullptr);
+    explicit ClientModel(interfaces::Node& node, OptionsModel *optionsModel, QObject *parent = nullptr, const QString& snapshot_path = QString());
     ~ClientModel();
 
     void stop();
@@ -91,6 +113,13 @@ public:
 
     bool getProxyInfo(std::string& ip_port) const;
 
+    //! Load snapshot from the specified path
+    bool loadSnapshot(const QString& snapshot_path);
+    //! Load snapshot using the stored snapshot path
+    bool loadSnapshot();
+    //! Set verification progress and trigger snapshot loading if threshold reached
+    void setVerificationProgress(double verification_progress);
+
     // caches for the best header: hash, number of blocks and block time
     mutable std::atomic<int> cachedBestHeaderHeight;
     mutable std::atomic<int64_t> cachedBestHeaderTime;
@@ -110,6 +139,19 @@ private:
     //! A thread to interact with m_node asynchronously
     QThread* const m_thread;
 
+    //! Snapshot path for loading
+    QString m_snapshot_path;
+
+    //! Verification progress for snapshot loading trigger
+    double m_verification_progress{0.0};
+
+    //! Flag to prevent multiple snapshot loading attempts
+    bool m_snapshot_loaded{false};
+
+    //! Thread and worker for snapshot loading
+    QThread* m_snapshot_thread{nullptr};
+    SnapshotLoadWorker* m_snapshot_worker{nullptr};
+
     void TipChanged(SynchronizationState sync_state, interfaces::BlockTip tip, double verification_progress, SyncType synctype) EXCLUSIVE_LOCKS_REQUIRED(!m_cached_tip_mutex);
     void subscribeToCoreSignals();
     void unsubscribeFromCoreSignals();
@@ -127,6 +169,10 @@ Q_SIGNALS:
 
     // Show progress dialog e.g. for verifychain
     void showProgress(const QString &title, int nProgress);
+
+    //! Snapshot loading progress signals
+    void snapshotLoadProgress(double progress);
+    void snapshotLoadFinished(bool success, const QString& errorMessage);
 };
 
 #endif // BITCOIN_QT_CLIENTMODEL_H

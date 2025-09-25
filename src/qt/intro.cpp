@@ -17,12 +17,15 @@
 
 #include <common/args.h>
 #include <interfaces/node.h>
+#include <interfaces/snapshot.h>
 #include <util/fs_helpers.h>
 #include <validation.h>
 
 #include <QFileDialog>
 #include <QSettings>
 #include <QMessageBox>
+#include <QProgressDialog>
+#include <QApplication>
 
 #include <cmath>
 
@@ -119,9 +122,16 @@ int64_t Intro::getPruneMiB() const
     }
 }
 
-bool Intro::showIfNeeded(bool& did_show_intro, int64_t& prune_MiB)
+QString Intro::getSnapshotPath() const
+{
+    QString snapshot_path = ui->snapshotPath->text();
+    return snapshot_path;
+}
+
+bool Intro::showIfNeeded(bool& did_show_intro, int64_t& prune_MiB, QString& snapshot_path)
 {
     did_show_intro = false;
+    snapshot_path.clear();
 
     QSettings settings;
     /* If data directory provided on command line, no need to look at settings
@@ -171,6 +181,7 @@ bool Intro::showIfNeeded(bool& did_show_intro, int64_t& prune_MiB)
 
         // Additional preferences:
         prune_MiB = intro.getPruneMiB();
+        snapshot_path = intro.getSnapshotPath();
 
         settings.setValue("strDataDir", dataDir);
         settings.setValue("fReset", false);
@@ -251,6 +262,13 @@ void Intro::on_dataDirCustom_clicked()
 {
     ui->dataDirectory->setEnabled(true);
     ui->ellipsisButton->setEnabled(true);
+}
+
+void Intro::on_getSnapshotPathButton_clicked()
+{
+    QString m_snapshot_path = QFileDialog::getOpenFileName(nullptr, tr("Choose snapshot file"), "", tr("Snapshot Files (*.dat);;"));
+    if(!m_snapshot_path.isEmpty())
+        ui->snapshotPath->setText(m_snapshot_path);
 }
 
 void Intro::startThread()

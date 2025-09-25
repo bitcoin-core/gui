@@ -150,6 +150,11 @@ public:
         return m_last_error;
     }
 
+    fs::path getPath() const override
+    {
+        return m_path;
+    }
+
 private:
     ChainstateManager& m_chainman;
     fs::path m_path;

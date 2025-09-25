@@ -37,6 +37,7 @@ public:
     QString getDataDirectory();
     void setDataDirectory(const QString &dataDir);
     int64_t getPruneMiB() const;
+    QString getSnapshotPath() const;
 
     /**
      * Determine data directory. Let the user choose if the current one doesn't exist.
@@ -48,7 +49,7 @@ public:
      * @note do NOT call global gArgs.GetDataDirNet() before calling this function, this
      * will cause the wrong path to be cached.
      */
-    static bool showIfNeeded(bool& did_show_intro, int64_t& prune_MiB);
+    static bool showIfNeeded(bool& did_show_intro, int64_t& prune_MiB, QString& snapshot_path);
 
 Q_SIGNALS:
     void requestCheck();
@@ -61,6 +62,7 @@ private Q_SLOTS:
     void on_ellipsisButton_clicked();
     void on_dataDirDefault_clicked();
     void on_dataDirCustom_clicked();
+    void on_getSnapshotPathButton_clicked();
 
 private:
     Ui::Intro *ui;
@@ -75,6 +77,7 @@ private:
     int64_t m_required_space_gb{0};
     uint64_t m_bytes_available{0};
     int64_t m_prune_target_gb;
+    QString m_snapshot_path;
 
     void startThread();
     void checkPath(const QString &dataDir);

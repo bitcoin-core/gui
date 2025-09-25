@@ -7,6 +7,10 @@
 
 #include <QDialog>
 #include <QValidator>
+#include <QThread>
+#include <QObject>
+#include <QString>
+#include <util/fs.h>
 
 class ClientModel;
 class OptionsModel;
@@ -19,6 +23,13 @@ QT_END_NAMESPACE
 namespace Ui {
 class OptionsDialog;
 }
+
+namespace interfaces {
+class Handler;
+class Node;
+}
+
+class SnapshotLoadWorker;
 
 /** Proxy address widget validator, checks for a valid proxy address.
  */
@@ -58,6 +69,8 @@ private Q_SLOTS:
     void on_openBitcoinConfButton_clicked();
     void on_okButton_clicked();
     void on_cancelButton_clicked();
+    void on_loadSnapshotButton_clicked();
+
 
     void on_showTrayIcon_stateChanged(int state);
 
@@ -77,6 +90,9 @@ private:
     ClientModel* m_client_model{nullptr};
     OptionsModel* model{nullptr};
     QDataWidgetMapper* mapper{nullptr};
+    // std::unique_ptr<interfaces::Handler> m_snapshot_load_handler;
+    QThread* m_snapshot_thread{nullptr};
+    SnapshotLoadWorker* m_snapshot_worker{nullptr};
 };
 
 #endif // BITCOIN_QT_OPTIONSDIALOG_H
