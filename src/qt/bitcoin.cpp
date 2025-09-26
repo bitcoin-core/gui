@@ -505,6 +505,18 @@ int GuiMain(int argc, char* argv[])
     QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
 #endif
 
+#ifdef Q_OS_LINUX
+    // Enable proper dark mode detection on Linux
+    // This must be done before creating the QApplication
+
+    // Use the system palette (works with GTK integration)
+    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORMTHEME")) {
+        // Try to use GTK theme integration for better dark mode support
+        // This will be ignored if the gtk platformtheme plugin is not available
+        qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
+    }
+#endif
+
     BitcoinApplication app;
     GUIUtil::LoadFont(QStringLiteral(":/fonts/monospace"));
 
