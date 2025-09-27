@@ -140,6 +140,29 @@ jobs:
           # Ensure the latest merged pull request state is used, even on re-runs.
           ref: &CHECKOUT_REF_TMPL ${{ github.event_name == 'pull_request' && github.ref || '' }}
 
+      - name: Create free_space.py
+        # We'll write your function into a script file for execution
+        run: |
+          echo "import ctypes" > free_space.py
+          echo "import os" >> free_space.py
+          echo "import platform" >> free_space.py
+          echo "import sys" >> free_space.py
+          echo "def get_free_space_mb(dirname):" >> free_space.py
+          echo "    # [Your function content here]" >> free_space.py
+          echo "    if platform.system() == 'Windows':" >> free_space.py
+          echo "        free_bytes = ctypes.c_ulonglong(0)" >> free_space.py
+          echo "        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(dirname), None, None, ctypes.pointer(free_bytes))" >> free_space.py
+          echo "        return free_bytes.value / 1024 / 1024" >> free_space.py
+          echo "    else:" >> free_space.py
+          echo "        st = os.statvfs(dirname)" >> free_space.py
+          echo "        return st.f_bavail * st.f_frsize / 1024 / 1024" >> free_space.py
+          echo "" >> free_space.py
+          echo "# Execute the function and print the result" >> free_space.py
+          echo "dirname = 'C:\\\\' if platform.system() == 'Windows' else '/'" >> free_space.py
+          echo "free_mb = get_free_space_mb(dirname)" >> free_space.py
+          echo "print(f'Free space at {dirname}: {free_mb:.2f} MB')" >> free_space.py
+          echo "assert free_mb > 100, 'Free space is unexpectedly low!'" >> free_space.py
+
       - name: Clang version
         run: |
           # Use the earliest Xcode supported by the version of macOS denoted in
@@ -157,10 +180,16 @@ jobs:
           brew install --quiet python@3 || brew link --overwrite python@3
           brew install --quiet coreutils ninja pkgconf gnu-getopt ccache boost libevent zeromq qt@6 qrencode capnp
 
+      - name: run free_space.py
+        run: python free_space.py
+
       - name: Install Python packages
         run: |
           git clone -b v2.1.0 https://github.com/capnproto/pycapnp
           pip3 install ./pycapnp -C force-bundled-libcapnp=True --break-system-packages
+
+      - name: run free_space.py
+        run: python free_space.py
 
       - name: Set Ccache directory
         run: echo "CCACHE_DIR=${RUNNER_TEMP}/ccache_dir" >> "$GITHUB_ENV"
@@ -172,6 +201,9 @@ jobs:
           path: ${{ env.CCACHE_DIR }}
           key: ${{ github.job }}-${{ matrix.job-type }}-ccache-${{ github.run_id }}
           restore-keys: ${{ github.job }}-${{ matrix.job-type }}-ccache-
+
+      - name: run free_space.py
+        run: python free_space.py
 
       - name: CI script
         run: ./ci/test_run_all.sh
