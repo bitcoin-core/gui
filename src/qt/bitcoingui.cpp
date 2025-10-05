@@ -277,6 +277,13 @@ void BitcoinGUI::createActions()
     historyAction->setShortcut(QKeySequence(QStringLiteral("Alt+4")));
     tabGroup->addAction(historyAction);
 
+    showCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/coins"), tr("&Coins"), this);
+    showCoinsAction->setStatusTip(tr("View wallet coins (UTXOs)"));
+    showCoinsAction->setToolTip(showCoinsAction->statusTip());
+    showCoinsAction->setCheckable(true);
+    showCoinsAction->setShortcut(QKeySequence(QStringLiteral("Alt+5")));
+    tabGroup->addAction(showCoinsAction);
+
 #ifdef ENABLE_WALLET
     // These showNormalIfMinimized are needed because Send Coins and Receive Coins
     // can be triggered from the tray menu, and need to show the GUI to be useful.
@@ -288,6 +295,7 @@ void BitcoinGUI::createActions()
     connect(receiveCoinsAction, &QAction::triggered, this, &BitcoinGUI::gotoReceiveCoinsPage);
     connect(historyAction, &QAction::triggered, [this]{ showNormalIfMinimized(); });
     connect(historyAction, &QAction::triggered, this, &BitcoinGUI::gotoHistoryPage);
+    connect(showCoinsAction, &QAction::triggered, this, &BitcoinGUI::showCoins);
 #endif // ENABLE_WALLET
 
     quitAction = new QAction(tr("E&xit"), this);
@@ -601,7 +609,11 @@ void BitcoinGUI::createToolBars()
         toolbar->addAction(sendCoinsAction);
         toolbar->addAction(receiveCoinsAction);
         toolbar->addAction(historyAction);
+        toolbar->addAction(showCoinsAction);
         overviewAction->setChecked(true);
+
+        showCoinsAction->setVisible(false);
+        showCoinsAction->setEnabled(false);
 
 #ifdef ENABLE_WALLET
         QWidget *spacer = new QWidget();
@@ -676,6 +688,14 @@ void BitcoinGUI::setClientModel(ClientModel *_clientModel, interfaces::BlockAndH
         }
 
         m_mask_values_action->setChecked(_clientModel->getOptionsModel()->getOption(OptionsModel::OptionID::MaskValues).toBool());
+
+        // watch for runtime changes and hide/show the coins tab accordingly
+        updateCoinsTabVisibility();
+        if (optionsModel) {
+            connect(optionsModel, &OptionsModel::coinControlFeaturesChanged, this, [this](bool) {
+                updateCoinsTabVisibility();
+            });
+        }
     } else {
         // Shutdown requested, disable menus
         if (trayIconMenu)
@@ -822,6 +842,7 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     sendCoinsAction->setEnabled(enabled);
     receiveCoinsAction->setEnabled(enabled);
     historyAction->setEnabled(enabled);
+    showCoinsAction->setEnabled(enabled);
     encryptWalletAction->setEnabled(enabled);
     backupWalletAction->setEnabled(enabled);
     changePassphraseAction->setEnabled(enabled);
@@ -832,6 +853,8 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     openAction->setEnabled(enabled);
     m_close_wallet_action->setEnabled(enabled);
     m_close_all_wallets_action->setEnabled(enabled);
+    m_wallet_actions_enabled = enabled;
+    updateCoinsTabVisibility();
 }
 
 void BitcoinGUI::createTrayIcon()
@@ -1293,6 +1316,7 @@ void BitcoinGUI::changeEvent(QEvent *e)
         sendCoinsAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/send")));
         receiveCoinsAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/receiving_addresses")));
         historyAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/history")));
+        showCoinsAction->setIcon(platformStyle->SingleColorIcon(QStringLiteral(":/icons/coins")));
     }
 
     QMainWindow::changeEvent(e);
@@ -1465,6 +1489,24 @@ void BitcoinGUI::updateWalletStatus()
     WalletModel * const walletModel = walletView->getWalletModel();
     setEncryptionStatus(walletModel->getEncryptionStatus());
     setHDStatus(walletModel->wallet().privateKeysDisabled(), walletModel->wallet().hdEnabled());
+}
+#endif // ENABLE_WALLET
+
+#ifdef ENABLE_WALLET
+void BitcoinGUI::showCoins()
+{
+    if (!(clientModel && clientModel->getOptionsModel() && clientModel->getOptionsModel()->getCoinControlFeatures())) {
+        if (overviewAction) overviewAction->setChecked(true);
+        // if user disables coin control features while this view is active, switch to overview
+        if (walletFrame) walletFrame->gotoOverviewPage();
+        return;
+    }
+
+    if (showCoinsAction) showCoinsAction->setChecked(true);
+    if (!walletFrame) return;
+    if (WalletView* wv = walletFrame->currentWalletView()) {
+        wv->gotoCoinsPage();
+    }
 }
 #endif // ENABLE_WALLET
 
@@ -1679,4 +1721,28 @@ void UnitDisplayStatusBarControl::onMenuSelection(QAction* action)
     {
         optionsModel->setDisplayUnit(action->data());
     }
+}
+
+void BitcoinGUI::updateCoinsTabVisibility()
+{
+    if (!showCoinsAction) return;
+
+    bool coin_control_enabled = false;
+    if (clientModel && clientModel->getOptionsModel()) {
+        coin_control_enabled = clientModel->getOptionsModel()->getCoinControlFeatures();
+    }
+
+    // Visible only when wallet is compiled/enabled and coin control is enabled
+    const bool visible = enableWallet && coin_control_enabled;
+    showCoinsAction->setVisible(visible);
+
+    // Enabled only when visible and wallet actions are globally enabled
+    showCoinsAction->setEnabled(visible && m_wallet_actions_enabled);
+
+#ifdef ENABLE_WALLET
+    // If the Coins tab is active but we turn it off, switch to Overview page
+    if (!visible && showCoinsAction->isChecked()) {
+        gotoOverviewPage();
+    }
+#endif
 }
