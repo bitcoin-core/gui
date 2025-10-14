@@ -93,6 +93,8 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void reply(int category, const QString &command);
+    void clearConsole(bool clear_screen, bool clear_history);
+    void printHistory();
 
 private:
     interfaces::Node& m_node;
@@ -402,7 +404,25 @@ void RPCExecutor::request(const QString &command, const QString& wallet_name)
                 "   example:    getblock(getblockhash(0) 1)[tx]\n\n"
 
                 "Results without keys can be queried with an integer in brackets using the parenthesized syntax.\n"
-                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n")));
+                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n"
+                "Console commands:\n"
+                "   clear               Clears the screen.\n"
+                "   clear-all           Clears the screen and command history.\n"
+                "   history             Prints all command history.\n"
+                "   history-clear       Clears the command history.\n\n"
+            )));
+            return;
+        } else if (executableCommand == "clear\n") {
+            Q_EMIT clearConsole(true, false);
+            return;
+        } else if (executableCommand == "clear-all\n") {
+            Q_EMIT clearConsole(true, true);
+            return;
+        } else if (executableCommand == "history-clear\n") {
+            Q_EMIT clearConsole(false, true);
+            return;
+        } else if (executableCommand == "history\n") {
+            Q_EMIT printHistory();
             return;
         }
         if (!RPCConsole::RPCExecuteCommandLine(m_node, result, executableCommand, nullptr, wallet_name)) {
@@ -728,6 +748,10 @@ void RPCConsole::setClientModel(ClientModel *model, int bestblock_height, int64_
         }
 
         wordList << "help-console";
+        wordList << "clear";
+        wordList << "clear-all";
+        wordList << "history";
+        wordList << "history-clear";
         wordList.sort();
         autoCompleter = new QCompleter(wordList, this);
         autoCompleter->setModelSorting(QCompleter::CaseSensitivelySortedModel);
@@ -1081,14 +1105,34 @@ void RPCConsole::startExecutor()
 {
     m_executor = new RPCExecutor(m_node);
     m_executor->moveToThread(&thread);
-
-    // Replies from executor object must go to this object
-    connect(m_executor, &RPCExecutor::reply, this, [this](int category, const QString& command) {
-        // Remove "Executing…" message.
+    const auto finish = [this](const auto action) {
         ui->messagesWidget->undo();
-        message(category, command);
+        action();
         scrollToEnd();
         m_is_executing = false;
+    };
+
+    // Replies from executor object must go to this object
+    connect(m_executor, &RPCExecutor::reply, this, [this, finish](int category, const QString& command) {
+        finish([this, category, command]() { message(category, command); });
+    });
+    connect(m_executor, &RPCExecutor::clearConsole, this, [this, finish](bool clear_screen, bool clear_history) {
+        finish([this, clear_screen, clear_history]() {
+            if (clear_history) {
+                history.clear();
+                if (!clear_screen) message(CMD_REPLY, tr("History has been cleared."));
+            }
+            if (clear_screen) clear();
+        });
+    });
+    connect(m_executor, &RPCExecutor::printHistory, this, [this, finish]() {
+        finish([this]() {
+            QStringList out;
+            out.reserve(history.size());
+            for (qsizetype i = 0; i < history.size(); ++i)
+                out << tr("%1: %2").arg(i+1).arg(history.at(i));
+            message(CMD_REPLY, out.join(QStringLiteral("\n")));
+        });
     });
 
     // Make sure executor object is deleted in its own thread
