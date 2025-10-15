@@ -1129,6 +1129,16 @@ public:
     void MakeTopological() noexcept
     {
         Assume(m_suboptimal_chunks.empty());
+        /** What direction to initially merge chunks in; one of the two directions is enough. This
+         *  is sufficient because if a non-topological inactive dependency exists between two
+         *  chunks, at least one of the two chunks will eventually be processed in a direction that
+         *  discovers it - either the lower chunk tries upward, or the upper chunk tries downward.
+         *  Chunks that are the result of the merging are always tried in both directions. */
+        unsigned init_dir = m_rng.randbool();
+        /** Which chunks are the result of merging, and thus need merge attempts in both
+         *  directions. */
+        SetType merged_chunks;
+        // Mark chunks as suboptimal.
         m_suboptimal_idxs = m_chunk_idxs;
         for (auto chunk_idx : m_chunk_idxs) {
             m_suboptimal_chunks.emplace_back(chunk_idx);
@@ -1147,9 +1157,12 @@ public:
             // If what was popped is not currently a chunk, continue. This may
             // happen when it was merged with something else since being added.
             if (!m_chunk_idxs[chunk_idx]) continue;
+            /** What direction(s) to attempt merging in. 1=up, 2=down, 3=both. */
+            unsigned direction = merged_chunks[chunk_idx] ? 3 : init_dir + 1;
             int flip = m_rng.randbool();
             for (int i = 0; i < 2; ++i) {
                 if (i ^ flip) {
+                    if (!(direction & 1)) continue;
                     // Attempt to merge the chunk upwards.
                     auto result_up = MergeStep<false>(chunk_idx);
                     if (result_up != INVALID_SET_IDX) {
@@ -1157,9 +1170,11 @@ public:
                             m_suboptimal_idxs.Set(result_up);
                             m_suboptimal_chunks.push_back(result_up);
                         }
+                        merged_chunks.Set(result_up);
                         break;
                     }
                 } else {
+                    if (!(direction & 2)) continue;
                     // Attempt to merge the chunk downwards.
                     auto result_down = MergeStep<true>(chunk_idx);
                     if (result_down != INVALID_SET_IDX) {
@@ -1167,6 +1182,7 @@ public:
                             m_suboptimal_idxs.Set(result_down);
                             m_suboptimal_chunks.push_back(result_down);
                         }
+                        merged_chunks.Set(result_down);
                         break;
                     }
                 }
