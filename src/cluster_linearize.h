@@ -682,6 +682,10 @@ private:
     /** The set of all chunk SetIdx's. This excludes the SetIdxs that refer to active
      *  dependencies' tops. */
     SetType m_chunk_idxs;
+    /** The set of all SetIdx's that appear in m_suboptimal_chunks. Note that they do not need to
+     *  be chunks: some of these sets may have been converted to a dependency's top set since being
+     *  added to m_suboptimal_chunks. */
+    SetType m_suboptimal_idxs;
     /** Information about each transaction (and chunks). Keeps the "holes" from DepGraph during
      *  construction. Indexed by TxIdx. */
     std::vector<TxData> m_tx_data;
@@ -979,8 +983,11 @@ private:
             if (merged_chunk_idx == INVALID_SET_IDX) break;
             chunk_idx = merged_chunk_idx;
         }
-        // Add the chunk to the queue of improvable chunks.
-        m_suboptimal_chunks.push_back(chunk_idx);
+        // Add the chunk to the queue of improvable chunks, if it wasn't already there.
+        if (!m_suboptimal_idxs[chunk_idx]) {
+            m_suboptimal_idxs.Set(chunk_idx);
+            m_suboptimal_chunks.push_back(chunk_idx);
+        }
     }
 
     /** Split a chunk, and then merge the resulting two chunks to make the graph topological
@@ -1007,7 +1014,10 @@ private:
             // on the child chunk, so child_chunk_idx is the "top" and parent_chunk_idx is the
             // "bottom" for MergeChunks.
             auto merged_chunk_idx = MergeChunks(child_chunk_idx, parent_chunk_idx);
-            m_suboptimal_chunks.push_back(merged_chunk_idx);
+            if (!m_suboptimal_idxs[merged_chunk_idx]) {
+                m_suboptimal_idxs.Set(merged_chunk_idx);
+                m_suboptimal_chunks.push_back(merged_chunk_idx);
+            }
         } else {
             // Merge the top chunk with lower-feerate chunks it depends on.
             MergeSequence<false>(parent_chunk_idx);
@@ -1022,6 +1032,8 @@ private:
         while (!m_suboptimal_chunks.empty()) {
             // Pop an entry from the potentially-suboptimal chunk queue.
             SetIdx chunk_idx = m_suboptimal_chunks.front();
+            Assume(m_suboptimal_idxs[chunk_idx]);
+            m_suboptimal_idxs.Reset(chunk_idx);
             m_suboptimal_chunks.pop_front();
             if (m_chunk_idxs[chunk_idx]) return chunk_idx;
             // If what was popped is not currently a chunk, continue. This may
@@ -1117,6 +1129,7 @@ public:
     void MakeTopological() noexcept
     {
         Assume(m_suboptimal_chunks.empty());
+        m_suboptimal_idxs = m_chunk_idxs;
         for (auto chunk_idx : m_chunk_idxs) {
             m_suboptimal_chunks.emplace_back(chunk_idx);
             // Randomize the initial order of suboptimal chunks in the queue.
@@ -1129,6 +1142,8 @@ public:
             // Pop an entry from the potentially-suboptimal chunk queue.
             SetIdx chunk_idx = m_suboptimal_chunks.front();
             m_suboptimal_chunks.pop_front();
+            Assume(m_suboptimal_idxs[chunk_idx]);
+            m_suboptimal_idxs.Reset(chunk_idx);
             // If what was popped is not currently a chunk, continue. This may
             // happen when it was merged with something else since being added.
             if (!m_chunk_idxs[chunk_idx]) continue;
@@ -1138,14 +1153,20 @@ public:
                     // Attempt to merge the chunk upwards.
                     auto result_up = MergeStep<false>(chunk_idx);
                     if (result_up != INVALID_SET_IDX) {
-                        m_suboptimal_chunks.push_back(result_up);
+                        if (!m_suboptimal_idxs[result_up]) {
+                            m_suboptimal_idxs.Set(result_up);
+                            m_suboptimal_chunks.push_back(result_up);
+                        }
                         break;
                     }
                 } else {
                     // Attempt to merge the chunk downwards.
                     auto result_down = MergeStep<true>(chunk_idx);
                     if (result_down != INVALID_SET_IDX) {
-                        m_suboptimal_chunks.push_back(result_down);
+                        if (!m_suboptimal_idxs[result_down]) {
+                            m_suboptimal_idxs.Set(result_down);
+                            m_suboptimal_chunks.push_back(result_down);
+                        }
                         break;
                     }
                 }
@@ -1158,6 +1179,7 @@ public:
     {
         Assume(m_suboptimal_chunks.empty());
         // Mark chunks suboptimal.
+        m_suboptimal_idxs = m_chunk_idxs;
         for (auto chunk_idx : m_chunk_idxs) {
             m_suboptimal_chunks.push_back(chunk_idx);
             // Randomize the initial order of suboptimal chunks in the queue.
@@ -1603,10 +1625,13 @@ public:
         //
         // Verify m_suboptimal_chunks.
         //
+        SetType suboptimal_idxs;
         for (size_t i = 0; i < m_suboptimal_chunks.size(); ++i) {
             auto chunk_idx = m_suboptimal_chunks[i];
-            assert(chunk_idx < m_set_info.size());
+            assert(!suboptimal_idxs[chunk_idx]);
+            suboptimal_idxs.Set(chunk_idx);
         }
+        assert(m_suboptimal_idxs == suboptimal_idxs);
 
         //
         // Verify m_nonminimal_chunks.
