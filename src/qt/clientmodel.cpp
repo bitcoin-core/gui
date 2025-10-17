@@ -17,8 +17,10 @@
 #include <common/system.h>
 #include <interfaces/handler.h>
 #include <interfaces/node.h>
+#include <interfaces/snapshot.h>
 #include <net.h>
 #include <netbase.h>
+#include <util/fs.h>
 #include <util/threadnames.h>
 #include <util/time.h>
 #include <validation.h>
@@ -26,18 +28,57 @@
 #include <cstdint>
 
 #include <QDebug>
+#include <QMessageBox>
 #include <QMetaObject>
 #include <QThread>
 #include <QTimer>
 
+// SnapshotLoadWorker implementation
+SnapshotLoadWorker::SnapshotLoadWorker(const fs::path& path, interfaces::Node& node, QObject* parent)
+    : QObject(parent), m_path(path), m_node(node)
+{
+}
+
+void SnapshotLoadWorker::loadSnapshot()
+{
+    try {
+        // Create snapshot object using the node interface
+        auto snapshot = m_node.snapshot(m_path);
+        if (!snapshot) {
+            Q_EMIT finished(false, tr("Failed to create snapshot object"));
+            return;
+        }
+
+        // Set up progress handler - it will be kept alive by the node until the operation completes
+        auto progress_handler = m_node.handleSnapshotLoadProgress(
+            [this](double progress) {
+                Q_EMIT progressUpdated(progress);
+            });
+
+        // Activate the snapshot
+        bool success = snapshot->activate();
+
+        if (success) {
+            Q_EMIT finished(true, QString());
+        } else {
+            QString error_msg = QString::fromStdString(snapshot->getLastError());
+            Q_EMIT finished(false, error_msg);
+        }
+    } catch (const std::exception& e) {
+        Q_EMIT finished(false, tr("Exception during snapshot loading: %1").arg(QString::fromStdString(e.what())));
+    }
+}
+
+
 static SteadyClock::time_point g_last_header_tip_update_notification{};
 static SteadyClock::time_point g_last_block_tip_update_notification{};
 
-ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QObject *parent) :
+ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QObject *parent, const QString& snapshot_path) :
     QObject(parent),
     m_node(node),
     optionsModel(_optionsModel),
-    m_thread(new QThread(this))
+    m_thread(new QThread(this)),
+    m_snapshot_path(snapshot_path)
 {
     cachedBestHeaderHeight = -1;
     cachedBestHeaderTime = -1;
@@ -71,6 +112,18 @@ ClientModel::ClientModel(interfaces::Node& node, OptionsModel *_optionsModel, QO
 void ClientModel::stop()
 {
     unsubscribeFromCoreSignals();
+
+    // Clean up snapshot thread and worker
+    if (m_snapshot_thread) {
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        delete m_snapshot_thread;
+        m_snapshot_thread = nullptr;
+    }
+    if (m_snapshot_worker) {
+        delete m_snapshot_worker;
+        m_snapshot_worker = nullptr;
+    }
 
     m_thread->quit();
     m_thread->wait();
@@ -234,6 +287,9 @@ void ClientModel::TipChanged(SynchronizationState sync_state, interfaces::BlockT
         WITH_LOCK(m_cached_tip_mutex, m_cached_tip_blocks = tip.block_hash;);
     }
 
+    // Check if we should load snapshot based on verification progress
+    setVerificationProgress(verification_progress);
+
     // Throttle GUI notifications about (a) blocks during initial sync, and (b) both blocks and headers during reindex.
     const bool throttle = (sync_state != SynchronizationState::POST_INIT && synctype == SyncType::BLOCK_SYNC) || sync_state == SynchronizationState::INIT_REINDEX;
     const auto now{throttle ? SteadyClock::now() : SteadyClock::time_point{}};
@@ -293,4 +349,77 @@ bool ClientModel::getProxyInfo(std::string& ip_port) const
       return true;
     }
     return false;
+}
+
+bool ClientModel::loadSnapshot()
+{
+    QString path_to_use = m_snapshot_path;
+
+    if (path_to_use.isEmpty()) {
+        qDebug() << "ClientModel::loadSnapshot: No snapshot path provided (neither parameter nor stored path)";
+        return false;
+    }
+
+    // Convert QString to fs::path
+    const fs::path snapshot_path_fs = fs::u8path(path_to_use.toStdString());
+
+    qDebug() << "ClientModel::loadSnapshot: Attempting to load snapshot from:" << QString::fromStdString(snapshot_path_fs.utf8string());
+
+    // Check if file exists
+    if (!fs::exists(snapshot_path_fs)) {
+        qDebug() << "ClientModel::loadSnapshot: Snapshot file does not exist:" << QString::fromStdString(snapshot_path_fs.utf8string());
+        return false;
+    }
+
+    qDebug() << "ClientModel::loadSnapshot: Snapshot file exists, proceeding with threaded loading...";
+
+    // Clean up any existing thread and worker
+    if (m_snapshot_thread) {
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        delete m_snapshot_thread;
+        m_snapshot_thread = nullptr;
+    }
+    if (m_snapshot_worker) {
+        delete m_snapshot_worker;
+        m_snapshot_worker = nullptr;
+    }
+
+    // Create worker thread
+    m_snapshot_thread = new QThread(this);
+    m_snapshot_worker = new SnapshotLoadWorker(snapshot_path_fs, m_node);
+    m_snapshot_worker->moveToThread(m_snapshot_thread);
+
+    // Connect signals
+    connect(m_snapshot_thread, &QThread::started, m_snapshot_worker, &SnapshotLoadWorker::loadSnapshot);
+    connect(m_snapshot_worker, &SnapshotLoadWorker::progressUpdated, this, &ClientModel::snapshotLoadProgress);
+    connect(m_snapshot_worker, &SnapshotLoadWorker::finished, this, &ClientModel::snapshotLoadFinished);
+    connect(m_snapshot_worker, &SnapshotLoadWorker::finished, this, [this](bool success, const QString& error) {
+        // Clean up worker and thread
+        m_snapshot_worker->deleteLater();
+        m_snapshot_worker = nullptr;
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        m_snapshot_thread->deleteLater();
+        m_snapshot_thread = nullptr;
+    });
+
+    // Start the thread
+    m_snapshot_thread->start();
+
+    return true; // Threaded operation started successfully
+}
+
+void ClientModel::setVerificationProgress(double verification_progress)
+{
+    m_verification_progress = verification_progress;
+
+    // Check if we should load snapshot based on verification progress
+    const double SNAPSHOT_LOAD_THRESHOLD = 0.00014;
+    if (verification_progress > SNAPSHOT_LOAD_THRESHOLD && !m_snapshot_path.isEmpty() && !m_snapshot_loaded) {
+        qDebug() << "ClientModel::setVerificationProgress: Verification progress" << verification_progress
+                 << "exceeds threshold" << SNAPSHOT_LOAD_THRESHOLD << "- starting threaded snapshot loading";
+        m_snapshot_loaded = true; // Set flag before attempting to load
+        loadSnapshot(); // This now uses threaded loading with progress updates
+    }
 }
