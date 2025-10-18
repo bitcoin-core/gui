@@ -1511,7 +1511,7 @@ void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
     if (!isHidden() && !isMinimized() && !GUIUtil::isObscured(this) && fToggleHidden) {
         hide();
     } else {
-        GUIUtil::bringToFront(this);
+        show();
     }
 }
 
