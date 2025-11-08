@@ -83,6 +83,14 @@ const QStringList historyFilter = QStringList()
 
 }
 
+// List of commands that may cause unintended effects if accidentally re-executed from history
+const QStringList sensitiveFilter = QStringList()
+    << "send"
+    << "sendall"
+    << "sendmany"
+    << "sendtoaddress"
+;
+
 /* Object for executing console RPC commands in a separate thread.
 */
 class RPCExecutor : public QObject
@@ -361,6 +369,23 @@ bool RPCConsole::RPCParseCommandLine(interfaces::Node* node, std::string &strRes
         for (auto i = filter_ranges.rbegin(); i != filter_ranges.rend(); ++i) {
             pstrFilteredOut->replace(i->first, i->second - i->first, "(…)");
         }
+
+        bool is_sensitive = !filter_ranges.empty();
+
+        if (!is_sensitive) {
+            const QString strcmd = QString::fromStdString(*pstrFilteredOut);
+            for (const QString& val : sensitiveFilter) {
+                if (strcmd.contains(val, Qt::CaseInsensitive)) {
+                    is_sensitive = true;
+                    break;
+                }
+            }
+        }
+
+        // Prefix "!" to mark sensitive commands as non-executable when recalled from history
+        if (is_sensitive) {
+            pstrFilteredOut->insert(0, 1, '!');
+        }
     }
     switch(state) // final state
     {
@@ -405,7 +430,11 @@ void RPCExecutor::request(const QString &command, const QString& wallet_name)
                 "   example:    getblock(getblockhash(0) 1)[tx]\n\n"
 
                 "Results without keys can be queried with an integer in brackets using the parenthesized syntax.\n"
-                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n")));
+                "   example:    getblock(getblockhash(0),1)[tx][0]\n\n"
+
+                "Commands starting with a leading '!' are blocked from execution.\n"
+                "These entries are shown for reference only. Remove the '!' or retype to run them.\n"
+                "   example:    !walletpassphrase(...)\n\n")));
             return;
         }
         if (!RPCConsole::RPCExecuteCommandLine(m_node, result, executableCommand, nullptr, wallet_name)) {
@@ -991,6 +1020,16 @@ void RPCConsole::on_lineEdit_returnPressed()
     QString cmd = ui->lineEdit->text().trimmed();
 
     if (cmd.isEmpty()) {
+        return;
+    }
+
+    // Prevent parsing and execution of commands prefixed with '!'
+    if (cmd.startsWith('!')) {
+        QMessageBox::information(this, tr("Command not executed"), tr(
+            "Commands prefixed with '!' are blocked.\n"
+            "Remove the '!' or retype to run again."
+
+        ));
         return;
     }
 
