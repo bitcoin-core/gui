@@ -15,6 +15,7 @@
 
 #include <common/system.h>
 #include <interfaces/node.h>
+#include <interfaces/snapshot.h>
 #include <netbase.h>
 #include <node/caches.h>
 #include <node/chainstatemanager_args.h>
@@ -25,12 +26,18 @@
 #include <QApplication>
 #include <QDataWidgetMapper>
 #include <QDir>
+#include <QFileDialog>
 #include <QFontDialog>
 #include <QIntValidator>
 #include <QLocale>
 #include <QMessageBox>
 #include <QSystemTrayIcon>
 #include <QTimer>
+#include <QProgressDialog>
+#include <QThread>
+
+#include <interfaces/handler.h>
+
 
 int setFontChoice(QComboBox* cb, const OptionsModel::FontChoice& fc)
 {
@@ -121,6 +128,12 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
     connect(ui->connectSocksTor, &QPushButton::toggled, ui->proxyPortTor, &QWidget::setEnabled);
     connect(ui->connectSocksTor, &QPushButton::toggled, this, &OptionsDialog::updateProxyValidationState);
 
+    QPushButton* loadSnapshotButton = new QPushButton(tr("Load Snapshot..."), this);
+    loadSnapshotButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    loadSnapshotButton->setMaximumWidth(200); // Match the width of other buttons
+    ui->verticalLayout_Main->insertWidget(ui->verticalLayout_Main->indexOf(ui->enableServer) + 1, loadSnapshotButton);
+    connect(loadSnapshotButton, &QPushButton::clicked, this, &OptionsDialog::on_loadSnapshotButton_clicked);
+
     /* Window elements init */
 #ifdef Q_OS_MACOS
     /* remove Window tab on Mac */
@@ -207,6 +220,16 @@ OptionsDialog::OptionsDialog(QWidget* parent, bool enableWallet)
 
 OptionsDialog::~OptionsDialog()
 {
+    // Clean up snapshot thread and worker if they exist
+    if (m_snapshot_thread) {
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        delete m_snapshot_thread;
+    }
+    if (m_snapshot_worker) {
+        delete m_snapshot_worker;
+    }
+
     delete ui;
 }
 
@@ -398,6 +421,80 @@ void OptionsDialog::on_showTrayIcon_stateChanged(int state)
         ui->minimizeToTray->setChecked(false);
         ui->minimizeToTray->setEnabled(false);
     }
+}
+
+void OptionsDialog::on_loadSnapshotButton_clicked()
+{
+    QString filename = QFileDialog::getOpenFileName(this,
+        tr("Load Snapshot"),
+        tr("Bitcoin Snapshot Files (*.dat);;"));
+
+    if (filename.isEmpty()) return;
+
+    const fs::path path_file_fs = fs::u8path(filename.toStdString());
+
+    QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm snapshot load"),
+        tr("Are you sure you want to load this snapshot? This will delete your current blockchain data."),
+        QMessageBox::Yes | QMessageBox::Cancel,
+        QMessageBox::Cancel);
+
+    if (retval != QMessageBox::Yes) return;
+
+    // Create progress dialog
+    QProgressDialog* progress = new QProgressDialog(tr("Loading snapshot..."), tr("Cancel"), 0, 100, this);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(0);
+    progress->setValue(0);
+    progress->show();
+
+    // Note: Progress updates are handled via Qt signals from the worker thread
+    // No direct progress handler needed here to avoid thread safety issues
+
+    // Clean up any existing thread and worker
+    if (m_snapshot_thread) {
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        delete m_snapshot_thread;
+        m_snapshot_thread = nullptr;
+    }
+    if (m_snapshot_worker) {
+        delete m_snapshot_worker;
+        m_snapshot_worker = nullptr;
+    }
+
+    // Create worker thread
+    m_snapshot_thread = new QThread(this);
+    m_snapshot_worker = new SnapshotLoadWorker(path_file_fs, model->node());
+    m_snapshot_worker->moveToThread(m_snapshot_thread);
+
+    // Connect signals
+    connect(m_snapshot_thread, &QThread::started, m_snapshot_worker, &SnapshotLoadWorker::loadSnapshot);
+    connect(m_snapshot_worker, &SnapshotLoadWorker::progressUpdated, this, [progress](double progress_value) {
+        // Convert progress from 0.0-1.0 range to 0-100 integer range
+        int progress_percent = static_cast<int>(progress_value * 100);
+        progress->setValue(progress_percent);
+    });
+    connect(m_snapshot_worker, &SnapshotLoadWorker::finished, this, [this, progress](bool success, const QString& error) {
+        progress->close();
+        progress->deleteLater();
+
+        if (success) {
+            QMessageBox::information(this, tr("Success"), tr("Snapshot loaded successfully"));
+        } else {
+            QMessageBox::critical(this, tr("Error"), tr("Error loading snapshot: %1").arg(error));
+        }
+
+        // Clean up worker and thread
+        m_snapshot_worker->deleteLater();
+        m_snapshot_worker = nullptr;
+        m_snapshot_thread->quit();
+        m_snapshot_thread->wait();
+        m_snapshot_thread->deleteLater();
+        m_snapshot_thread = nullptr;
+    });
+
+    // Start the thread
+    m_snapshot_thread->start();
 }
 
 void OptionsDialog::togglePruneWarning(bool enabled)
