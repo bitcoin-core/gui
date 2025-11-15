@@ -10,6 +10,8 @@
 
 #include <QStackedWidget>
 
+#include <wallet/coincontrol.h>
+
 class ClientModel;
 class OverviewPage;
 class PlatformStyle;
@@ -19,6 +21,7 @@ class SendCoinsRecipient;
 class TransactionView;
 class WalletModel;
 class AddressBookPage;
+class CoinControlDialog;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -65,6 +68,10 @@ private:
     AddressBookPage *usedSendingAddressesPage;
     AddressBookPage *usedReceivingAddressesPage;
 
+    QWidget* coinsPage{nullptr};
+    CoinControlDialog* coinsWidget{nullptr};
+    wallet::CCoinControl coinsPageCoinControl;
+
     TransactionView *transactionView;
 
     QProgressDialog* progressDialog{nullptr};
@@ -79,6 +86,10 @@ public Q_SLOTS:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to embedded Coins (UTXOs) page */
+    void gotoCoinsPage();
+    /** Switch to show coins page*/
+    void showCoinsDialog();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
