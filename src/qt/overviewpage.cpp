@@ -190,13 +190,20 @@ void OverviewPage::setBalance(const interfaces::WalletBalances& balances)
     ui->labelBalance->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
     ui->labelUnconfirmed->setText(BitcoinUnits::formatWithPrivacy(unit, balances.unconfirmed_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
     ui->labelImmature->setText(BitcoinUnits::formatWithPrivacy(unit, balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
-    ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelNonMempool->setText(BitcoinUnits::formatWithPrivacy(unit, balances.nonmempool_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
+    ui->labelTotal->setText(BitcoinUnits::formatWithPrivacy(unit, balances.balance + balances.unconfirmed_balance + balances.immature_balance + balances.nonmempool_balance, BitcoinUnits::SeparatorStyle::ALWAYS, m_privacy));
     // only show immature (newly mined) balance if it's non-zero, so as not to complicate things
     // for the non-mining users
     bool showImmature = balances.immature_balance != 0;
 
     ui->labelImmature->setVisible(showImmature);
     ui->labelImmatureText->setVisible(showImmature);
+
+    // likewise for non-mempool balances
+    bool showNonMempool = balances.nonmempool_balance != 0;
+
+    ui->labelNonMempool->setVisible(showNonMempool);
+    ui->labelNonMempoolText->setVisible(showNonMempool);
 }
 
 void OverviewPage::setClientModel(ClientModel *model)
@@ -296,5 +303,6 @@ void OverviewPage::setMonospacedFont(const QFont& f)
     ui->labelBalance->setFont(f);
     ui->labelUnconfirmed->setFont(f);
     ui->labelImmature->setFont(f);
+    ui->labelNonMempool->setFont(f);
     ui->labelTotal->setFont(f);
 }

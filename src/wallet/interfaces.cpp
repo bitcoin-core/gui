@@ -383,7 +383,7 @@ public:
     }
     WalletBalances getBalances() override
     {
-        const auto bal = GetBalance(*m_wallet);
+        const auto bal = GetBalance(*m_wallet, /*min_depth=*/0, /*avoid_reuse=*/true, /*include_nonmempool=*/true);
         WalletBalances result;
         result.balance = bal.m_mine_trusted;
         result.unconfirmed_balance = bal.m_mine_untrusted_pending;
