@@ -86,23 +86,33 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY(filtered == "getblock(getbestblockhash())[tx][0]");
 
     RPCConsole::RPCParseCommandLine(nullptr, result, "createwallet test true", false, &filtered);
-    QVERIFY(filtered == "createwallet(…)");
+    QVERIFY(filtered == "!createwallet(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "createwalletdescriptor abc", false, &filtered);
-    QVERIFY(filtered == "createwalletdescriptor(…)");
+    QVERIFY(filtered == "!createwalletdescriptor(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "migratewallet abc abc", false, &filtered);
-    QVERIFY(filtered == "migratewallet(…)");
+    QVERIFY(filtered == "!migratewallet(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "signmessagewithprivkey abc", false, &filtered);
-    QVERIFY(filtered == "signmessagewithprivkey(…)");
+    QVERIFY(filtered == "!signmessagewithprivkey(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "signmessagewithprivkey abc,def", false, &filtered);
-    QVERIFY(filtered == "signmessagewithprivkey(…)");
+    QVERIFY(filtered == "!signmessagewithprivkey(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "signrawtransactionwithkey(abc)", false, &filtered);
-    QVERIFY(filtered == "signrawtransactionwithkey(…)");
+    QVERIFY(filtered == "!signrawtransactionwithkey(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "walletpassphrase(help())", false, &filtered);
-    QVERIFY(filtered == "walletpassphrase(…)");
+    QVERIFY(filtered == "!walletpassphrase(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "walletpassphrasechange(help(walletpassphrasechange(abc)))", false, &filtered);
-    QVERIFY(filtered == "walletpassphrasechange(…)");
+    QVERIFY(filtered == "!walletpassphrasechange(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "help(encryptwallet(abc, def))", false, &filtered);
-    QVERIFY(filtered == "help(encryptwallet(…))");
+    QVERIFY(filtered == "!help(encryptwallet(…))");
+
+    // Test filtering for sensitive commands
+    RPCConsole::RPCParseCommandLine(nullptr, result, "send abc abc", false, &filtered);
+    QVERIFY(filtered == "!send abc abc");
+    RPCConsole::RPCParseCommandLine(nullptr, result, "sendall abc abc", false, &filtered);
+    QVERIFY(filtered == "!sendall abc abc");
+    RPCConsole::RPCParseCommandLine(nullptr, result, "sendmany abc abc", false, &filtered);
+    QVERIFY(filtered == "!sendmany abc abc");
+    RPCConsole::RPCParseCommandLine(nullptr, result, "sendtoaddress abc abc", false, &filtered);
+    QVERIFY(filtered == "!sendtoaddress abc abc");
 
     RPCConsole::RPCExecuteCommandLine(m_node, result, "rpcNestedTest");
     QVERIFY(result == "[]");
