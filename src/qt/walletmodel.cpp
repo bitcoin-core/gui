@@ -148,7 +148,7 @@ bool WalletModel::validateAddress(const QString& address) const
     return IsValidDestinationString(address.toStdString());
 }
 
-WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl& coinControl)
+WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl& coinControl, bool sign)
 {
     transaction.getWtx() = nullptr; // reset tx output
 
@@ -203,7 +203,9 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
     try {
         auto& newTx = transaction.getWtx();
-        const auto& res = m_wallet->createTransaction(vecSend, coinControl, /*sign=*/!wallet().privateKeysDisabled(), /*change_pos=*/std::nullopt);
+        // Only sign if explicitly requested via the sign parameter (e.g. when user clicks Send).
+        const bool should_sign = sign && !wallet().privateKeysDisabled();
+        const auto& res = m_wallet->createTransaction(vecSend, coinControl, should_sign, /*change_pos=*/std::nullopt);
         if (!res) {
             Q_EMIT message(tr("Send Coins"), QString::fromStdString(util::ErrorString(res).translated),
                            CClientUIInterface::MSG_ERROR);
@@ -215,6 +217,10 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
         transaction.setTransactionFee(nFeeRequired);
         if (fSubtractFeeFromAmount && newTx) {
             transaction.reassignAmounts(static_cast<int>(res->change_pos.value_or(-1)));
+        }
+
+        if (!fSubtractFeeFromAmount && (total + nFeeRequired) > nBalance) {
+            return SendCoinsReturn(AmountExceedsBalance);
         }
 
         // Reject absurdly high fee. (This can never happen because the
