@@ -371,6 +371,10 @@ void BitcoinGUI::createActions()
     m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab"));
     m_mask_values_action->setCheckable(true);
 
+    m_export_watchonly_action = new QAction(tr("Export watch-only wallet"), this);
+    m_export_watchonly_action->setEnabled(false);
+    m_export_watchonly_action->setStatusTip(tr("Export a watch-only version of the current wallet that can be restored onto another node."));
+
     connect(quitAction, &QAction::triggered, this, &BitcoinGUI::quitRequested);
     connect(aboutAction, &QAction::triggered, this, &BitcoinGUI::aboutClicked);
     connect(aboutQtAction, &QAction::triggered, qApp, QApplication::aboutQt);
@@ -488,6 +492,11 @@ void BitcoinGUI::createActions()
         });
         connect(m_mask_values_action, &QAction::toggled, this, &BitcoinGUI::setPrivacy);
         connect(m_mask_values_action, &QAction::toggled, this, &BitcoinGUI::enableHistoryAction);
+        connect(m_export_watchonly_action, &QAction::triggered, [this] {
+            QString destination = GUIUtil::getSaveFileName(this, tr("Save Watch-only Wallet Export"), QString(), QString(), nullptr);
+            if (destination.isEmpty()) return;
+            walletFrame->currentWalletModel()->wallet().exportWatchOnlyWallet(GUIUtil::QStringToPath(destination));
+        });
     }
 #endif // ENABLE_WALLET
 
@@ -511,6 +520,7 @@ void BitcoinGUI::createMenuBar()
         file->addSeparator();
         file->addAction(backupWalletAction);
         file->addAction(m_restore_wallet_action);
+        file->addAction(m_export_watchonly_action);
         file->addSeparator();
         file->addAction(openAction);
         file->addAction(signMessageAction);
@@ -719,6 +729,7 @@ void BitcoinGUI::setWalletController(WalletController* wallet_controller, bool s
     m_restore_wallet_action->setEnabled(true);
     m_migrate_wallet_action->setEnabled(true);
     m_migrate_wallet_action->setMenu(m_migrate_wallet_menu);
+    m_export_watchonly_action->setEnabled(true);
 
     GUIUtil::ExceptionSafeConnect(wallet_controller, &WalletController::walletAdded, this, &BitcoinGUI::addWallet);
     connect(wallet_controller, &WalletController::walletRemoved, this, &BitcoinGUI::removeWallet);
