@@ -242,7 +242,7 @@ class IPCMiningTest(BitcoinTestFramework):
             self.log.debug("Enforce minimum reserved weight for IPC clients too")
             opts.blockReservedWeight = 0
             try:
-                await mining.createNewBlock(opts)
+                await mining.createNewBlock(ctx, opts)
                 raise AssertionError("createNewBlock unexpectedly succeeded")
             except capnp.lib.capnp.KjException as e:
                 if e.type == "DISCONNECTED":
@@ -269,7 +269,7 @@ class IPCMiningTest(BitcoinTestFramework):
             current_block_height = self.nodes[0].getchaintips()[0]["height"]
             check_opts = self.capnp_modules['mining'].BlockCheckOptions()
 
-            async with destroying((await mining.createNewBlock(self.default_block_create_options)).result, ctx) as template:
+            async with destroying((await mining.createNewBlock(ctx, self.default_block_create_options)).result, ctx) as template:
                 block = await mining_get_block(template, ctx)
                 balance = self.miniwallet.get_balance()
                 coinbase = await self.build_coinbase_test(template, ctx, self.miniwallet)
@@ -282,7 +282,7 @@ class IPCMiningTest(BitcoinTestFramework):
                 self.log.debug("Submit a block with a bad version")
                 block.nVersion = 0
                 block.solve()
-                check = await mining.checkBlock(block.serialize(), check_opts)
+                check = await mining.checkBlock(ctx, block.serialize(), check_opts)
                 assert_equal(check.result, False)
                 assert_equal(check.reason, "bad-version(0x00000000)")
                 submitted = (await template.submitSolution(ctx, block.nVersion, block.nTime, block.nNonce, coinbase.serialize())).result
@@ -292,7 +292,7 @@ class IPCMiningTest(BitcoinTestFramework):
                 block.solve()
 
                 self.log.debug("First call checkBlock()")
-                block_valid = (await mining.checkBlock(block.serialize(), check_opts)).result
+                block_valid = (await mining.checkBlock(ctx, block.serialize(), check_opts)).result
                 assert_equal(block_valid, True)
 
                 # The remote template block will be mutated, capture the original:
@@ -324,7 +324,7 @@ class IPCMiningTest(BitcoinTestFramework):
             self.miniwallet.rescan_utxos()
             assert_equal(self.miniwallet.get_balance(), balance + 1)
             self.log.debug("Check block should fail now, since it is a duplicate")
-            check = await mining.checkBlock(block.serialize(), check_opts)
+            check = await mining.checkBlock(ctx, block.serialize(), check_opts)
             assert_equal(check.result, False)
             assert_equal(check.reason, "inconclusive-not-best-prevblk")
 
