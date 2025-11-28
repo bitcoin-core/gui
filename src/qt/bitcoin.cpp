@@ -509,11 +509,17 @@ int GuiMain(int argc, char* argv[])
     SetupUIArgs(gArgs);
     std::string error;
     if (!gArgs.ParseParameters(argc, argv, error)) {
+        int nMBoxIcon = QMessageBox::Critical;
         InitError(Untranslated(strprintf("Error parsing command line arguments: %s", error)));
         // Create a message box, because the gui has neither been created nor has subscribed to core signals
-        QMessageBox::critical(nullptr, CLIENT_NAME,
+        QMessageBox mBox(static_cast<QMessageBox::Icon>(nMBoxIcon), CLIENT_NAME,
             // message cannot be translated because translations have not been initialized
             QString::fromStdString("Error parsing command line arguments: %1.").arg(QString::fromStdString(error)));
+        mBox.setTextFormat(Qt::PlainText);
+        if (gArgs.GetChainTypeString() != "main") {
+            mBox.setWindowIcon(NetworkStyle::instantiate(gArgs.GetChainType())->getTrayAndWindowIcon());
+        }
+        mBox.exec();
         return EXIT_FAILURE;
     }
 
