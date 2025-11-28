@@ -15,6 +15,8 @@
 
 #include <QByteArray>
 #include <QCompleter>
+#include <QFontMetrics>
+#include <QLabel>
 #include <QMimeData>
 #include <QTextDocumentFragment>
 #include <QTextEdit>
@@ -207,6 +209,58 @@ protected:
         auto md = new QMimeData();
         md->setText(textCursor().selection().toPlainText());
         return md;
+    }
+};
+
+class NetworkName : public QLabel
+{
+    Q_OBJECT
+
+public:
+    explicit NetworkName(QWidget *parent = nullptr) : QLabel(parent) {}
+
+    void setText(const QString& text) {
+        m_fullText = text;
+        recalculateElidedText();
+    }
+
+    const QString& fullText() const { return m_fullText; }
+    QString selectedText() const {
+        return m_fullText;
+    }
+
+protected:
+    void resizeEvent(QResizeEvent *event) override {
+        QLabel::resizeEvent(event);
+        recalculateElidedText();
+    }
+
+    // Provide the full challenge when Copy&Paste
+    QMimeData* createMimeDataFromSelection() const {
+        auto md = new QMimeData();
+        md->setText(m_fullText);
+        return md;
+    }
+
+private:
+    QString m_fullText;
+
+    void recalculateElidedText() {
+        if (m_fullText.isEmpty()) {
+            QLabel::setText(QString());
+            return;
+        }
+
+        QFontMetrics fm(font());
+        int availableWidth = width()-1;
+        //int availableWidth = contentsRect().width()-1;
+
+        QString elidedText = fm.elidedText(m_fullText, Qt::ElideMiddle, availableWidth);
+
+        if (QLabel::text() != elidedText) {
+            QLabel::setText(elidedText);
+            //QLabel::setText(m_fullText);
+        }
     }
 };
 
