@@ -1,6 +1,8 @@
-// Copyright (c) 2011-2022 The Bitcoin Core developers
+// Copyright (c) 2011-present The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+#include <bitcoin-build-config.h> // IWYU pragma: keep
 
 #include <qt/guiutil.h>
 
@@ -1006,6 +1008,29 @@ void ShowModalDialogAsynchronously(QDialog* dialog)
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setWindowModality(Qt::ApplicationModal);
     dialog->show();
+}
+
+void ShowMessageBox(const QString& message,
+                            QMessageBox::Icon box_icon,
+                            const NetworkStyle* network_style,
+                            const QString& title)
+{
+    QString qTitle = CLIENT_NAME;
+    if (!title.isEmpty()) qTitle = title;
+    QMessageBox mBox(box_icon, qTitle, message);
+
+    mBox.setTextFormat(Qt::PlainText);
+
+    if (network_style) {
+        mBox.setWindowIcon(network_style->getTrayAndWindowIcon());
+    } else if (!gArgs.GetChainTypeString().empty()) {
+        std::unique_ptr<const NetworkStyle> fallback(NetworkStyle::instantiate(gArgs.GetChainType()));
+        if (fallback) {
+            mBox.setWindowIcon(fallback->getTrayAndWindowIcon());
+        }
+    }
+
+    mBox.exec();
 }
 
 QString WalletDisplayName(const QString& name)
