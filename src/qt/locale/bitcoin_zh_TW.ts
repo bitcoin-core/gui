@@ -332,12 +332,12 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Inbound</source>
         <extracomment>An inbound connection from a peer. An inbound connection is a connection initiated by a peer.</extracomment>
-        <translation type="unfinished">進來</translation>
+        <translation type="unfinished">传入</translation>
     </message>
     <message>
         <source>Outbound</source>
         <extracomment>An outbound connection to a peer. An outbound connection is a connection initiated by us.</extracomment>
-        <translation type="unfinished">出去</translation>
+        <translation type="unfinished">传出</translation>
     </message>
     <message>
         <source>Block Relay</source>
@@ -347,7 +347,7 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Manual</source>
         <extracomment>Peer connection type established manually through one of several methods.</extracomment>
-        <translation type="unfinished">手册</translation>
+        <translation type="unfinished">手动连接</translation>
     </message>
     <message>
         <source>%1 d</source>

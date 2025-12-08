@@ -357,17 +357,17 @@ Signing is only possible with addresses of the type 'legacy'.</source>
     <message>
         <source>Manual</source>
         <extracomment>Peer connection type established manually through one of several methods.</extracomment>
-        <translation type="unfinished">手册</translation>
+        <translation type="unfinished">手动连接</translation>
     </message>
     <message>
         <source>Feeler</source>
         <extracomment>Short-lived peer connection type that tests the aliveness of known addresses.</extracomment>
-        <translation type="unfinished">触须</translation>
+        <translation type="unfinished">探测连接</translation>
     </message>
     <message>
         <source>Address Fetch</source>
         <extracomment>Short-lived peer connection type that solicits known addresses from a peer.</extracomment>
-        <translation type="unfinished">地址取回</translation>
+        <translation type="unfinished">地址获取</translation>
     </message>
     <message>
         <source>%1 d</source>
