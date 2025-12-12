@@ -136,6 +136,7 @@ private:
     QAction* historyAction = nullptr;
     QAction* quitAction = nullptr;
     QAction* sendCoinsAction = nullptr;
+    QAction* showCoinsAction = nullptr;
     QAction* usedSendingAddressesAction = nullptr;
     QAction* usedReceivingAddressesAction = nullptr;
     QAction* signMessageAction = nullptr;
@@ -213,6 +214,12 @@ private:
     /** Open the OptionsDialog on the specified tab index */
     void openOptionsDialogWithTab(OptionsDialog::Tab tab);
 
+    // Track whether wallet actions are globally enabled
+    bool m_wallet_actions_enabled{false};
+
+    /** Update the visibility and enabled state of the Coins tab/action based on options. */
+    void updateCoinsTabVisibility();
+
 Q_SIGNALS:
     void quitRequested();
     /** Signal raised when a URI was entered or dragged to the GUI */
@@ -283,6 +290,8 @@ public Q_SLOTS:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage(QString addr = "");
+    /** Switch to show coins page*/
+    void showCoins();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
