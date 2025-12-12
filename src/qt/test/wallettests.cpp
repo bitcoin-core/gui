@@ -302,7 +302,7 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
     OverviewPage overviewPage(platformStyle.get());
     overviewPage.setWalletModel(&walletModel);
     walletModel.pollBalanceChanged(); // Manual balance polling update
-    CompareBalance(walletModel, walletModel.wallet().getBalance(), overviewPage.findChild<QLabel*>("labelBalance"));
+    CompareBalance(walletModel, walletModel.wallet().getBalances().balance, overviewPage.findChild<QLabel*>("labelBalance"));
 
     // Check Request Payment button
     ReceiveCoinsDialog receiveCoinsDialog(platformStyle.get());
