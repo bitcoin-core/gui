@@ -5,8 +5,13 @@
 #ifndef BITCOIN_UTIL_LOG_H
 #define BITCOIN_UTIL_LOG_H
 
+#include <logging/categories.h> // IWYU pragma: export
+#include <tinyformat.h>
+#include <util/check.h>
+
 #include <cstdint>
 #include <source_location>
+#include <string>
 #include <string_view>
 
 /// Like std::source_location, but allowing to override the function name.
@@ -30,6 +35,9 @@ private:
 };
 
 namespace util::log {
+/** Opaque to util::log; interpreted by consumers (e.g., BCLog::LogFlags). */
+using Category = uint64_t;
+
 enum class Level {
     Trace = 0, // High-volume or detailed logging for development/debugging
     Debug,     // Reasonably noisy logging, but still usable in production
@@ -37,12 +45,44 @@ enum class Level {
     Warning,
     Error,
 };
+
+struct Entry {
+    Category category;
+    Level level;
+    bool should_ratelimit{false}; //!< Hint for consumers if this entry should be ratelimited
+    SourceLocation source_loc;
+    std::string message;
+};
+
+/** Return whether messages with specified category and level should be logged. Applications using
+ * the logging library need to provide this. */
+bool ShouldLog(Category category, Level level);
+
+/** Send message to be logged. Applications using the logging library need to provide this. */
+void Log(Entry entry);
 } // namespace util::log
 
 namespace BCLog {
 //! Alias for compatibility. Prefer util::log::Level over BCLog::Level in new code.
 using Level = util::log::Level;
 } // namespace BCLog
+
+template <typename... Args>
+inline void LogPrintFormatInternal(SourceLocation&& source_loc, BCLog::LogFlags flag, BCLog::Level level, bool should_ratelimit, util::ConstevalFormatString<sizeof...(Args)> fmt, const Args&... args)
+{
+    std::string log_msg;
+    try {
+        log_msg = tfm::format(fmt, args...);
+    } catch (tinyformat::format_error& fmterr) {
+        log_msg = "Error \"" + std::string{fmterr.what()} + "\" while formatting log message: " + fmt.fmt;
+    }
+    util::log::Log(util::log::Entry{
+        .category = flag,
+        .level = level,
+        .should_ratelimit = should_ratelimit,
+        .source_loc = std::move(source_loc),
+        .message = std::move(log_msg)});
+}
 
 // Allow __func__ to be used in any context without warnings:
 // NOLINTNEXTLINE(bugprone-lambda-function-name)
@@ -64,7 +104,7 @@ using Level = util::log::Level;
 // developers or power users who are aware that -debug may cause excessive disk usage due to logging.
 #define detail_LogIfCategoryAndLevelEnabled(category, level, ...)      \
     do {                                                               \
-        if (LogAcceptCategory((category), (level))) {                  \
+        if (util::log::ShouldLog((category), (level))) {               \
             bool rate_limit{level >= BCLog::Level::Info};              \
             Assume(!rate_limit); /*Only called with the levels below*/ \
             LogPrintLevel_(category, level, rate_limit, __VA_ARGS__);  \
