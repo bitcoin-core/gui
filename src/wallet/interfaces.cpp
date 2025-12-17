@@ -529,6 +529,11 @@ public:
     }
     CWallet* wallet() override { return m_wallet.get(); }
 
+    util::Result<std::string> exportWatchOnlyWallet(const fs::path& destination) override {
+        LOCK(m_wallet->cs_wallet);
+        return m_wallet->ExportWatchOnlyWallet(destination, m_context);
+    }
+
     WalletContext& m_context;
     std::shared_ptr<CWallet> m_wallet;
 };
