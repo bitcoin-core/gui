@@ -8,6 +8,7 @@ from contextlib import AsyncExitStack
 from io import BytesIO
 from test_framework.blocktools import NULL_OUTPOINT
 from test_framework.messages import (
+    MAX_BLOCK_WEIGHT,
     CTransaction,
     CTxIn,
     CTxOut,
@@ -227,6 +228,37 @@ class IPCMiningTest(BitcoinTestFramework):
 
         asyncio.run(capnp.run(async_routine()))
 
+    def run_ipc_option_override_test(self):
+        self.log.info("Running IPC option override test")
+        # Set an absurd reserved weight. `-blockreservedweight` is RPC-only, so
+        # with this setting RPC templates would be empty. IPC clients set
+        # blockReservedWeight per template request and are unaffected; later in
+        # the test the IPC template includes a mempool transaction.
+        self.restart_node(0, extra_args=[f"-blockreservedweight={MAX_BLOCK_WEIGHT}"])
+
+        async def async_routine():
+            ctx, mining = await self.make_mining_ctx()
+            self.miniwallet.send_self_transfer(fee_rate=10, from_node=self.nodes[0])
+
+            async with AsyncExitStack() as stack:
+                opts = self.capnp_modules['mining'].BlockCreateOptions()
+                opts.useMempool = True
+                opts.blockReservedWeight = 4000
+                opts.coinbaseOutputMaxAdditionalSigops = 0
+                template = await mining_create_block_template(mining, stack, ctx, opts)
+                assert template is not None
+                block = await mining_get_block(template, ctx)
+                assert_equal(len(block.vtx), 2)
+
+                self.log.debug("Use absurdly large reserved weight to force an empty template")
+                opts.blockReservedWeight = MAX_BLOCK_WEIGHT
+                empty_template = await mining_create_block_template(mining, stack, ctx, opts)
+                assert empty_template is not None
+                empty_block = await mining_get_block(empty_template, ctx)
+                assert_equal(len(empty_block.vtx), 1)
+
+        asyncio.run(capnp.run(async_routine()))
+
     def run_coinbase_and_submission_test(self):
         """Test coinbase construction (getCoinbaseTx, getCoinbaseCommitment) and block submission (submitSolution)."""
         self.log.info("Running coinbase construction and submission test")
@@ -309,6 +341,7 @@ class IPCMiningTest(BitcoinTestFramework):
         self.run_mining_interface_test()
         self.run_block_template_test()
         self.run_coinbase_and_submission_test()
+        self.run_ipc_option_override_test()
 
 
 if __name__ == '__main__':
