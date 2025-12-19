@@ -160,6 +160,7 @@ class IPCMiningTest(BitcoinTestFramework):
             async with AsyncExitStack() as stack:
                 self.log.debug("Create a template")
                 template = await mining_create_block_template(mining, stack, ctx, self.default_block_create_options)
+                assert template is not None
 
                 self.log.debug("Test some inspectors of Template")
                 header = (await template.getBlockHeader(ctx)).result
@@ -179,23 +180,26 @@ class IPCMiningTest(BitcoinTestFramework):
                 template2 = await wait_and_do(
                     mining_wait_next_template(template, stack, ctx, waitoptions),
                     lambda: self.generate(self.nodes[0], 1))
+                assert template2 is not None
                 block2 = await mining_get_block(template2, ctx)
                 assert_equal(len(block2.vtx), 1)
 
                 self.log.debug("Wait for another, but time out")
-                template3 = await template2.waitNext(ctx, waitoptions)
-                assert_equal(template3._has("result"), False)
+                template3 = await mining_wait_next_template(template2, stack, ctx, waitoptions)
+                assert template3 is None
 
                 self.log.debug("Wait for another, get one after increase in fees in the mempool")
                 template4 = await wait_and_do(
                     mining_wait_next_template(template2, stack, ctx, waitoptions),
                     lambda: self.miniwallet.send_self_transfer(fee_rate=10, from_node=self.nodes[0]))
+                assert template4 is not None
                 block3 = await mining_get_block(template4, ctx)
                 assert_equal(len(block3.vtx), 2)
 
                 self.log.debug("Wait again, this should return the same template, since the fee threshold is zero")
                 waitoptions.feeThreshold = 0
                 template5 = await mining_wait_next_template(template4, stack, ctx, waitoptions)
+                assert template5 is not None
                 block4 = await mining_get_block(template5, ctx)
                 assert_equal(len(block4.vtx), 2)
                 waitoptions.feeThreshold = 1
@@ -204,20 +208,21 @@ class IPCMiningTest(BitcoinTestFramework):
                 template6 = await wait_and_do(
                     mining_wait_next_template(template5, stack, ctx, waitoptions),
                     lambda: self.miniwallet.send_self_transfer(fee_rate=10, from_node=self.nodes[0]))
+                assert template6 is not None
                 block4 = await mining_get_block(template6, ctx)
                 assert_equal(len(block4.vtx), 3)
 
                 self.log.debug("Wait for another, but time out, since the fee threshold is set now")
-                template7 = await template6.waitNext(ctx, waitoptions)
-                assert_equal(template7._has("result"), False)
+                template7 = await mining_wait_next_template(template6, stack, ctx, waitoptions)
+                assert template7 is None
 
                 self.log.debug("interruptWait should abort the current wait")
                 async def wait_for_block():
                     new_waitoptions = self.capnp_modules['mining'].BlockWaitOptions()
                     new_waitoptions.timeout = timeout * 60 # 1 minute wait
                     new_waitoptions.feeThreshold = 1
-                    template7 = await template6.waitNext(ctx, new_waitoptions)
-                    assert_equal(template7._has("result"), False)
+                    template7 = await mining_wait_next_template(template6, stack, ctx, new_waitoptions)
+                    assert template7 is None
                 await wait_and_do(wait_for_block(), template6.interruptWait())
 
         asyncio.run(capnp.run(async_routine()))
