@@ -257,7 +257,9 @@ FUZZ_TARGET(coinscache_sim)
                 // Look up in simulation data.
                 auto sim = lookup(outpointidx);
                 // Look up in real caches.
-                auto realcoin = caches.back()->GetCoin(data.outpoints[outpointidx]);
+                auto realcoin = provider.ConsumeBool() ?
+                    caches.back()->PeekCoin(data.outpoints[outpointidx]) :
+                    caches.back()->GetCoin(data.outpoints[outpointidx]);
                 // Compare results.
                 if (!sim.has_value()) {
                     assert(!realcoin);
