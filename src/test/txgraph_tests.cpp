@@ -291,19 +291,37 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_big_singletons)
     }
 }
 
-BOOST_AUTO_TEST_CASE(txgraph_get_worst_chunk_chain)
+BOOST_AUTO_TEST_CASE(txgraph_chunk_chain)
 {
     // Create a new graph for the test.
     auto graph = MakeTxGraph(50, 1000, NUM_ACCEPTABLE_ITERS);
 
-    auto chunk_check_helper = [&graph](const std::vector<FeePerWeight>& expected_chunk_txs_feerates, FeePerWeight expected_chunk_feerate) {
-        auto chunk = graph->GetWorstMainChunk();
-        BOOST_CHECK_EQUAL(chunk.first.size(), expected_chunk_txs_feerates.size());
-        for (size_t i = 0; i  < expected_chunk_txs_feerates.size(); i++)
-            BOOST_CHECK(graph->GetIndividualFeerate(*chunk.first[i]) == expected_chunk_txs_feerates[i]);
+    auto block_builder_checker = [&graph](std::vector<std::vector<TxGraph::Ref*>> expected_chunks) {
+        std::vector<std::vector<TxGraph::Ref*>> chunks;
+        auto builder = graph->GetBlockBuilder();
+        FeePerWeight last_chunk_feerate;
+        while (auto chunk = builder->GetCurrentChunk()) {
+            FeePerWeight sum;
+            for (TxGraph::Ref* ref : chunk->first) {
+                // The reported chunk feerate must match the chunk feerate obtained by asking
+                // it for each of the chunk's transactions individually.
+                BOOST_CHECK(graph->GetMainChunkFeerate(*ref) == chunk->second);
+                // Verify the chunk feerate matches the sum of the reported individual feerates.
+                sum += graph->GetIndividualFeerate(*ref);
+            }
+            BOOST_CHECK(sum == chunk->second);
+            chunks.push_back(std::move(chunk->first));
+            last_chunk_feerate = chunk->second;
+            builder->Include();
+        }
 
-        BOOST_CHECK_EQUAL(chunk.second.fee, expected_chunk_feerate.fee);
-        BOOST_CHECK_EQUAL(chunk.second.size, expected_chunk_feerate.size);
+        BOOST_CHECK(chunks == expected_chunks);
+        auto& last_chunk = chunks.back();
+        // The last chunk returned by the BlockBuilder must match GetWorstMainChunk, in reverse.
+        std::reverse(last_chunk.begin(), last_chunk.end());
+        auto [worst_chunk, worst_chunk_feerate] = graph->GetWorstMainChunk();
+        BOOST_CHECK(last_chunk == worst_chunk);
+        BOOST_CHECK(last_chunk_feerate == worst_chunk_feerate);
     };
 
     std::vector<TxGraph::Ref> refs;
@@ -318,24 +336,24 @@ BOOST_AUTO_TEST_CASE(txgraph_get_worst_chunk_chain)
     // [A]
     refs.push_back(graph->AddTransaction(feerateA));
     BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 1);
-    chunk_check_helper({feerateA}, feerateA);
+    block_builder_checker({{&refs[0]}});
     // [A, B]
     refs.push_back(graph->AddTransaction(feerateB));
     graph->AddDependency(/*parent=*/refs[0], /*child=*/refs[1]);
     BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 2);
-    chunk_check_helper({feerateB}, feerateB);
+    block_builder_checker({{&refs[0]}, {&refs[1]}});
 
     // [A, BC]
     refs.push_back(graph->AddTransaction(feerateC));
     graph->AddDependency(/*parent=*/refs[1], /*child=*/refs[2]);
     BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 3);
-    chunk_check_helper({feerateC, feerateB}, FeePerWeight{3, 20});
+    block_builder_checker({{&refs[0]}, {&refs[1], &refs[2]}});
 
     // [ABCD]
     refs.push_back(graph->AddTransaction(feerateD));
     graph->AddDependency(/*parent=*/refs[2], /*child=*/refs[3]);
     BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 4);
-    chunk_check_helper({feerateD, feerateC, feerateB, feerateA}, FeePerWeight{9, 40});
+    block_builder_checker({{&refs[0], &refs[1], &refs[2], &refs[3]}});
 
     graph->SanityCheck();
 
@@ -347,7 +365,7 @@ BOOST_AUTO_TEST_CASE(txgraph_get_worst_chunk_chain)
     graph->RemoveTransaction(refs[2]);
     graph->RemoveTransaction(refs[3]);
     BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 1);
-    chunk_check_helper({feerateA}, feerateA);
+    block_builder_checker({{&refs[0]}});
 }
 
 BOOST_AUTO_TEST_SUITE_END()
