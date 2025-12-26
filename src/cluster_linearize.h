@@ -724,7 +724,8 @@ private:
     }
 
     /** Find the set of out-of-chunk transactions reachable from tx_idxs, both in upwards and
-     *  downwards direction. */
+     *  downwards direction. Only used by SanityCheck to verify the precomputed reachable sets in
+     *  m_reachable that are maintained by Activate/Deactivate. */
     std::pair<SetType, SetType> GetReachable(const SetType& tx_idxs) const noexcept
     {
         SetType parents, children;
@@ -794,9 +795,8 @@ private:
         // Merge top_info into bottom_info, which becomes the merged chunk.
         bottom_info |= top_info;
         m_cost += bottom_info.transactions.Count();
-        // Compute merged sets of reachable transactions from the new chunk. There is no need to
-        // call GetReachable here, because they can be computed directly from the input chunks'
-        // reachable sets.
+        // Compute merged sets of reachable transactions from the new chunk, based on the input
+        // chunks' reachable sets.
         m_reachable[child_chunk_idx].first |= m_reachable[parent_chunk_idx].first;
         m_reachable[child_chunk_idx].second |= m_reachable[parent_chunk_idx].second;
         m_reachable[child_chunk_idx].first -= bottom_info.transactions;
@@ -834,25 +834,34 @@ private:
         // Subtract the top_info from the bottom_info, as it will become the child chunk.
         bottom_info -= top_info;
         // See the comment above in Activate(). We perform the opposite operations here, removing
-        // instead of adding.
+        // instead of adding. Simultaneously, aggregate the top/bottom's union of parents/children.
+        SetType top_parents, top_children;
         for (auto tx_idx : top_info.transactions) {
             auto& tx_data = m_tx_data[tx_idx];
             tx_data.chunk_idx = parent_chunk_idx;
+            top_parents |= tx_data.parents;
+            top_children |= tx_data.children;
             for (auto dep_child_idx : tx_data.active_children) {
                 auto& dep_top_info = m_set_info[tx_data.dep_top_idx[dep_child_idx]];
                 if (dep_top_info.transactions[parent_idx]) dep_top_info -= bottom_info;
             }
         }
+        SetType bottom_parents, bottom_children;
         for (auto tx_idx : bottom_info.transactions) {
             auto& tx_data = m_tx_data[tx_idx];
+            bottom_parents |= tx_data.parents;
+            bottom_children |= tx_data.children;
             for (auto dep_child_idx : tx_data.active_children) {
                 auto& dep_top_info = m_set_info[tx_data.dep_top_idx[dep_child_idx]];
                 if (dep_top_info.transactions[child_idx]) dep_top_info -= top_info;
             }
         }
-        // Compute the new sets of reachable transactions for each new chunk.
-        m_reachable[child_chunk_idx] = GetReachable(bottom_info.transactions);
-        m_reachable[parent_chunk_idx] = GetReachable(top_info.transactions);
+        // Compute the new sets of reachable transactions for each new chunk, based on the
+        // top/bottom parents and children computed above.
+        m_reachable[parent_chunk_idx].first = top_parents - top_info.transactions;
+        m_reachable[parent_chunk_idx].second = top_children - top_info.transactions;
+        m_reachable[child_chunk_idx].first = bottom_parents - bottom_info.transactions;
+        m_reachable[child_chunk_idx].second = bottom_children - bottom_info.transactions;
         // Return the two new set idxs.
         return {parent_chunk_idx, child_chunk_idx};
     }
