@@ -368,4 +368,57 @@ BOOST_AUTO_TEST_CASE(txgraph_chunk_chain)
     block_builder_checker({{&refs[0]}});
 }
 
+BOOST_AUTO_TEST_CASE(txgraph_staging)
+{
+    /* Create a new graph for the test.
+     * The parameters are max_cluster_count, max_cluster_size, acceptable_iters
+     */
+    auto graph = MakeTxGraph(10, 1000, NUM_ACCEPTABLE_ITERS);
+
+    std::vector<TxGraph::Ref> refs;
+    refs.reserve(2);
+
+    FeePerWeight feerateA{2, 10};
+    FeePerWeight feerateB{1, 10};
+
+    // everytime adding a transaction, test the chunk status
+    // [A]
+    refs.push_back(graph->AddTransaction(feerateA));
+    BOOST_CHECK_EQUAL(graph->HaveStaging(), false);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 1);
+
+    graph->StartStaging();
+    BOOST_CHECK_EQUAL(graph->HaveStaging(), true);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 1);
+
+    // [A, B]
+    refs.push_back(graph->AddTransaction(feerateB));
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), 1);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 2);
+    BOOST_CHECK_EQUAL(graph->Exists(refs[0], TxGraph::Level::TOP), true);
+    BOOST_CHECK_EQUAL(graph->Exists(refs[1], TxGraph::Level::TOP), true);
+
+    graph->AddDependency(/*parent=*/refs[0], /*child=*/refs[1]);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), 1);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 2);
+
+    graph->CommitStaging();
+    BOOST_CHECK_EQUAL(graph->HaveStaging(), false);
+
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), 2);
+
+    graph->StartStaging();
+
+    // [A]
+    graph->RemoveTransaction(refs[1]);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), 2);
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::TOP), 1);
+
+    graph->CommitStaging();
+
+    BOOST_CHECK_EQUAL(graph->GetTransactionCount(TxGraph::Level::MAIN), 1);
+
+    graph->SanityCheck();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
