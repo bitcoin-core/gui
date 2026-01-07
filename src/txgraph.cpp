@@ -497,14 +497,22 @@ private:
         auto feerate_cmp = FeeRateCompare(entry_b.m_main_chunk_feerate, entry_a.m_main_chunk_feerate);
         if (feerate_cmp < 0) return std::strong_ordering::less;
         if (feerate_cmp > 0) return std::strong_ordering::greater;
-        // Compare Cluster m_sequence as tie-break for equal chunk feerates.
+        // Compare equal-feerate chunk prefix size for comparing equal chunk feerates. This does two
+        // things: it distinguishes equal-feerate chunks within the same cluster (because later
+        // ones will always have a higher prefix size), and it may distinguish equal-feerate chunks
+        // from distinct clusters.
+        if (entry_a.m_main_equal_feerate_chunk_prefix_size != entry_b.m_main_equal_feerate_chunk_prefix_size) {
+            return entry_a.m_main_equal_feerate_chunk_prefix_size <=> entry_b.m_main_equal_feerate_chunk_prefix_size;
+        }
+        // Compare Cluster m_sequence as tie-break for equal chunk feerates in distinct clusters,
+        // when the equal-feerate-prefix size is also the same.
         const auto& locator_a = entry_a.m_locator[0];
         const auto& locator_b = entry_b.m_locator[0];
         Assume(locator_a.IsPresent() && locator_b.IsPresent());
         if (locator_a.cluster != locator_b.cluster) {
             return CompareClusters(locator_a.cluster, locator_b.cluster);
         }
-        // As final tie-break, compare position within cluster linearization.
+        // Within a single chunk, sort by position within cluster linearization.
         return entry_a.m_main_lin_index <=> entry_b.m_main_lin_index;
     }
 
@@ -595,6 +603,13 @@ private:
         Locator m_locator[MAX_LEVELS];
         /** The chunk feerate of this transaction in main (if present in m_locator[0]). */
         FeePerWeight m_main_chunk_feerate;
+        /** The equal-feerate chunk prefix size of this transaction in main. If the transaction is
+         *  part of chunk C in main, then this gives the sum of the sizes of all chunks in C's
+         *  cluster, whose feerate is equal to that of C, which do not appear after C itself in
+         *  the cluster's linearization.
+         *  This provides a way to sort equal-feerate chunks across clusters, in a way that agrees
+         *  with the within-cluster chunk ordering. */
+        int32_t m_main_equal_feerate_chunk_prefix_size;
         /** The position this transaction has in the main linearization (if present). */
         LinearizationIndex m_main_lin_index;
     };
@@ -1056,11 +1071,23 @@ void GenericClusterImpl::Updated(TxGraphImpl& graph, int level, bool rename) noe
     if (level == 0 && (rename || IsAcceptable())) {
         auto chunking = ChunkLinearizationInfo(m_depgraph, m_linearization);
         LinearizationIndex lin_idx{0};
+        /** The sum of all chunk feerate FeeFracs with the same feerate as the current chunk,
+         *  up to and including the current chunk. */
+        FeeFrac equal_feerate_chunk_feerate;
         // Iterate over the chunks.
         for (unsigned chunk_idx = 0; chunk_idx < chunking.size(); ++chunk_idx) {
             auto& chunk = chunking[chunk_idx];
             auto chunk_count = chunk.transactions.Count();
             Assume(chunk_count > 0);
+            // Update equal_feerate_chunk_feerate to include this chunk, starting over when the
+            // feerate changed.
+            if (chunk.feerate << equal_feerate_chunk_feerate) {
+                equal_feerate_chunk_feerate = chunk.feerate;
+            } else {
+                // Note that this is adding fees to fees, and sizes to sizes, so the overall
+                // ratio remains the same; it's just accounting for the size of the added chunk.
+                equal_feerate_chunk_feerate += chunk.feerate;
+            }
             // Iterate over the transactions in the linearization, which must match those in chunk.
             while (true) {
                 DepGraphIndex idx = m_linearization[lin_idx];
@@ -1068,6 +1095,7 @@ void GenericClusterImpl::Updated(TxGraphImpl& graph, int level, bool rename) noe
                 auto& entry = graph.m_entries[graph_idx];
                 entry.m_main_lin_index = lin_idx++;
                 entry.m_main_chunk_feerate = FeePerWeight::FromFeeFrac(chunk.feerate);
+                entry.m_main_equal_feerate_chunk_prefix_size = equal_feerate_chunk_feerate.size;
                 Assume(chunk.transactions[idx]);
                 chunk.transactions.Reset(idx);
                 if (chunk.transactions.None()) {
@@ -1101,6 +1129,7 @@ void SingletonClusterImpl::Updated(TxGraphImpl& graph, int level, bool rename) n
     if (level == 0 && (rename || IsAcceptable())) {
         entry.m_main_lin_index = 0;
         entry.m_main_chunk_feerate = m_feerate;
+        entry.m_main_equal_feerate_chunk_prefix_size = m_feerate.size;
         // Always use the special LinearizationIndex(-1), indicating singleton chunk at end of
         // Cluster, here.
         if (!rename) graph.CreateChunkData(m_graph_index, LinearizationIndex(-1));
@@ -2779,6 +2808,8 @@ void GenericClusterImpl::SanityCheck(const TxGraphImpl& graph, int level) const
     LinearizationIndex linindex{0};
     DepGraphIndex chunk_pos{0}; //!< position within the current chunk
     assert(m_depgraph.IsAcyclic());
+    if (m_linearization.empty()) return;
+    FeeFrac equal_feerate_prefix = linchunking[chunk_num].feerate;
     for (auto lin_pos : m_linearization) {
         assert(lin_pos < m_mapping.size());
         const auto& entry = graph.m_entries[m_mapping[lin_pos]];
@@ -2795,10 +2826,18 @@ void GenericClusterImpl::SanityCheck(const TxGraphImpl& graph, int level) const
             assert(entry.m_main_lin_index == linindex);
             ++linindex;
             if (!linchunking[chunk_num].transactions[lin_pos]) {
+                // First transaction of a new chunk.
                 ++chunk_num;
                 chunk_pos = 0;
+                if (linchunking[chunk_num].feerate << equal_feerate_prefix) {
+                    equal_feerate_prefix = linchunking[chunk_num].feerate;
+                } else {
+                    assert(!(linchunking[chunk_num].feerate >> equal_feerate_prefix));
+                    equal_feerate_prefix += linchunking[chunk_num].feerate;
+                }
             }
             assert(entry.m_main_chunk_feerate == linchunking[chunk_num].feerate);
+            assert(entry.m_main_equal_feerate_chunk_prefix_size == equal_feerate_prefix.size);
             // Verify that an entry in the chunk index exists for every chunk-ending transaction.
             ++chunk_pos;
             if (graph.m_main_clusterset.m_to_remove.empty()) {
@@ -2834,6 +2873,7 @@ void SingletonClusterImpl::SanityCheck(const TxGraphImpl& graph, int level) cons
         if (level == 0 && IsAcceptable()) {
             assert(entry.m_main_lin_index == 0);
             assert(entry.m_main_chunk_feerate == m_feerate);
+            assert(entry.m_main_equal_feerate_chunk_prefix_size == m_feerate.size);
             if (graph.m_main_clusterset.m_to_remove.empty()) {
                 assert(entry.m_main_chunkindex_iterator != graph.m_main_chunkindex.end());
                 auto& chunk_data = *entry.m_main_chunkindex_iterator;
