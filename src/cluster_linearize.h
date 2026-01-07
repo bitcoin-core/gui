@@ -462,6 +462,16 @@ std::vector<FeeFrac> ChunkLinearization(const DepGraph<SetType>& depgraph, std::
     return ret;
 }
 
+/** Concept for function objects that return std::strong_ordering when invoked with two Args. */
+template<typename F, typename Arg>
+concept StrongComparator =
+    std::regular_invocable<F, Arg, Arg> &&
+    std::is_same_v<std::invoke_result_t<F, Arg, Arg>, std::strong_ordering>;
+
+/** Simple default transaction ordering function for SpanningForestState::GetLinearization() and
+ *  Linearize(), which just sorts by DepGraphIndex. */
+using IndexTxOrder = std::compare_three_way;
+
 /** Class to represent the internal state of the spanning-forest linearization (SFL) algorithm.
  *
  * At all times, each dependency is marked as either "active" or "inactive". The subset of active
@@ -636,7 +646,7 @@ private:
     InsecureRandomContext m_rng;
 
     /** Data type to represent indexing into m_tx_data. */
-    using TxIdx = uint32_t;
+    using TxIdx = DepGraphIndex;
     /** Data type to represent indexing into m_dep_data. */
     using DepIdx = uint32_t;
 
@@ -1240,15 +1250,30 @@ public:
     }
 
     /** Construct a topologically-valid linearization from the current forest state. Must be
-     *  topological. */
-    std::vector<DepGraphIndex> GetLinearization() noexcept
+     *  topological. fallback_order is a comparator that defines a strong order for DepGraphIndexes
+     *  in this cluster, used to order equal-feerate transactions and chunks.
+     *
+     * Specifically, the resulting order consists of:
+     * - The chunks of the current SFL state, sorted by (in decreasing order of priority):
+     *   - topology (parents before children)
+     *   - highest chunk feerate first
+     *   - smallest chunk size first
+     *   - the chunk with the lowest maximum transaction, by fallback_order, first
+     * - The transactions within a chunk, sorted by (in decreasing order of priority):
+     *   - topology (parents before children)
+     *   - highest tx feerate first
+     *   - smallest tx size first
+     *   - the lowest transaction, by fallback_order, first
+     */
+    std::vector<DepGraphIndex> GetLinearization(const StrongComparator<DepGraphIndex> auto& fallback_order) const noexcept
     {
         /** The output linearization. */
         std::vector<DepGraphIndex> ret;
         ret.reserve(m_transaction_idxs.Count());
         /** A heap with all chunks (by representative) that can currently be included, sorted by
-         *  chunk feerate (high to low), chunk size (small to large), and a random tie-breaker. */
-        std::vector<std::pair<TxIdx, uint64_t>> ready_chunks;
+         *  chunk feerate (high to low), chunk size (small to large), and by least maximum element
+         *  according to the fallback order (which is the second pair element). */
+        std::vector<std::pair<TxIdx, TxIdx>> ready_chunks;
         /** Information about chunks:
          *  - The first value is only used for chunk representatives, and counts the number of
          *    unmet dependencies this chunk has on other chunks (not including dependencies within
@@ -1259,8 +1284,8 @@ public:
         /** The set of all chunk representatives. */
         SetType chunk_reps;
         /** A heap with all transactions within the current chunk that can be included, sorted by
-         *  tx feerate (high to low), tx size (small to large), and a random tie-breaker. */
-        std::vector<std::pair<TxIdx, uint64_t>> ready_tx;
+         *  tx feerate (high to low), tx size (small to large), and fallback order. */
+        std::vector<TxIdx> ready_tx;
         // Populate chunk_deps[c] with the number of {out-of-chunk dependencies, dependencies} the
         // child has.
         for (TxIdx chl_idx : m_transaction_idxs) {
@@ -1273,27 +1298,45 @@ public:
                 chunk_deps[chl_chunk_rep].first += (par_chunk_rep != chl_chunk_rep);
             }
         }
+        /** Function to compute the highest element of a chunk, by fallback_order. */
+        auto max_fallback_fn = [&](TxIdx chunk_rep) noexcept {
+            auto& chunk = m_tx_data[chunk_rep].chunk_setinfo.transactions;
+            auto it = chunk.begin();
+            DepGraphIndex ret = *it;
+            ++it;
+            while (it != chunk.end()) {
+                if (fallback_order(*it, ret) > 0) ret = *it;
+                ++it;
+            }
+            return ret;
+        };
         /** Comparison function for the transaction heap. Note that it is a max-heap, so
          *  tx_cmp_fn(a, b) == true means "a appears after b in the linearization". */
         auto tx_cmp_fn = [&](const auto& a, const auto& b) noexcept {
+            // Bail out for identical transactions.
+            if (a == b) return false;
             // First sort by increasing transaction feerate.
-            auto& a_feerate = m_depgraph.FeeRate(a.first);
-            auto& b_feerate = m_depgraph.FeeRate(b.first);
+            auto& a_feerate = m_depgraph.FeeRate(a);
+            auto& b_feerate = m_depgraph.FeeRate(b);
             auto feerate_cmp = FeeRateCompare(a_feerate, b_feerate);
             if (feerate_cmp != 0) return feerate_cmp < 0;
             // Then by decreasing transaction size.
             if (a_feerate.size != b_feerate.size) {
                 return a_feerate.size > b_feerate.size;
             }
-            // Tie-break randomly.
-            if (a.second != b.second) return a.second < b.second;
-            // Lastly, tie-break by TxIdx.
-            return a.first < b.first;
+            // Tie-break by decreasing fallback_order.
+            auto fallback_cmp = fallback_order(a, b);
+            if (fallback_cmp != 0) return fallback_cmp > 0;
+            // This should not be hit, because fallback_order defines a strong ordering.
+            Assume(false);
+            return a < b;
         };
         // Construct a heap with all chunks that have no out-of-chunk dependencies.
         /** Comparison function for the chunk heap. Note that it is a max-heap, so
          *  chunk_cmp_fn(a, b) == true means "a appears after b in the linearization". */
-        auto chunk_cmp_fn = [&](const std::pair<TxIdx, uint64_t>& a, const std::pair<TxIdx, uint64_t>& b) noexcept {
+        auto chunk_cmp_fn = [&](const auto& a, const auto& b) noexcept {
+            // Bail out for identical chunks.
+            if (a.first == b.first) return false;
             // First sort by increasing chunk feerate.
             auto& chunk_feerate_a = m_tx_data[a.first].chunk_setinfo.feerate;
             auto& chunk_feerate_b = m_tx_data[b.first].chunk_setinfo.feerate;
@@ -1303,13 +1346,18 @@ public:
             if (chunk_feerate_a.size != chunk_feerate_b.size) {
                 return chunk_feerate_a.size > chunk_feerate_b.size;
             }
-            // Tie-break randomly.
-            if (a.second != b.second) return a.second < b.second;
-            // Lastly, tie-break by chunk representative.
-            return a.first < b.first;
+            // Tie-break by decreasing fallback_order.
+            auto fallback_cmp = fallback_order(a.second, b.second);
+            if (fallback_cmp != 0) return fallback_cmp > 0;
+            // This should not be hit, because fallback_order defines a strong ordering.
+            Assume(false);
+            return a.second < b.second;
         };
+        // Construct a heap with all chunks that have no out-of-chunk dependencies.
         for (TxIdx chunk_rep : chunk_reps) {
-            if (chunk_deps[chunk_rep].first == 0) ready_chunks.emplace_back(chunk_rep, m_rng.rand64());
+            if (chunk_deps[chunk_rep].first == 0) {
+                ready_chunks.emplace_back(chunk_rep, max_fallback_fn(chunk_rep));
+            }
         }
         std::make_heap(ready_chunks.begin(), ready_chunks.end(), chunk_cmp_fn);
         // Pop chunks off the heap.
@@ -1323,9 +1371,7 @@ public:
             // Build heap of all includable transactions in chunk.
             Assume(ready_tx.empty());
             for (TxIdx tx_idx : chunk_txn) {
-                if (chunk_deps[tx_idx].second == 0) {
-                    ready_tx.emplace_back(tx_idx, m_rng.rand64());
-                }
+                if (chunk_deps[tx_idx].second == 0) ready_tx.push_back(tx_idx);
             }
             Assume(!ready_tx.empty());
             std::make_heap(ready_tx.begin(), ready_tx.end(), tx_cmp_fn);
@@ -1333,7 +1379,7 @@ public:
             // dependency counts.
             while (!ready_tx.empty()) {
                 // Pop an element from the tx_ready heap.
-                auto [tx_idx, _rnd] = ready_tx.front();
+                auto tx_idx = ready_tx.front();
                 std::pop_heap(ready_tx.begin(), ready_tx.end(), tx_cmp_fn);
                 ready_tx.pop_back();
                 // Append to linearization.
@@ -1346,7 +1392,7 @@ public:
                     Assume(chunk_deps[chl_idx].second > 0);
                     if (--chunk_deps[chl_idx].second == 0 && chunk_txn[chl_idx]) {
                         // Child tx has no dependencies left, and is in this chunk. Add it to the tx heap.
-                        ready_tx.emplace_back(chl_idx, m_rng.rand64());
+                        ready_tx.push_back(chl_idx);
                         std::push_heap(ready_tx.begin(), ready_tx.end(), tx_cmp_fn);
                     }
                     // Decrement chunk dependency count if this is out-of-chunk dependency.
@@ -1354,7 +1400,7 @@ public:
                         Assume(chunk_deps[chl_data.chunk_rep].first > 0);
                         if (--chunk_deps[chl_data.chunk_rep].first == 0) {
                             // Child chunk has no dependencies left. Add it to the chunk heap.
-                            ready_chunks.emplace_back(chl_data.chunk_rep, m_rng.rand64());
+                            ready_chunks.emplace_back(chl_data.chunk_rep, max_fallback_fn(chl_data.chunk_rep));
                             std::push_heap(ready_chunks.begin(), ready_chunks.end(), chunk_cmp_fn);
                         }
                     }
@@ -1546,6 +1592,9 @@ public:
  * @param[in] rng_seed            A random number seed to control search order. This prevents peers
  *                                from predicting exactly which clusters would be hard for us to
  *                                linearize.
+ * @param[in] fallback_order      A comparator to order transactions, used to sort equal-feerate
+ *                                chunks and transactions. See SpanningForestState::GetLinearization
+ *                                for details.
  * @param[in] old_linearization   An existing linearization for the cluster, or empty.
  * @param[in] is_topological      (Only relevant if old_linearization is not empty) Whether
  *                                old_linearization is topologically valid.
@@ -1557,7 +1606,13 @@ public:
  *                                - How many optimization steps were actually performed.
  */
 template<typename SetType>
-std::tuple<std::vector<DepGraphIndex>, bool, uint64_t> Linearize(const DepGraph<SetType>& depgraph, uint64_t max_iterations, uint64_t rng_seed, std::span<const DepGraphIndex> old_linearization = {}, bool is_topological = true) noexcept
+std::tuple<std::vector<DepGraphIndex>, bool, uint64_t> Linearize(
+    const DepGraph<SetType>& depgraph,
+    uint64_t max_iterations,
+    uint64_t rng_seed,
+    const StrongComparator<DepGraphIndex> auto& fallback_order,
+    std::span<const DepGraphIndex> old_linearization = {},
+    bool is_topological = true) noexcept
 {
     /** Initialize a spanning forest data structure for this cluster. */
     SpanningForestState forest(depgraph, rng_seed);
@@ -1587,7 +1642,7 @@ std::tuple<std::vector<DepGraphIndex>, bool, uint64_t> Linearize(const DepGraph<
             }
         } while (forest.GetCost() < max_iterations);
     }
-    return {forest.GetLinearization(), optimal, forest.GetCost()};
+    return {forest.GetLinearization(fallback_order), optimal, forest.GetCost()};
 }
 
 /** Improve a given linearization.
