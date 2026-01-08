@@ -4,6 +4,7 @@
 
 #include <compare>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <utility>
@@ -253,9 +254,20 @@ public:
 };
 
 /** Construct a new TxGraph with the specified limit on the number of transactions within a cluster,
- *  and on the sum of transaction sizes within a cluster. max_cluster_count cannot exceed
- *  MAX_CLUSTER_COUNT_LIMIT. acceptable_iters controls how many linearization optimization
- *  steps will be performed per cluster before they are considered to be of acceptable quality. */
-std::unique_ptr<TxGraph> MakeTxGraph(unsigned max_cluster_count, uint64_t max_cluster_size, uint64_t acceptable_iters) noexcept;
+ *  and on the sum of transaction sizes within a cluster.
+ *
+ * - max_cluster_count cannot exceed MAX_CLUSTER_COUNT_LIMIT.
+ * - acceptable_iters controls how many linearization optimization steps will be performed per
+ *   cluster before they are considered to be of acceptable quality.
+ * - fallback_order determines how to break tie-breaks between transactions:
+ *   fallback_order(a, b) < 0 means a is "better" than b, and will (in case of ties) be placed
+ *   first. This ordering must be stable over the transactions' lifetimes.
+ */
+std::unique_ptr<TxGraph> MakeTxGraph(
+    unsigned max_cluster_count,
+    uint64_t max_cluster_size,
+    uint64_t acceptable_iters,
+    const std::function<std::strong_ordering(const TxGraph::Ref&, const TxGraph::Ref&)>& fallback_order
+) noexcept;
 
 #endif // BITCOIN_TXGRAPH_H

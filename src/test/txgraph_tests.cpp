@@ -13,9 +13,18 @@
 
 BOOST_AUTO_TEST_SUITE(txgraph_tests)
 
+namespace {
+
 /** The number used as acceptable_iters argument in these tests. High enough that everything
  *  should be optimal, always. */
-static constexpr uint64_t NUM_ACCEPTABLE_ITERS = 100'000'000;
+constexpr uint64_t NUM_ACCEPTABLE_ITERS = 100'000'000;
+
+std::strong_ordering PointerComparator(const TxGraph::Ref& a, const TxGraph::Ref& b) noexcept
+{
+    return (&a) <=> (&b);
+}
+
+} // namespace
 
 BOOST_AUTO_TEST_CASE(txgraph_trim_zigzag)
 {
@@ -39,7 +48,7 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_zigzag)
     static constexpr int32_t MAX_CLUSTER_SIZE = 100'000 * 100;
 
     // Create a new graph for the test.
-    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     // Add all transactions and store their Refs.
     std::vector<TxGraph::Ref> refs;
@@ -102,7 +111,7 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_flower)
     /** Set a very large cluster size limit so that only the count limit is triggered. */
     static constexpr int32_t MAX_CLUSTER_SIZE = 100'000 * 100;
 
-    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     // Add all transactions and store their Refs.
     std::vector<TxGraph::Ref> refs;
@@ -188,7 +197,7 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_huge)
     std::vector<size_t> top_components;
 
     FastRandomContext rng;
-    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     // Construct the top chains.
     for (int chain = 0; chain < NUM_TOP_CHAINS; ++chain) {
@@ -261,7 +270,7 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_big_singletons)
     static constexpr int NUM_TOTAL_TX = 100;
 
     // Create a new graph for the test.
-    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(MAX_CLUSTER_COUNT, MAX_CLUSTER_SIZE, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     // Add all transactions and store their Refs.
     std::vector<TxGraph::Ref> refs;
@@ -295,7 +304,7 @@ BOOST_AUTO_TEST_CASE(txgraph_trim_big_singletons)
 BOOST_AUTO_TEST_CASE(txgraph_chunk_chain)
 {
     // Create a new graph for the test.
-    auto graph = MakeTxGraph(50, 1000, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(50, 1000, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     auto block_builder_checker = [&graph](std::vector<std::vector<TxGraph::Ref*>> expected_chunks) {
         std::vector<std::vector<TxGraph::Ref*>> chunks;
@@ -374,7 +383,7 @@ BOOST_AUTO_TEST_CASE(txgraph_staging)
     /* Create a new graph for the test.
      * The parameters are max_cluster_count, max_cluster_size, acceptable_iters
      */
-    auto graph = MakeTxGraph(10, 1000, NUM_ACCEPTABLE_ITERS);
+    auto graph = MakeTxGraph(10, 1000, NUM_ACCEPTABLE_ITERS, PointerComparator);
 
     std::vector<TxGraph::Ref> refs;
     refs.reserve(2);
