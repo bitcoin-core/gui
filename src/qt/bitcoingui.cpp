@@ -737,6 +737,8 @@ void BitcoinGUI::enableHistoryAction(bool privacy)
     if (walletFrame->currentWalletModel()) {
         historyAction->setEnabled(!privacy);
         if (historyAction->isChecked()) gotoOverviewPage();
+    } else if (privacy) {
+        historyAction->setEnabled(false);
     }
 }
 
