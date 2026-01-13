@@ -14,7 +14,9 @@
 #include <interfaces/handler.h>
 #include <interfaces/init.h>
 #include <interfaces/node.h>
+#include <interfaces/snapshot.h>
 #include <logging.h>
+#include <validation.h>
 #include <node/context.h>
 #include <node/interface_ui.h>
 #include <noui.h>
@@ -35,7 +37,6 @@
 #include <util/string.h>
 #include <util/threadnames.h>
 #include <util/translation.h>
-#include <validation.h>
 
 #ifdef ENABLE_WALLET
 #include <qt/paymentserver.h>
@@ -319,6 +320,12 @@ void BitcoinApplication::InitPruneSetting(int64_t prune_MiB)
     optionsModel->SetPruneTargetGB(PruneMiBtoGB(prune_MiB));
 }
 
+void BitcoinApplication::setSnapshotPath(const QString& snapshot_path)
+{
+    qDebug() << "setSnapshotPath called with:" << snapshot_path;
+    m_snapshot_path = snapshot_path;
+}
+
 void BitcoinApplication::requestInitialize()
 {
     qDebug() << __func__ << ": Requesting initialize";
@@ -386,7 +393,7 @@ void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHead
 
         // Log this only after AppInitMain finishes, as then logging setup is guaranteed complete
         qInfo() << "Platform customization:" << platformStyle->getName();
-        clientModel = new ClientModel(node(), optionsModel);
+        clientModel = new ClientModel(node(), optionsModel, this, m_snapshot_path);
         window->setClientModel(clientModel, &tip_info);
 
         // If '-min' option passed, start window minimized (iconified) or minimized to tray
@@ -575,8 +582,9 @@ int GuiMain(int argc, char* argv[])
     // User language is set up: pick a data directory
     bool did_show_intro = false;
     int64_t prune_MiB = 0;  // Intro dialog prune configuration
+    QString snapshot_path;  // Intro dialog snapshot path
     // Gracefully exit if the user cancels
-    if (!Intro::showIfNeeded(did_show_intro, prune_MiB)) return EXIT_SUCCESS;
+    if (!Intro::showIfNeeded(did_show_intro, prune_MiB, snapshot_path)) return EXIT_SUCCESS;
 
     /// 6-7. Parse bitcoin.conf, determine network, switch to network specific
     /// options, and create datadir and settings.json.
@@ -655,6 +663,11 @@ int GuiMain(int argc, char* argv[])
     if (did_show_intro) {
         // Store intro dialog settings other than datadir (network specific)
         app.InitPruneSetting(prune_MiB);
+    }
+
+    // Store snapshot path for later loading after node initialization
+    if (!snapshot_path.isEmpty()) {
+        app.setSnapshotPath(snapshot_path);
     }
 
     try
