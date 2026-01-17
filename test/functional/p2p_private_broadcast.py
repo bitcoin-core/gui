@@ -36,6 +36,7 @@ from test_framework.test_framework import (
 )
 from test_framework.util import (
     assert_equal,
+    assert_greater_than_or_equal,
     assert_not_equal,
     assert_raises_rpc_error,
     p2p_port,
@@ -301,6 +302,16 @@ class P2PPrivateBroadcast(BitcoinTestFramework):
             self.log.info(f"{label}: ok: outbound connection i={i} is private broadcast of txid={tx['txid']}")
             broadcasts_done += 1
 
+        # Verify the tx we just observed is tracked in getprivatebroadcastinfo.
+        pbinfo = self.nodes[0].getprivatebroadcastinfo()
+        pending = [t for t in pbinfo["transactions"] if t["txid"] == tx["txid"] and t["wtxid"] == tx["wtxid"]]
+        assert_equal(len(pending), 1)
+        assert_equal(pending[0]["hex"].lower(), tx["hex"].lower())
+        peers = pending[0]["peers"]
+        assert len(peers) >= NUM_PRIVATE_BROADCAST_PER_TX
+        assert all("address" in p and "sent" in p for p in peers)
+        assert_greater_than_or_equal(sum(1 for p in peers if "received" in p), NUM_PRIVATE_BROADCAST_PER_TX)
+
     def run_test(self):
         tx_originator = self.nodes[0]
         tx_receiver = self.nodes[1]
@@ -365,6 +376,11 @@ class P2PPrivateBroadcast(BitcoinTestFramework):
 
         self.log.info("Waiting for normal broadcast to another peer")
         self.destinations[1]["node"].wait_for_inv([inv])
+
+        self.log.info("Checking getprivatebroadcastinfo no longer reports the transaction after it is received back")
+        pbinfo = tx_originator.getprivatebroadcastinfo()
+        pending = [t for t in pbinfo["transactions"] if t["txid"] == txs[0]["txid"] and t["wtxid"] == txs[0]["wtxid"]]
+        assert_equal(len(pending), 0)
 
         self.log.info("Sending a transaction that is already in the mempool")
         skip_destinations = len(self.destinations)
