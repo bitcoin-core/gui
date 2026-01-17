@@ -382,6 +382,25 @@ class P2PPrivateBroadcast(BitcoinTestFramework):
         pending = [t for t in pbinfo["transactions"] if t["txid"] == txs[0]["txid"] and t["wtxid"] == txs[0]["wtxid"]]
         assert_equal(len(pending), 0)
 
+        self.log.info("Checking abortprivatebroadcast removes a pending private-broadcast transaction")
+        tx_abort = wallet.create_self_transfer()
+        tx_originator.sendrawtransaction(hexstring=tx_abort["hex"], maxfeerate=0.1)
+        assert any(t["wtxid"] == tx_abort["wtxid"] for t in tx_originator.getprivatebroadcastinfo()["transactions"])
+        abort_res = tx_originator.abortprivatebroadcast(tx_abort["txid"])
+        assert_equal(len(abort_res["removed_transactions"]), 1)
+        assert_equal(abort_res["removed_transactions"][0]["txid"], tx_abort["txid"])
+        assert_equal(abort_res["removed_transactions"][0]["wtxid"], tx_abort["wtxid"])
+        assert_equal(abort_res["removed_transactions"][0]["hex"].lower(), tx_abort["hex"].lower())
+        assert all(t["wtxid"] != tx_abort["wtxid"] for t in tx_originator.getprivatebroadcastinfo()["transactions"])
+
+        self.log.info("Checking abortprivatebroadcast fails for non-existent transaction")
+        assert_raises_rpc_error(
+            -5,
+            "Transaction not in private broadcast queue",
+            tx_originator.abortprivatebroadcast,
+            "0" * 64,
+        )
+
         self.log.info("Sending a transaction that is already in the mempool")
         skip_destinations = len(self.destinations)
         tx_originator.sendrawtransaction(hexstring=txs[0]["hex"], maxfeerate=0)
