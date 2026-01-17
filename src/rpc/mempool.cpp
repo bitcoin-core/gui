@@ -137,6 +137,71 @@ static RPCHelpMan sendrawtransaction()
     };
 }
 
+static RPCHelpMan getprivatebroadcastinfo()
+{
+    return RPCHelpMan{
+        "getprivatebroadcastinfo",
+        "Returns information about transactions that are currently being privately broadcast.\n",
+        {},
+        RPCResult{
+            RPCResult::Type::OBJ, "", "",
+            {
+                {RPCResult::Type::ARR, "transactions", "",
+                    {
+                        {RPCResult::Type::OBJ, "", "",
+                            {
+                                {RPCResult::Type::STR_HEX, "txid", "The transaction hash in hex"},
+                                {RPCResult::Type::STR_HEX, "wtxid", "The transaction witness hash in hex"},
+                                {RPCResult::Type::STR_HEX, "hex", "The serialized, hex-encoded transaction data"},
+                                {RPCResult::Type::ARR, "peers", "Per-peer send and acknowledgment information for this transaction",
+                                    {
+                                        {RPCResult::Type::OBJ, "", "",
+                                            {
+                                                {RPCResult::Type::STR, "address", "The address of the peer to which the transaction was sent"},
+                                                {RPCResult::Type::NUM_TIME, "sent", "The time this transaction was picked for sending to this peer via private broadcast (seconds since epoch)"},
+                                                {RPCResult::Type::NUM_TIME, "received", /*optional=*/true, "The time this peer acknowledged reception of the transaction (seconds since epoch)"},
+                                            }},
+                                    }},
+                            }},
+                    }},
+            }},
+        RPCExamples{
+            HelpExampleCli("getprivatebroadcastinfo", "")
+            + HelpExampleRpc("getprivatebroadcastinfo", "")
+        },
+        [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
+        {
+            const NodeContext& node{EnsureAnyNodeContext(request.context)};
+            const PeerManager& peerman{EnsurePeerman(node)};
+            const auto txs{peerman.GetPrivateBroadcastInfo()};
+
+            UniValue transactions(UniValue::VARR);
+            for (const auto& tx_info : txs) {
+                UniValue o(UniValue::VOBJ);
+                o.pushKV("txid", tx_info.tx->GetHash().ToString());
+                o.pushKV("wtxid", tx_info.tx->GetWitnessHash().ToString());
+                o.pushKV("hex", EncodeHexTx(*tx_info.tx));
+                UniValue peers(UniValue::VARR);
+                for (const auto& peer : tx_info.peers) {
+                    UniValue p(UniValue::VOBJ);
+                    p.pushKV("address", peer.address.ToStringAddrPort());
+                    p.pushKV("sent", TicksSinceEpoch<std::chrono::seconds>(peer.sent));
+                    if (peer.received.has_value()) {
+                        p.pushKV("received", TicksSinceEpoch<std::chrono::seconds>(*peer.received));
+                    }
+                    peers.push_back(std::move(p));
+                }
+                o.pushKV("peers", std::move(peers));
+                transactions.push_back(std::move(o));
+            }
+
+            UniValue ret(UniValue::VOBJ);
+            ret.pushKV("transactions", std::move(transactions));
+            return ret;
+        },
+    };
+}
+
 static RPCHelpMan testmempoolaccept()
 {
     return RPCHelpMan{
@@ -1329,6 +1394,7 @@ void RegisterMempoolRPCCommands(CRPCTable& t)
 {
     static const CRPCCommand commands[]{
         {"rawtransactions", &sendrawtransaction},
+        {"rawtransactions", &getprivatebroadcastinfo},
         {"rawtransactions", &testmempoolaccept},
         {"blockchain", &getmempoolancestors},
         {"blockchain", &getmempooldescendants},
