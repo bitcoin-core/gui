@@ -29,4 +29,18 @@ private:
     std::source_location m_loc;
 };
 
+namespace util::log {
+enum class Level {
+    Trace = 0, // High-volume or detailed logging for development/debugging
+    Debug,     // Reasonably noisy logging, but still usable in production
+    Info,      // Default
+    Warning,
+    Error,
+};
+} // namespace util::log
+
+namespace BCLog {
+//! Alias for compatibility. Prefer util::log::Level over BCLog::Level in new code.
+using Level = util::log::Level;
+} // namespace BCLog
 #endif // BITCOIN_UTIL_LOG_H
