@@ -17,6 +17,9 @@
 #include <qt/transactiontablemodel.h>
 #include <qt/transactionview.h>
 #include <qt/walletmodel.h>
+#include <qt/coincontroldialog.h>
+#include <wallet/coincontrol.h>
+#include <QDialogButtonBox>
 
 #include <interfaces/node.h>
 #include <node/interface_ui.h>
@@ -69,10 +72,26 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
     usedReceivingAddressesPage->setModel(walletModel->getAddressTableModel());
 
+    // Create embedded Coins (UTXOs) page
+    coinsPage = new QWidget(this);
+    {
+        QVBoxLayout* coinsLayout = new QVBoxLayout(coinsPage);
+        coinsWidget = new CoinControlDialog(coinsPageCoinControl, walletModel, platformStyle, coinsPage);
+        coinsWidget->setViewOnly(true);
+        // Make it behave as a plain widget in-page
+        coinsWidget->setWindowFlags(Qt::Widget);
+        // Hide the dialog button box when embedded
+        if (auto bb = coinsWidget->findChild<QDialogButtonBox*>("buttonBox")) {
+            bb->setVisible(false);
+        }
+        coinsLayout->addWidget(coinsWidget);
+    }
+
     addWidget(overviewPage);
     addWidget(transactionsPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(coinsPage);
 
     connect(overviewPage, &OverviewPage::transactionClicked, this, &WalletView::transactionClicked);
     // Clicking on a transaction on the overview pre-selects the transaction on the transaction history page
@@ -164,6 +183,17 @@ void WalletView::gotoSendCoinsPage(QString addr)
 
     if (!addr.isEmpty())
         sendCoinsPage->setAddress(addr);
+}
+
+void WalletView::gotoCoinsPage()
+{
+    setCurrentWidget(coinsPage);
+}
+
+void WalletView::showCoinsDialog()
+{
+    if (!walletModel) return;
+    gotoCoinsPage();
 }
 
 void WalletView::gotoSignMessageTab(QString addr)
