@@ -18,10 +18,13 @@
 #include <util/hasher.h>
 
 #include <cassert>
+#include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -35,6 +38,62 @@ bool operator==(const Coin& a, const Coin& b)
     if (a.IsSpent() && b.IsSpent()) return true;
     return a.fCoinBase == b.fCoinBase && a.nHeight == b.nHeight && a.out == b.out;
 }
+
+/**
+ * MutationGuardCoinsViewCache asserts that nothing mutates cacheCoins until
+ * BatchWrite is called. It keeps a snapshot of the cacheCoins state, which it
+ * uses for the assertion in BatchWrite. After the call to the superclass
+ * CCoinsViewCache::BatchWrite returns, it recomputes the snapshot at that
+ * moment.
+ */
+class MutationGuardCoinsViewCache final : public CCoinsViewCache
+{
+private:
+    struct CacheCoinSnapshot {
+        COutPoint outpoint;
+        bool dirty{false};
+        bool fresh{false};
+        Coin coin;
+        bool operator==(const CacheCoinSnapshot&) const = default;
+    };
+
+    std::vector<CacheCoinSnapshot> ComputeCacheCoinsSnapshot() const
+    {
+        std::vector<CacheCoinSnapshot> snapshot;
+        snapshot.reserve(cacheCoins.size());
+
+        for (const auto& [outpoint, entry] : cacheCoins) {
+            snapshot.emplace_back(outpoint, entry.IsDirty(), entry.IsFresh(), entry.coin);
+        }
+
+        std::ranges::sort(snapshot, std::less<>{}, &CacheCoinSnapshot::outpoint);
+        return snapshot;
+    }
+
+    mutable std::vector<CacheCoinSnapshot> m_expected_snapshot{ComputeCacheCoinsSnapshot()};
+
+public:
+    void BatchWrite(CoinsViewCacheCursor& cursor, const uint256& block_hash) override
+    {
+        // Nothing must modify cacheCoins other than BatchWrite.
+        assert(ComputeCacheCoinsSnapshot() == m_expected_snapshot);
+        try {
+            CCoinsViewCache::BatchWrite(cursor, block_hash);
+        } catch (const std::logic_error& e) {
+            // This error is thrown if the cursor contains a fresh entry for an outpoint that we already have a fresh
+            // entry for. This can happen if the fuzzer calls AddCoin -> Flush -> AddCoin -> Flush on the child cache.
+            // There's not an easy way to prevent the fuzzer from reaching this, so we handle it here.
+            // Since it is thrown in the middle of the write, we reset our own state and iterate through
+            // the cursor so the caller's state is also reset.
+            assert(e.what() == std::string{"FRESH flag misapplied to coin that exists in parent cache"});
+            Reset();
+            for (auto it{cursor.Begin()}; it != cursor.End(); it = cursor.NextAndMaybeErase(*it)) {}
+        }
+        m_expected_snapshot = ComputeCacheCoinsSnapshot();
+    }
+
+    using CCoinsViewCache::CCoinsViewCache;
+};
 } // namespace
 
 void initialize_coins_view()
@@ -194,8 +253,10 @@ void TestCoinsView(FuzzedDataProvider& fuzzed_data_provider, CCoinsViewCache& co
     }
 
     {
-        std::unique_ptr<CCoinsViewCursor> coins_view_cursor = backend_coins_view.Cursor();
-        assert(is_db == !!coins_view_cursor);
+        if (is_db) {
+            std::unique_ptr<CCoinsViewCursor> coins_view_cursor = backend_coins_view.Cursor();
+            assert(!!coins_view_cursor);
+        }
         (void)backend_coins_view.EstimateSize();
         (void)backend_coins_view.GetBestBlock();
         (void)backend_coins_view.GetHeadBlocks();
@@ -326,4 +387,17 @@ FUZZ_TARGET(coins_view_db, .init = initialize_coins_view)
     CCoinsViewDB backend_coins_view{std::move(db_params), CoinsViewOptions{}};
     CCoinsViewCache coins_view_cache{&backend_coins_view, /*deterministic=*/true};
     TestCoinsView(fuzzed_data_provider, coins_view_cache, backend_coins_view, /*is_db=*/true);
+}
+
+// Creates a CoinsViewOverlay and a MutationGuardCoinsViewCache as the base.
+// This allows us to exercise all methods on a CoinsViewOverlay, while also
+// ensuring that nothing can mutate the underlying cache until Flush or Sync is
+// called.
+FUZZ_TARGET(coins_view_overlay, .init = initialize_coins_view)
+{
+    FuzzedDataProvider fuzzed_data_provider{buffer.data(), buffer.size()};
+    CCoinsView backend_base_coins_view;
+    MutationGuardCoinsViewCache backend_cache{&backend_base_coins_view, /*deterministic=*/true};
+    CoinsViewOverlay coins_view_cache{&backend_cache, /*deterministic=*/true};
+    TestCoinsView(fuzzed_data_provider, coins_view_cache, backend_cache, /*is_db=*/false);
 }
