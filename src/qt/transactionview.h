@@ -19,6 +19,7 @@ class TransactionFilterProxy;
 class WalletModel;
 
 QT_BEGIN_NAMESPACE
+class QCheckBox;
 class QComboBox;
 class QDateTimeEdit;
 class QFrame;
@@ -71,6 +72,7 @@ private:
 
     QComboBox *dateWidget;
     QComboBox *typeWidget;
+    QCheckBox *hideConflictedWidget;
     QLineEdit *search_widget;
     QLineEdit *amountWidget;
 
