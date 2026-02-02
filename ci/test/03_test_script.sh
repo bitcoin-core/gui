@@ -116,7 +116,6 @@ if [ -z "$NO_WERROR" ]; then
 fi
 
 ccache --zero-stats
-PRINT_CCACHE_STATISTICS="ccache --version | head -n 1 && ccache --show-stats"
 
 # Folder where the build is done.
 BASE_BUILD_DIR=${BASE_BUILD_DIR:-$BASE_SCRATCH_DIR/build-$HOST}
@@ -147,7 +146,7 @@ cmake --build "${BASE_BUILD_DIR}" "$MAKEJOBS" --target $GOAL || (
   false
 )
 
-bash -c "${PRINT_CCACHE_STATISTICS}"
+ccache --version | head -n 1 && ccache --show-stats --verbose
 hit_rate=$(ccache --show-stats | grep "Hits:" | head -1 | sed 's/.*(\(.*\)%).*/\1/')
 if [ "${hit_rate%.*}" -lt 75 ]; then
   echo "::notice title=low ccache hitrate::Ccache hit-rate in $CONTAINER_NAME was $hit_rate%"
