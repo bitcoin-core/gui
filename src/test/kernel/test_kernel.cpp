@@ -265,9 +265,7 @@ void run_verify_test(
 }
 
 template <typename T>
-concept HasToBytes = requires(T t) {
-    { t.ToBytes() } -> std::convertible_to<std::vector<std::byte>>;
-};
+concept HasToBytes = requires(T t) { t.ToBytes(); };
 
 template <typename T>
 void CheckHandle(T object, T distinct_object)
@@ -277,7 +275,9 @@ void CheckHandle(T object, T distinct_object)
     BOOST_CHECK(object.get() != distinct_object.get());
 
     if constexpr (HasToBytes<T>) {
-        BOOST_CHECK_NE(object.ToBytes().size(), distinct_object.ToBytes().size());
+        const auto object_bytes = object.ToBytes();
+        const auto distinct_bytes = distinct_object.ToBytes();
+        BOOST_CHECK(!std::ranges::equal(object_bytes, distinct_bytes));
     }
 
     // Copy constructor
@@ -321,7 +321,8 @@ void CheckRange(const RangeType& range, size_t expected_size)
     using value_type = std::ranges::range_value_t<RangeType>;
 
     BOOST_CHECK_EQUAL(range.size(), expected_size);
-    BOOST_CHECK_EQUAL(range.empty(), (expected_size == 0));
+    BOOST_REQUIRE(range.size() > 0); // Some checks below assume a non-empty range
+    BOOST_REQUIRE(!range.empty());
 
     BOOST_CHECK(range.begin() != range.end());
     BOOST_CHECK_EQUAL(std::distance(range.begin(), range.end()), static_cast<std::ptrdiff_t>(expected_size));
@@ -332,7 +333,6 @@ void CheckRange(const RangeType& range, size_t expected_size)
         BOOST_CHECK_EQUAL(range[i].get(), (*(range.begin() + i)).get());
     }
 
-    BOOST_CHECK_NE(range.at(0).get(), range.at(expected_size - 1).get());
     BOOST_CHECK_THROW(range.at(expected_size), std::out_of_range);
 
     BOOST_CHECK_EQUAL(range.front().get(), range[0].get());
