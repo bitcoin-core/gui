@@ -41,7 +41,6 @@
 #include <cstring>
 #include <exception>
 #include <functional>
-#include <iterator>
 #include <list>
 #include <memory>
 #include <span>
@@ -56,7 +55,7 @@ using util::ImmediateTaskRunner;
 
 // Define G_TRANSLATION_FUN symbol in libbitcoinkernel library so users of the
 // library aren't required to export this symbol
-extern const std::function<std::string(const char*)> G_TRANSLATION_FUN{nullptr};
+extern const TranslateFn G_TRANSLATION_FUN{nullptr};
 
 static const kernel::Context btck_context_static{};
 
@@ -84,7 +83,7 @@ public:
     //
     void write(std::span<const std::byte> src)
     {
-        if (m_writer(std::data(src), src.size(), m_user_data) != 0) {
+        if (m_writer(src.data(), src.size(), m_user_data) != 0) {
             throw std::runtime_error("Failed to write serialization data");
         }
     }
@@ -113,13 +112,13 @@ struct Handle {
     static C* create(Args&&... args)
     {
         auto cpp_obj{std::make_unique<CPP>(std::forward<Args>(args)...)};
-        return reinterpret_cast<C*>(cpp_obj.release());
+        return ref(cpp_obj.release());
     }
 
     static C* copy(const C* ptr)
     {
         auto cpp_obj{std::make_unique<CPP>(get(ptr))};
-        return reinterpret_cast<C*>(cpp_obj.release());
+        return ref(cpp_obj.release());
     }
 
     static const CPP& get(const C* ptr)

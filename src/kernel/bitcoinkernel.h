@@ -82,9 +82,9 @@ extern "C" {
  * @section error Error handling
  *
  * Functions communicate an error through their return types, usually returning
- * a nullptr, 0, or false if an error is encountered. Additionally, verification
- * functions, e.g. for scripts, may communicate more detailed error information
- * through status code out parameters.
+ * a nullptr or a status code as documented by the returning function.
+ * Additionally, verification functions, e.g. for scripts, may communicate more
+ * detailed error information through status code out parameters.
  *
  * Fine-grained validation information is communicated through the validation
  * interface.
