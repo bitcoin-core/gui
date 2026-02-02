@@ -202,7 +202,7 @@ static std::vector<CAddress> ConvertSeeds(const std::vector<uint8_t> &vSeedsIn)
     std::vector<CAddress> vSeedsOut;
     FastRandomContext rng;
     ParamsStream s{DataStream{vSeedsIn}, CAddress::V2_NETWORK};
-    while (!s.eof()) {
+    while (!s.empty()) {
         CService endpoint;
         s >> endpoint;
         CAddress addr{endpoint, SeedsServiceFlags()};

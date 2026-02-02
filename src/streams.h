@@ -195,7 +195,6 @@ public:
     //
     // Stream subset
     //
-    bool eof() const             { return size() == 0; }
     int in_avail() const         { return size(); }
 
     void read(std::span<value_type> dst)
