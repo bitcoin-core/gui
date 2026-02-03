@@ -972,7 +972,7 @@ void CBlockPolicyEstimator::FlushFeeEstimates()
         LogWarning("Failed to close fee estimates file %s: %s. Continuing anyway.", fs::PathToString(m_estimation_filepath), SysErrorString(errno));
         return;
     }
-    LogInfo("Flushed fee estimates to %s.", fs::PathToString(m_estimation_filepath.filename()));
+    LogDebug(BCLog::ESTIMATEFEE, "Flushed fee estimates to %s.", fs::PathToString(m_estimation_filepath));
 }
 
 bool CBlockPolicyEstimator::Write(AutoFile& fileout) const
