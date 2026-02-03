@@ -62,6 +62,7 @@ def main():
         f"./{build_dir}/test/functional/test_runner.py",
         "-j",
         str(num_procs * 2),
+        "--failfast",
         "--combinedlogslen=99999999",
     ])
 
