@@ -56,15 +56,30 @@ def generate(ci_type):
     run(command)
 
 
+def build():
+    command = [
+        "cmake",
+        "--build",
+        "build",
+        "-j",
+        str(os.process_cpu_count()),
+        "--config",
+        "Release",
+    ]
+    run(command)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to run Windows CI steps.")
     parser.add_argument("ci_type", choices=GENERATE_OPTIONS, help="CI type to run.")
-    steps = ["generate"]
+    steps = ["generate", "build"]
     parser.add_argument("step", choices=steps, help="CI step to perform.")
     args = parser.parse_args()
 
     if args.step == "generate":
         generate(args.ci_type)
+    elif args.step == "build":
+        build()
 
 
 if __name__ == "__main__":

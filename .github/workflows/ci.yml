@@ -280,9 +280,8 @@ jobs:
           key: ${{ github.job }}-vcpkg-binary-${{ hashFiles('cmake_version', 'msbuild_version', 'toolset_version', 'vcpkg.json') }}
 
       - name: Build
-        working-directory: build
         run: |
-          cmake --build . -j $NUMBER_OF_PROCESSORS --config Release
+          py -3 .github/ci-windows.py ${{ matrix.job-type }} build
 
       - name: Check executable manifests
         if: matrix.job-type == 'standard'
