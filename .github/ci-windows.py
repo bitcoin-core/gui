@@ -61,12 +61,12 @@ def build():
         "cmake",
         "--build",
         "build",
-        "-j",
-        str(os.process_cpu_count()),
         "--config",
         "Release",
     ]
-    run(command)
+    if run(command + ["-j", str(os.process_cpu_count())], check=False).returncode != 0:
+        print("Build failure. Verbose build follows.")
+        run(command + ["-j1", "--verbose"])
 
 
 def main():
