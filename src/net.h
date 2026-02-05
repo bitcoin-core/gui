@@ -1241,7 +1241,7 @@ public:
         /// Wait for the number of needed connections to become greater than 0.
         void NumToOpenWait() const;
 
-    private:
+    protected:
         /**
          * Check if private broadcast can be done to IPv4 or IPv6 peers and if so via which proxy.
          * If private broadcast connections should not be opened to IPv4 or IPv6, then this will
@@ -1251,6 +1251,8 @@ public:
 
         /// Number of `ConnectionType::PRIVATE_BROADCAST` connections to open.
         std::atomic_size_t m_num_to_open{0};
+
+        friend struct ConnmanTestMsg;
     } m_private_broadcast;
 
     bool CheckIncomingNonce(uint64_t nonce);
