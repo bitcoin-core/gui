@@ -80,6 +80,12 @@ void ConnmanTestMsg::ResetMaxOutboundCycle()
     nMaxOutboundTotalBytesSentInCycle = 0;
 }
 
+void ConnmanTestMsg::Reset()
+{
+    ResetAddrCache();
+    ResetMaxOutboundCycle();
+}
+
 void ConnmanTestMsg::NodeReceiveMsgBytes(CNode& node, std::span<const uint8_t> msg_bytes, bool& complete) const
 {
     assert(node.ReceiveMsgBytes(msg_bytes, complete));

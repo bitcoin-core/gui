@@ -62,8 +62,7 @@ FUZZ_TARGET(process_messages, .init = initialize_process_messages)
 
     auto& node{g_setup->m_node};
     auto& connman{static_cast<ConnmanTestMsg&>(*node.connman)};
-    connman.ResetAddrCache();
-    connman.ResetMaxOutboundCycle();
+    connman.Reset();
     auto& chainman{static_cast<TestChainstateManager&>(*node.chainman)};
     const auto block_index_size{WITH_LOCK(chainman.GetMutex(), return chainman.BlockIndex().size())};
     SetMockTime(1610000000); // any time to successfully reset ibd
