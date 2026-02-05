@@ -31,7 +31,7 @@ defaults:
 jobs:
   runners:
     name: '[meta] determine runners'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       provider: ${{ steps.runners.outputs.provider }}
     steps:
@@ -305,7 +305,7 @@ jobs:
     # Record frozen commit, so that the native tests on cross-builds can run on
     # the exact same commit id of the build.
     name: '[meta] record frozen commit'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       commit: ${{ steps.record-commit.outputs.commit }}
     steps:
