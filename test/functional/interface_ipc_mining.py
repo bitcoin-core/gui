@@ -114,18 +114,21 @@ class IPCMiningTest(BitcoinTestFramework):
 
         return coinbase_tx
 
+    async def make_mining_ctx(self):
+        """Create IPC context and Mining proxy object."""
+        ctx, init = await make_capnp_init_ctx(self)
+        self.log.debug("Create Mining proxy object")
+        mining = init.makeMining(ctx).result
+        return ctx, mining
+
     def run_mining_interface_test(self):
         """Test Mining interface methods."""
         self.log.info("Running Mining interface test")
         block_hash_size = 32
-        block_header_size = 80
         timeout = 1000.0 # 1000 milliseconds
-        miniwallet = MiniWallet(self.nodes[0])
 
         async def async_routine():
-            ctx, init = await make_capnp_init_ctx(self)
-            self.log.debug("Create Mining proxy object")
-            mining = init.makeMining(ctx).result
+            ctx, mining = await self.make_mining_ctx()
             blockref = await mining.getTip(ctx)
             current_block_height = self.nodes[0].getchaintips()[0]["height"]
             assert blockref.result.height == current_block_height
@@ -142,6 +145,19 @@ class IPCMiningTest(BitcoinTestFramework):
             assert_equal(oldblockref.hash, newblockref.hash)
             assert_equal(oldblockref.height, newblockref.height)
 
+        asyncio.run(capnp.run(async_routine()))
+
+    def run_block_template_test(self):
+        """Test BlockTemplate interface methods."""
+        self.log.info("Running BlockTemplate interface test")
+        block_header_size = 80
+        timeout = 1000.0 # 1000 milliseconds
+        miniwallet = MiniWallet(self.nodes[0])
+
+        async def async_routine():
+            ctx, mining = await self.make_mining_ctx()
+            blockref = await mining.getTip(ctx)
+
             async with AsyncExitStack() as stack:
                 self.log.debug("Create a template")
                 opts = self.capnp_modules['mining'].BlockCreateOptions()
@@ -154,7 +170,7 @@ class IPCMiningTest(BitcoinTestFramework):
                 header = (await template.getBlockHeader(ctx)).result
                 assert_equal(len(header), block_header_size)
                 block = await mining_get_block(template, ctx)
-                assert_equal(ser_uint256(block.hashPrevBlock), newblockref.hash)
+                assert_equal(ser_uint256(block.hashPrevBlock), blockref.result.hash)
                 assert len(block.vtx) >= 1
                 txfees = await template.getTxFees(ctx)
                 assert_equal(len(txfees.result), 0)
@@ -209,8 +225,23 @@ class IPCMiningTest(BitcoinTestFramework):
                     assert_equal(template7._has("result"), False)
                 await wait_and_do(wait_for_block(), template6.interruptWait())
 
+        asyncio.run(capnp.run(async_routine()))
+
+    def run_coinbase_and_submission_test(self):
+        """Test coinbase construction (getCoinbaseTx, getCoinbaseCommitment) and block submission (submitSolution)."""
+        self.log.info("Running coinbase construction and submission test")
+
+        async def async_routine():
+            ctx, mining = await self.make_mining_ctx()
+
             current_block_height = self.nodes[0].getchaintips()[0]["height"]
+            miniwallet = MiniWallet(self.nodes[0])
+            opts = self.capnp_modules['mining'].BlockCreateOptions()
+            opts.useMempool = True
+            opts.blockReservedWeight = 4000
+            opts.coinbaseOutputMaxAdditionalSigops = 0
             check_opts = self.capnp_modules['mining'].BlockCheckOptions()
+
             async with destroying((await mining.createNewBlock(opts)).result, ctx) as template:
                 block = await mining_get_block(template, ctx)
                 balance = miniwallet.get_balance()
@@ -220,6 +251,7 @@ class IPCMiningTest(BitcoinTestFramework):
                 block.vtx[0] = coinbase
                 block.hashMerkleRoot = block.calc_merkle_root()
                 original_version = block.nVersion
+
                 self.log.debug("Submit a block with a bad version")
                 block.nVersion = 0
                 block.solve()
@@ -273,6 +305,8 @@ class IPCMiningTest(BitcoinTestFramework):
 
     def run_test(self):
         self.run_mining_interface_test()
+        self.run_block_template_test()
+        self.run_coinbase_and_submission_test()
 
 
 if __name__ == '__main__':
