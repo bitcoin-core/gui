@@ -39,12 +39,6 @@ GENERATE_OPTIONS = {
 
 
 def generate(ci_type):
-    toolchain_file = os.path.join(
-        os.environ["VCPKG_INSTALLATION_ROOT"],
-        "scripts",
-        "buildsystems",
-        "vcpkg.cmake",
-    )
     command = [
         "cmake",
         "-B",
@@ -52,7 +46,6 @@ def generate(ci_type):
         "-Werror=dev",
         "--preset",
         "vs2022",
-        f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
     ] + GENERATE_OPTIONS[ci_type]
     run(command)
 
