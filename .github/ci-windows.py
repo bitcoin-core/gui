@@ -69,10 +69,31 @@ def build():
         run(command + ["-j1", "--verbose"])
 
 
+def prepare_tests(ci_type):
+    if ci_type == "standard":
+        run([sys.executable, "-m", "pip", "install", "pyzmq"])
+    elif ci_type == "fuzz":
+        repo_dir = os.path.join(os.environ["RUNNER_TEMP"], "qa-assets")
+        clone_cmd = [
+            "git",
+            "clone",
+            "--depth=1",
+            "https://github.com/bitcoin-core/qa-assets",
+            repo_dir,
+        ]
+        run(clone_cmd)
+        print("Using qa-assets repo from commit ...")
+        run(["git", "-C", repo_dir, "log", "-1"])
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to run Windows CI steps.")
     parser.add_argument("ci_type", choices=GENERATE_OPTIONS, help="CI type to run.")
-    steps = ["generate", "build"]
+    steps = [
+        "generate",
+        "build",
+        "prepare_tests",
+    ]
     parser.add_argument("step", choices=steps, help="CI step to perform.")
     args = parser.parse_args()
 
@@ -80,6 +101,8 @@ def main():
         generate(args.ci_type)
     elif args.step == "build":
         build()
+    elif args.step == "prepare_tests":
+        prepare_tests(args.ci_type)
 
 
 if __name__ == "__main__":
