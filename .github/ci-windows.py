@@ -8,6 +8,7 @@ import os
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run(cmd, **kwargs):
@@ -67,6 +68,45 @@ def build():
     if run(command + ["-j", str(os.process_cpu_count())], check=False).returncode != 0:
         print("Build failure. Verbose build follows.")
         run(command + ["-j1", "--verbose"])
+
+
+def check_manifests(ci_type):
+    if ci_type != "standard":
+        print(f"Skipping manifest validation for '{ci_type}' ci type.")
+        return
+
+    release_dir = Path.cwd() / "build" / "bin" / "Release"
+    manifest_path = release_dir / "bitcoind.manifest"
+    cmd_bitcoind_manifest = [
+        "mt.exe",
+        "-nologo",
+        f"-inputresource:{release_dir / 'bitcoind.exe'}",
+        f"-out:{manifest_path}",
+    ]
+    run(cmd_bitcoind_manifest)
+    print(manifest_path.read_text())
+
+    skips = {  # Skip as they currently do not have manifests
+        "fuzz.exe",
+        "bench_bitcoin.exe",
+        "test_bitcoin-qt.exe",
+        "test_kernel.exe",
+        "bitcoin-chainstate.exe",
+    }
+    for entry in release_dir.iterdir():
+        if entry.suffix.lower() != ".exe":
+            continue
+        if entry.name in skips:
+            print(f"Skipping {entry.name} (no manifest present)")
+            continue
+        print(f"Checking {entry.name}")
+        cmd_check_manifest = [
+            "mt.exe",
+            "-nologo",
+            f"-inputresource:{entry}",
+            "-validate_manifest",
+        ]
+        run(cmd_check_manifest)
 
 
 def prepare_tests(ci_type):
@@ -150,6 +190,7 @@ def main():
     steps = [
         "generate",
         "build",
+        "check_manifests",
         "prepare_tests",
         "run_tests",
     ]
@@ -160,6 +201,8 @@ def main():
         generate(args.ci_type)
     elif args.step == "build":
         build()
+    elif args.step == "check_manifests":
+        check_manifests(args.ci_type)
     elif args.step == "prepare_tests":
         prepare_tests(args.ci_type)
     elif args.step == "run_tests":

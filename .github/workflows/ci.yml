@@ -284,25 +284,8 @@ jobs:
           py -3 .github/ci-windows.py ${{ matrix.job-type }} build
 
       - name: Check executable manifests
-        if: matrix.job-type == 'standard'
-        working-directory: build
-        shell: pwsh -Command "$PSVersionTable; $PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
         run: |
-          mt.exe -nologo -inputresource:bin\Release\bitcoind.exe -out:bitcoind.manifest
-          Get-Content bitcoind.manifest
-
-          Get-ChildItem -Filter "bin\Release\*.exe" | ForEach-Object {
-            $exeName = $_.Name
-
-            # Skip as they currently do not have manifests
-            if ($exeName -eq "fuzz.exe" -or $exeName -eq "bench_bitcoin.exe" -or $exeName -eq "test_bitcoin-qt.exe" -or $exeName -eq "test_kernel.exe" -or $exeName -eq "bitcoin-chainstate.exe") {
-              Write-Host "Skipping $exeName (no manifest present)"
-              return
-            }
-
-            Write-Host "Checking $exeName"
-            & mt.exe -nologo -inputresource:$_.FullName -validate_manifest
-          }
+          py -3 .github/ci-windows.py ${{ matrix.job-type }} check_manifests
 
       - name: Prepare tests
         run: |
