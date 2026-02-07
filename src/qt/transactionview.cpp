@@ -23,6 +23,7 @@
 #include <optional>
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDateTimeEdit>
 #include <QDesktopServices>
@@ -88,6 +89,12 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
     typeWidget->addItem(tr("Other"), TransactionFilterProxy::TYPE(TransactionRecord::Other));
 
     hlayout->addWidget(typeWidget);
+
+    hlayout->addSpacing(14);
+    hideConflictedWidget = new QCheckBox(tr("Hide conflicted"), this);
+    hideConflictedWidget->setToolTip(tr("Whether to hide conflicted transactions"));
+    hlayout->addWidget(hideConflictedWidget);
+    hlayout->addSpacing(14);
 
     search_widget = new QLineEdit(this);
     search_widget->setPlaceholderText(tr("Enter address, transaction id, or label to search"));
@@ -173,6 +180,9 @@ TransactionView::TransactionView(const PlatformStyle *platformStyle, QWidget *pa
 
     connect(dateWidget, qOverload<int>(&QComboBox::activated), this, &TransactionView::chooseDate);
     connect(typeWidget, qOverload<int>(&QComboBox::activated), this, &TransactionView::chooseType);
+    connect(hideConflictedWidget, &QCheckBox::toggled, this, [this](bool checked) {
+        if (transactionProxyModel) transactionProxyModel->setShowInactive(!checked);
+    });
     connect(amountWidget, &QLineEdit::textChanged, amount_typing_delay, qOverload<>(&QTimer::start));
     connect(amount_typing_delay, &QTimer::timeout, this, &TransactionView::changedAmount);
     connect(search_widget, &QLineEdit::textChanged, prefix_typing_delay, qOverload<>(&QTimer::start));
