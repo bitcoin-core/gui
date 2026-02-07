@@ -876,10 +876,9 @@ BOOST_AUTO_TEST_CASE(initial_advertise_from_version_message)
                                         std::span<const unsigned char> data,
                                         bool is_incoming) -> void {
         if (!is_incoming && msg_type == "addr") {
-            DataStream s{data};
             std::vector<CAddress> addresses;
 
-            s >> CAddress::V1_NETWORK(addresses);
+            SpanReader{data} >> CAddress::V1_NETWORK(addresses);
 
             for (const auto& addr : addresses) {
                 if (addr == expected) {
