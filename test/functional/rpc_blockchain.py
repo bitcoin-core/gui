@@ -646,6 +646,26 @@ class BlockchainTest(BitcoinTestFramework):
         self.wallet.send_self_transfer(fee_rate=fee_per_kb, from_node=node)
         blockhash = self.generate(node, 1)[0]
 
+        def assert_coinbase_metadata(hash, verbosity):
+            block = node.getblock(hash, verbosity)
+            coinbase_tx = node.getblock(hash, 2)["tx"][0]
+
+            expected_keys = {"version", "locktime", "sequence", "coinbase"}
+            if "txinwitness" in coinbase_tx["vin"][0]:
+                expected_keys.add("witness")
+            assert_equal(set(block["coinbase_tx"].keys()), expected_keys)
+
+            assert_equal(block["coinbase_tx"]["version"], coinbase_tx["version"])
+            assert_equal(block["coinbase_tx"]["locktime"], coinbase_tx["locktime"])
+            assert_equal(block["coinbase_tx"]["sequence"], coinbase_tx["vin"][0]["sequence"])
+            assert_equal(block["coinbase_tx"]["coinbase"], coinbase_tx["vin"][0]["coinbase"])
+
+            witness_stack = coinbase_tx["vin"][0].get("txinwitness")
+            if witness_stack is None:
+                assert "witness" not in block["coinbase_tx"]
+            else:
+                assert_equal(block["coinbase_tx"]["witness"], witness_stack[0])
+
         def assert_hexblock_hashes(verbosity):
             block = node.getblock(blockhash, verbosity)
             assert_equal(blockhash, hash256(bytes.fromhex(block[:160]))[::-1].hex())
@@ -691,6 +711,9 @@ class BlockchainTest(BitcoinTestFramework):
         self.log.info("Test that getblock with verbosity 1 doesn't include fee")
         assert_fee_not_in_block(blockhash, 1)
         assert_fee_not_in_block(blockhash, True)
+
+        self.log.info("Test getblock coinbase metadata fields")
+        assert_coinbase_metadata(blockhash, 1)
 
         self.log.info('Test that getblock with verbosity 2 and 3 includes expected fee')
         assert_fee_in_block(blockhash, 2)
