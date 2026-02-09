@@ -243,9 +243,6 @@ class IPCMiningTest(BitcoinTestFramework):
 
             async with AsyncExitStack() as stack:
                 opts = self.capnp_modules['mining'].BlockCreateOptions()
-                opts.useMempool = True
-                opts.blockReservedWeight = 4000
-                opts.coinbaseOutputMaxAdditionalSigops = 0
                 template = await mining_create_block_template(mining, stack, ctx, opts)
                 assert template is not None
                 block = await mining_get_block(template, ctx)
@@ -351,12 +348,7 @@ class IPCMiningTest(BitcoinTestFramework):
 
     def run_test(self):
         self.miniwallet = MiniWallet(self.nodes[0])
-        self.default_block_create_options = self.capnp_modules['mining'].BlockCreateOptions(
-            useMempool=True,
-            blockReservedWeight=4000,
-            coinbaseOutputMaxAdditionalSigops=0
-        )
-
+        self.default_block_create_options = self.capnp_modules['mining'].BlockCreateOptions()
         self.run_mining_interface_test()
         self.run_block_template_test()
         self.run_coinbase_and_submission_test()
