@@ -4040,9 +4040,8 @@ void ChainstateManager::UpdateUncommittedBlockStructures(CBlock& block, const CB
     }
 }
 
-std::vector<unsigned char> ChainstateManager::GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev) const
+void ChainstateManager::GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev) const
 {
-    std::vector<unsigned char> commitment;
     int commitpos = GetWitnessCommitmentIndex(block);
     std::vector<unsigned char> ret(32, 0x00);
     if (commitpos == NO_WITNESS_COMMITMENT) {
@@ -4058,13 +4057,11 @@ std::vector<unsigned char> ChainstateManager::GenerateCoinbaseCommitment(CBlock&
         out.scriptPubKey[4] = 0xa9;
         out.scriptPubKey[5] = 0xed;
         memcpy(&out.scriptPubKey[6], witnessroot.begin(), 32);
-        commitment = std::vector<unsigned char>(out.scriptPubKey.begin(), out.scriptPubKey.end());
         CMutableTransaction tx(*block.vtx[0]);
         tx.vout.push_back(out);
         block.vtx[0] = MakeTransactionRef(std::move(tx));
     }
     UpdateUncommittedBlockStructures(block, pindexPrev);
-    return commitment;
 }
 
 bool HasValidProofOfWork(std::span<const CBlockHeader> headers, const Consensus::Params& consensusParams)

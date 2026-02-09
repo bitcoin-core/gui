@@ -32,14 +32,11 @@ interface BlockTemplate $Proxy.wrap("interfaces::BlockTemplate") {
     getBlock @2 (context: Proxy.Context) -> (result: Data);
     getTxFees @3 (context: Proxy.Context) -> (result: List(Int64));
     getTxSigops @4 (context: Proxy.Context) -> (result: List(Int64));
-    getCoinbaseRawTx @5 (context: Proxy.Context) -> (result: Data);
-    getCoinbaseTx @12 (context: Proxy.Context) -> (result: CoinbaseTx);
-    getCoinbaseCommitment @6 (context: Proxy.Context) -> (result: Data);
-    getWitnessCommitmentIndex @7 (context: Proxy.Context) -> (result: Int32);
-    getCoinbaseMerklePath @8 (context: Proxy.Context) -> (result: List(Data));
-    submitSolution @9 (context: Proxy.Context, version: UInt32, timestamp: UInt32, nonce: UInt32, coinbase :Data) -> (result: Bool);
-    waitNext @10 (context: Proxy.Context, options: BlockWaitOptions) -> (result: BlockTemplate);
-    interruptWait @11() -> ();
+    getCoinbaseTx @5 (context: Proxy.Context) -> (result: CoinbaseTx);
+    getCoinbaseMerklePath @6 (context: Proxy.Context) -> (result: List(Data));
+    submitSolution @7 (context: Proxy.Context, version: UInt32, timestamp: UInt32, nonce: UInt32, coinbase :Data) -> (result: Bool);
+    waitNext @8 (context: Proxy.Context, options: BlockWaitOptions) -> (result: BlockTemplate);
+    interruptWait @9() -> ();
 }
 
 struct BlockCreateOptions $Proxy.wrap("node::BlockCreateOptions") {

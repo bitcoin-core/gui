@@ -34,7 +34,6 @@ from test_framework.ipc_util import (
     make_capnp_init_ctx,
     mining_get_block,
     mining_get_coinbase_tx,
-    mining_get_coinbase_raw_tx,
     mining_wait_next_template,
     wait_and_do,
 )
@@ -93,27 +92,12 @@ class IPCMiningTest(BitcoinTestFramework):
         coinbase_tx.vout[0].nValue = coinbase_res.blockRewardRemaining
         # Add SegWit OP_RETURN. This is currently always present even for
         # empty blocks, but this may change.
-        found_witness_op_return = False
-        # Compare SegWit OP_RETURN to getCoinbaseCommitment()
-        coinbase_commitment = (await template.getCoinbaseCommitment(ctx)).result
         for output_data in coinbase_res.requiredOutputs:
             output = CTxOut()
             output.deserialize(BytesIO(output_data))
             coinbase_tx.vout.append(output)
-            if output.scriptPubKey == coinbase_commitment:
-                found_witness_op_return = True
-
-        assert_equal(has_witness, found_witness_op_return)
 
         coinbase_tx.nLockTime = coinbase_res.lockTime
-        # Compare to dummy coinbase transaction provided by the deprecated
-        # getCoinbaseRawTx()
-        coinbase_legacy = await mining_get_coinbase_raw_tx(template, ctx)
-        assert_equal(coinbase_legacy.vout[0].nValue, coinbase_res.blockRewardRemaining)
-        # Swap dummy output for our own
-        coinbase_legacy.vout[0].scriptPubKey = coinbase_tx.vout[0].scriptPubKey
-        assert_equal(coinbase_tx.serialize().hex(), coinbase_legacy.serialize().hex())
-
         return coinbase_tx
 
     async def make_mining_ctx(self):
@@ -276,7 +260,7 @@ class IPCMiningTest(BitcoinTestFramework):
         asyncio.run(capnp.run(async_routine()))
 
     def run_coinbase_and_submission_test(self):
-        """Test coinbase construction (getCoinbaseTx, getCoinbaseCommitment) and block submission (submitSolution)."""
+        """Test coinbase construction (getCoinbaseTx) and block submission (submitSolution)."""
         self.log.info("Running coinbase construction and submission test")
 
         async def async_routine():

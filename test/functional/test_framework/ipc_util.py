@@ -12,7 +12,7 @@ from pathlib import Path
 import shutil
 from typing import Optional
 
-from test_framework.messages import CBlock, CTransaction
+from test_framework.messages import CBlock
 
 # Test may be skipped and not have capnp installed
 try:
@@ -127,14 +127,6 @@ async def mining_get_block(block_template, ctx):
     block = CBlock()
     block.deserialize(block_data)
     return block
-
-
-async def mining_get_coinbase_raw_tx(block_template, ctx):
-    assert block_template is not None
-    coinbase_data = BytesIO((await block_template.getCoinbaseRawTx(ctx)).result)
-    tx = CTransaction()
-    tx.deserialize(coinbase_data)
-    return tx
 
 
 async def mining_get_coinbase_tx(block_template, ctx) -> CoinbaseTxData:
