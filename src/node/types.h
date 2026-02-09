@@ -55,7 +55,7 @@ struct BlockCreateOptions {
      * The maximum additional sigops which the pool will add in coinbase
      * transaction outputs.
      */
-    size_t coinbase_output_max_additional_sigops{400};
+    size_t coinbase_output_max_additional_sigops{DEFAULT_COINBASE_OUTPUT_MAX_ADDITIONAL_SIGOPS};
     /**
      * Script to put in the coinbase transaction. The default is an
      * anyone-can-spend dummy.
