@@ -116,12 +116,29 @@ def run_functional_tests():
     run(cmd_feature_unsupported_db)
 
 
+def run_unit_tests():
+    # Can't use ctest here like other jobs as we don't have a CMake build tree.
+    commands = [
+        ["./bin/test_bitcoin-qt.exe"],
+        # Intentionally run sequentially here, to catch test case failures caused by dirty global state from prior test cases:
+        ["./bin/test_bitcoin.exe", "-l", "test_suite"],
+        ["./src/secp256k1/bin/exhaustive_tests.exe"],
+        ["./src/secp256k1/bin/noverify_tests.exe"],
+        ["./src/secp256k1/bin/tests.exe"],
+        ["./src/univalue/object.exe"],
+        ["./src/univalue/unitester.exe"],
+    ]
+    for cmd in commands:
+        run(cmd)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to run Windows CI steps.")
     steps = [
         "print_version",
         "check_manifests",
         "prepare_tests",
+        "run_unit_tests",
         "run_functional_tests",
     ]
     parser.add_argument("step", choices=steps, help="CI step to perform.")
@@ -138,6 +155,8 @@ def main():
         check_manifests()
     elif args.step == "prepare_tests":
         prepare_tests()
+    elif args.step == "run_unit_tests":
+        run_unit_tests()
     elif args.step == "run_functional_tests":
         run_functional_tests()
 
