@@ -407,7 +407,7 @@ jobs:
           name: ${{ matrix.artifact-name }}-${{ github.run_id }}
 
       - name: Run bitcoind.exe
-        run: ./bin/bitcoind.exe -version
+        run: py -3 .github/ci-windows-cross.py print_version
 
       - *SET_UP_VS
 
