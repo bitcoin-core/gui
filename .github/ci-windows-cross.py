@@ -52,11 +52,32 @@ def check_manifests():
         run(["mt.exe", "-nologo", f"-inputresource:{entry}", "-validate_manifest"])
 
 
+def prepare_tests():
+    workspace = Path.cwd()
+    config_path = workspace / "test" / "config.ini"
+    rpcauth_path = workspace / "share" / "rpcauth" / "rpcauth.py"
+    replacements = {
+        "SRCDIR=": f"SRCDIR={workspace}",
+        "BUILDDIR=": f"BUILDDIR={workspace}",
+        "RPCAUTH=": f"RPCAUTH={rpcauth_path}",
+    }
+    lines = config_path.read_text().splitlines()
+    for index, line in enumerate(lines):
+        for prefix, new_value in replacements.items():
+            if line.startswith(prefix):
+                lines[index] = new_value
+                break
+    content = "\n".join(lines) + "\n"
+    config_path.write_text(content)
+    print(content)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to run Windows CI steps.")
     steps = [
         "print_version",
         "check_manifests",
+        "prepare_tests",
     ]
     parser.add_argument("step", choices=steps, help="CI step to perform.")
     args = parser.parse_args()
@@ -65,6 +86,8 @@ def main():
         print_version()
     elif args.step == "check_manifests":
         check_manifests()
+    elif args.step == "prepare_tests":
+        prepare_tests()
 
 
 if __name__ == "__main__":

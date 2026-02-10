@@ -426,10 +426,7 @@ jobs:
           ./src/univalue/unitester.exe
 
       - name: Adjust paths in test/config.ini
-        shell: pwsh
-        run: |
-          (Get-Content "test/config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}/share/rpcauth/rpcauth.py' | Set-Content "test/config.ini"
-          Get-Content "test/config.ini"
+        run: py -3 .github/ci-windows-cross.py prepare_tests
 
       - name: Set previous release directory
         run: |
