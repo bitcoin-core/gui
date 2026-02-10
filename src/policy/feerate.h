@@ -9,6 +9,7 @@
 #include <consensus/amount.h>
 #include <serialize.h>
 #include <util/feefrac.h>
+#include <util/fees.h>
 
 
 #include <cstdint>
@@ -17,16 +18,6 @@
 
 const std::string CURRENCY_UNIT = "BTC"; // One formatted unit
 const std::string CURRENCY_ATOM = "sat"; // One indivisible minimum value unit
-
-/* Used to determine type of fee estimation requested */
-enum class FeeEstimateMode {
-    UNSET,        //!< Use default settings based on other criteria
-    ECONOMICAL,   //!< Force estimateSmartFee to use non-conservative estimates
-    CONSERVATIVE, //!< Force estimateSmartFee to use conservative estimates
-    BTC_KVB,      //!< Use BTC/kvB fee rate unit
-    SAT_VB,       //!< Use sat/vB fee rate unit
-};
-
 /**
  * Fee rate in satoshis per virtualbyte: CAmount / vB
  * the feerate is represented internally as FeeFrac
