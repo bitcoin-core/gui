@@ -425,10 +425,6 @@ jobs:
           ./src/univalue/object.exe
           ./src/univalue/unitester.exe
 
-      - name: Set previous release directory
-        run: |
-          echo "PREVIOUS_RELEASES_DIR=${{ runner.temp }}/previous_releases" >> "$GITHUB_ENV"
-
       - name: Prepare Windows test environment
         run: |
           py -3 .github/ci-windows-cross.py prepare_tests

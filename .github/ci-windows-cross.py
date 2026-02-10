@@ -127,6 +127,11 @@ def main():
     parser.add_argument("step", choices=steps, help="CI step to perform.")
     args = parser.parse_args()
 
+    os.environ.setdefault(
+        "PREVIOUS_RELEASES_DIR",
+        str(Path.cwd() / "previous_releases"),
+    )
+
     if args.step == "print_version":
         print_version()
     elif args.step == "check_manifests":
