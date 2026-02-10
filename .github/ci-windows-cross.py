@@ -82,12 +82,47 @@ def prepare_tests():
     run([sys.executable, "-m", "pip", "install", "pyzmq"])
 
 
+def run_functional_tests():
+    workspace = Path.cwd()
+    num_procs = str(os.process_cpu_count())
+    test_runner_cmd = [
+        sys.executable,
+        str(workspace / "test" / "functional" / "test_runner.py"),
+        "--jobs",
+        num_procs,
+        "--quiet",
+        f"--tmpdirprefix={workspace}",
+        "--combinedlogslen=99999999",
+        *shlex.split(os.environ.get("TEST_RUNNER_EXTRA", "").strip()),
+        # feature_unsupported_utxo_db.py fails on Windows because of emojis in the test data directory.
+        "--exclude",
+        "feature_unsupported_utxo_db.py",
+        # See https://github.com/bitcoin/bitcoin/issues/31409.
+        "--exclude",
+        "wallet_multiwallet.py",
+    ]
+    run(test_runner_cmd)
+
+    # Run feature_unsupported_utxo_db sequentially in ASCII-only tmp dir,
+    # because it is excluded above due to lack of UTF-8 support in the
+    # ancient release.
+    cmd_feature_unsupported_db = [
+        sys.executable,
+        str(workspace / "test" / "functional" / "feature_unsupported_utxo_db.py"),
+        "--previous-releases",
+        "--tmpdir",
+        str(Path(workspace) / "test_feature_unsupported_utxo_db"),
+    ]
+    run(cmd_feature_unsupported_db)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utility to run Windows CI steps.")
     steps = [
         "print_version",
         "check_manifests",
         "prepare_tests",
+        "run_functional_tests",
     ]
     parser.add_argument("step", choices=steps, help="CI step to perform.")
     args = parser.parse_args()
@@ -98,6 +133,8 @@ def main():
         check_manifests()
     elif args.step == "prepare_tests":
         prepare_tests()
+    elif args.step == "run_functional_tests":
+        run_functional_tests()
 
 
 if __name__ == "__main__":
