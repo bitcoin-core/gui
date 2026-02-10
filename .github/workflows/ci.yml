@@ -412,23 +412,7 @@ jobs:
       - *SET_UP_VS
 
       - name: Check executable manifests
-        shell: pwsh -Command "$PSVersionTable; $PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
-        run: |
-          mt.exe -nologo -inputresource:bin\bitcoind.exe -out:bitcoind.manifest
-          Get-Content bitcoind.manifest
-
-          Get-ChildItem -Filter "bin\*.exe" | ForEach-Object {
-            $exeName = $_.Name
-
-            # Skip as they currently do not have manifests
-            if ($exeName -eq "fuzz.exe" -or $exeName -eq "bench_bitcoin.exe" -or $exeName -eq "test_kernel.exe") {
-              Write-Host "Skipping $exeName (no manifest present)"
-              return
-            }
-
-            Write-Host "Checking $exeName"
-            & mt.exe -nologo -inputresource:$_.FullName -validate_manifest
-          }
+        run: py -3 .github/ci-windows-cross.py check_manifests
 
       - name: Run unit tests
         # Can't use ctest here like other jobs as we don't have a CMake build tree.
