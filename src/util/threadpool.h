@@ -7,6 +7,7 @@
 
 #include <sync.h>
 #include <tinyformat.h>
+#include <util/expected.h>
 #include <util/check.h>
 #include <util/thread.h>
 
@@ -15,8 +16,8 @@
 #include <functional>
 #include <future>
 #include <queue>
-#include <stdexcept>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -143,28 +144,39 @@ public:
         // Note: m_interrupt is left true until next Start()
     }
 
+    enum class SubmitError {
+        Inactive,
+        Interrupted,
+    };
+
     /**
      * @brief Enqueues a new task for asynchronous execution.
      *
-     * Returns a `std::future` that provides the task's result or propagates
-     * any exception it throws.
-     * Note: Ignoring the returned future requires guarding the task against
-     * uncaught exceptions, as they would otherwise be silently discarded.
+     * @param  fn Callable to execute asynchronously.
+     * @return On success, a future containing fn's result.
+     *         On failure, an error indicating why the task was rejected:
+     *         - SubmitError::Inactive: Pool has no workers (never started or already stopped).
+     *         - SubmitError::Interrupted: Pool task acceptance has been interrupted.
+     *
+     * Thread-safe: Can be called from any thread, including within the provided 'fn' callable.
+     *
+     * @warning Ignoring the returned future requires guarding the task against
+     *          uncaught exceptions, as they would otherwise be silently discarded.
      */
-    template <class F> [[nodiscard]] EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
-    auto Submit(F&& fn)
+    template <class F>
+    [[nodiscard]] util::Expected<std::future<std::invoke_result_t<F>>, SubmitError> Submit(F&& fn) noexcept EXCLUSIVE_LOCKS_REQUIRED(!m_mutex)
     {
-        std::packaged_task task{std::forward<F>(fn)};
+        std::packaged_task<std::invoke_result_t<F>()> task{std::forward<F>(fn)};
         auto future{task.get_future()};
         {
             LOCK(m_mutex);
-            if (m_interrupt || m_workers.empty()) {
-                throw std::runtime_error("No active workers; cannot accept new tasks");
-            }
+            if (m_workers.empty()) return util::Unexpected{SubmitError::Inactive};
+            if (m_interrupt) return util::Unexpected{SubmitError::Interrupted};
+
             m_work_queue.emplace(std::move(task));
         }
         m_cv.notify_one();
-        return future;
+        return {std::move(future)};
     }
 
     /**
@@ -207,5 +219,16 @@ public:
         return WITH_LOCK(m_mutex, return m_workers.size());
     }
 };
+
+constexpr std::string_view SubmitErrorString(const ThreadPool::SubmitError err) noexcept {
+    switch (err) {
+        case ThreadPool::SubmitError::Inactive:
+            return "No active workers";
+        case ThreadPool::SubmitError::Interrupted:
+            return "Interrupted";
+    }
+    Assume(false); // Unreachable
+    return "Unknown error";
+}
 
 #endif // BITCOIN_UTIL_THREADPOOL_H
