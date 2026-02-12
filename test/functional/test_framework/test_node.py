@@ -550,7 +550,7 @@ class TestNode():
             return dl.tell()
 
     @contextlib.contextmanager
-    def assert_debug_log(self, expected_msgs, unexpected_msgs=None, timeout=2):
+    def assert_debug_log(self, expected_msgs, unexpected_msgs=None, *, timeout=0):
         if unexpected_msgs is None:
             unexpected_msgs = []
         assert_equal(type(expected_msgs), list)
