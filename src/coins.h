@@ -383,6 +383,9 @@ protected:
      */
     void Reset() noexcept;
 
+    /* Fetch the coin from base. Used for cache misses in FetchCoin. */
+    virtual std::optional<Coin> FetchCoinFromBase(const COutPoint& outpoint) const;
+
 public:
     CCoinsViewCache(CCoinsView *baseIn, bool deterministic = false);
 
@@ -510,6 +513,27 @@ private:
      * memory usage.
      */
     CCoinsMap::iterator FetchCoin(const COutPoint &outpoint) const;
+};
+
+/**
+ * CCoinsViewCache overlay that avoids populating/mutating parent cache layers on cache misses.
+ *
+ * This is achieved by fetching coins from the base view using PeekCoin() instead of GetCoin(),
+ * so intermediate CCoinsViewCache layers are not filled.
+ *
+ * Used during ConnectBlock() as an ephemeral, resettable top-level view that is flushed only
+ * on success, so invalid blocks don't pollute the underlying cache.
+ */
+class CoinsViewOverlay : public CCoinsViewCache
+{
+private:
+    std::optional<Coin> FetchCoinFromBase(const COutPoint& outpoint) const override
+    {
+        return base->PeekCoin(outpoint);
+    }
+
+public:
+    using CCoinsViewCache::CCoinsViewCache;
 };
 
 //! Utility function to add all of a transaction's outputs to a cache.

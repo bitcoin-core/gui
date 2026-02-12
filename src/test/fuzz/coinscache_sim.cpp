@@ -374,7 +374,11 @@ FUZZ_TARGET(coinscache_sim)
             [&]() { // Add a cache level (if not already at the max).
                 if (caches.size() != MAX_CACHES) {
                     // Apply to real caches.
-                    caches.emplace_back(new CCoinsViewCache(&*caches.back(), /*deterministic=*/true));
+                    if (provider.ConsumeBool()) {
+                        caches.emplace_back(new CCoinsViewCache(&*caches.back(), /*deterministic=*/true));
+                    } else {
+                        caches.emplace_back(new CoinsViewOverlay(&*caches.back(), /*deterministic=*/true));
+                    }
                     // Apply to simulation data.
                     sim_caches[caches.size()].Wipe();
                 }
