@@ -550,6 +550,39 @@ void CoinControlDialog::changeEvent(QEvent* e)
     QDialog::changeEvent(e);
 }
 
+void CoinControlDialog::setViewOnly(bool view_only)
+{
+    m_view_only = view_only;
+
+    ui->pushButtonSelectAll->setVisible(true);
+    ui->treeWidget->setColumnHidden(COLUMN_CHECKBOX, false);
+    ui->frame->setVisible(true);
+
+    ui->radioListMode->setVisible(true);
+    ui->radioTreeMode->setVisible(true);
+    ui->radioListMode->setEnabled(true);
+    ui->radioTreeMode->setEnabled(true);
+
+    ui->labelCoinControlQuantity->setVisible(true);
+    ui->labelCoinControlAmount->setVisible(true);
+    ui->labelCoinControlFee->setVisible(!view_only);
+    ui->labelCoinControlAfterFee->setVisible(!view_only);
+    ui->labelCoinControlBytes->setVisible(!view_only);
+    ui->labelCoinControlChange->setVisible(!view_only);
+
+    ui->labelCoinControlQuantityText->setVisible(true);
+    ui->labelCoinControlAmountText->setVisible(true);
+    ui->labelCoinControlFeeText->setVisible(!view_only);
+    ui->labelCoinControlAfterFeeText->setVisible(!view_only);
+    ui->labelCoinControlBytesText->setVisible(!view_only);
+    ui->labelCoinControlChangeText->setVisible(!view_only);
+
+    if (view_only) {
+        lockAction->setVisible(false);
+        unlockAction->setVisible(false);
+    }
+}
+
 void CoinControlDialog::updateView()
 {
     if (!model || !model->getOptionsModel() || !model->getAddressTableModel())
@@ -560,8 +593,9 @@ void CoinControlDialog::updateView()
     ui->treeWidget->clear();
     ui->treeWidget->setEnabled(false); // performance, otherwise updateLabels would be called for every checked checkbox
     ui->treeWidget->setAlternatingRowColors(!treeMode);
-    QFlags<Qt::ItemFlag> flgCheckbox = Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable;
-    QFlags<Qt::ItemFlag> flgTristate = Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable | Qt::ItemIsAutoTristate;
+
+    QFlags<Qt::ItemFlag> flgCheckbox = (Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+    QFlags<Qt::ItemFlag> flgTristate = (Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable | Qt::ItemIsAutoTristate);
 
     BitcoinUnit nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
 
@@ -578,6 +612,7 @@ void CoinControlDialog::updateView()
             itemWalletAddress = new CCoinControlWidgetItem(ui->treeWidget);
 
             itemWalletAddress->setFlags(flgTristate);
+
             itemWalletAddress->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
 
             // label
@@ -599,7 +634,7 @@ void CoinControlDialog::updateView()
             if (treeMode)    itemOutput = new CCoinControlWidgetItem(itemWalletAddress);
             else             itemOutput = new CCoinControlWidgetItem(ui->treeWidget);
             itemOutput->setFlags(flgCheckbox);
-            itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+            itemOutput->setCheckState(COLUMN_CHECKBOX, Qt::Unchecked);
 
             // address
             CTxDestination outputAddress;
