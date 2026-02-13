@@ -289,7 +289,7 @@ INFO: Codesigning ${VERSION:?not set} for platform triple ${HOST:?not set}:
 EOF
 
 
-        # Run the build script 'contrib/guix/libexec/build.sh' in the build
+        # Run the build script 'contrib/guix/libexec/codesign.sh' in the build
         # container specified by 'contrib/guix/manifest.scm'.
         #
         # Explanation of `guix shell` flags:
