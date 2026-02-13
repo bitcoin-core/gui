@@ -232,6 +232,11 @@ public:
         return value.empty() ? m_wallet->EraseAddressReceiveRequest(batch, dest, id)
                              : m_wallet->SetAddressReceiveRequest(batch, dest, id, value);
     }
+    bool isChange(const CTxOut& txout) const override
+    {
+        LOCK(m_wallet->cs_wallet);
+        return OutputIsChange(*m_wallet, txout);
+    }
     util::Result<void> displayAddress(const CTxDestination& dest) override
     {
         LOCK(m_wallet->cs_wallet);
@@ -287,10 +292,11 @@ public:
         std::vector<bilingual_str>& errors,
         CAmount& old_fee,
         CAmount& new_fee,
-        CMutableTransaction& mtx) override
+        CMutableTransaction& mtx,
+        std::optional<uint32_t> reduce_output) override
     {
         std::vector<CTxOut> outputs; // just an empty list of new recipients for now
-        return feebumper::CreateRateBumpTransaction(*m_wallet.get(), txid, coin_control, errors, old_fee, new_fee, mtx, /* require_mine= */ true, outputs) == feebumper::Result::OK;
+        return feebumper::CreateRateBumpTransaction(*m_wallet.get(), txid, coin_control, errors, old_fee, new_fee, mtx, /* require_mine= */ true, outputs, reduce_output) == feebumper::Result::OK;
     }
     bool signBumpTransaction(CMutableTransaction& mtx) override { return feebumper::SignTransaction(*m_wallet.get(), mtx); }
     bool commitBumpTransaction(const Txid& txid,
