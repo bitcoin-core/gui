@@ -410,8 +410,8 @@ bool InitHTTPServer(const util::SignalInterrupt& interrupt)
     }
 
     LogDebug(BCLog::HTTP, "Initialized HTTP server\n");
-    g_max_queue_depth = std::max((long)gArgs.GetIntArg("-rpcworkqueue", DEFAULT_HTTP_WORKQUEUE), 1L);
-    LogDebug(BCLog::HTTP, "set work queue of depth %d\n", g_max_queue_depth);
+    g_max_queue_depth = std::max(gArgs.GetArg("-rpcworkqueue", DEFAULT_HTTP_WORKQUEUE), 1);
+    LogDebug(BCLog::HTTP, "set work queue of depth %d", g_max_queue_depth);
 
     // transfer ownership to eventBase/HTTP via .release()
     eventBase = base_ctr.release();
@@ -431,8 +431,8 @@ static std::thread g_thread_http;
 
 void StartHTTPServer()
 {
-    int rpcThreads = std::max((long)gArgs.GetIntArg("-rpcthreads", DEFAULT_HTTP_THREADS), 1L);
-    LogInfo("Starting HTTP server with %d worker threads\n", rpcThreads);
+    int rpcThreads = std::max(gArgs.GetArg("-rpcthreads", DEFAULT_HTTP_THREADS), 1);
+    LogInfo("Starting HTTP server with %d worker threads", rpcThreads);
     g_threadpool_http.Start(rpcThreads);
     g_thread_http = std::thread(ThreadHTTP, eventBase);
 }
