@@ -106,7 +106,7 @@ def prepare_tests(ci_type):
     if ci_type == "standard":
         run([sys.executable, "-m", "pip", "install", "pyzmq"])
     elif ci_type == "fuzz":
-        repo_dir = os.path.join(os.getcwd(), "qa-assets")
+        repo_dir = str(Path.cwd() / "qa-assets")
         clone_cmd = [
             "git",
             "clone",
@@ -120,9 +120,9 @@ def prepare_tests(ci_type):
 
 
 def run_tests(ci_type):
-    build_dir = "build"
+    build_dir = Path.cwd() / "build"
     num_procs = str(os.process_cpu_count())
-    release_bin = os.path.join(os.getcwd(), build_dir, "bin", "Release")
+    release_bin = build_dir / "bin" / "Release"
 
     if ci_type == "standard":
         test_envs = {
@@ -136,12 +136,12 @@ def run_tests(ci_type):
             "BITCOINCHAINSTATE": "bitcoin-chainstate.exe",
         }
         for var, exe in test_envs.items():
-            os.environ[var] = os.path.join(release_bin, exe)
+            os.environ[var] = str(release_bin / exe)
 
         ctest_cmd = [
             "ctest",
             "--test-dir",
-            build_dir,
+            str(build_dir),
             "--output-on-failure",
             "--stop-on-failure",
             "-j",
@@ -153,26 +153,26 @@ def run_tests(ci_type):
 
         test_cmd = [
             sys.executable,
-            os.path.join(build_dir, "test", "functional", "test_runner.py"),
+            str(build_dir / "test" / "functional" / "test_runner.py"),
             "--jobs",
             num_procs,
             "--quiet",
-            f"--tmpdirprefix={os.getcwd()}",
+            f"--tmpdirprefix={Path.cwd()}",
             "--combinedlogslen=99999999",
             *shlex.split(os.environ.get("TEST_RUNNER_EXTRA", "").strip()),
         ]
         run(test_cmd)
 
     elif ci_type == "fuzz":
-        os.environ["BITCOINFUZZ"] = os.path.join(release_bin, "fuzz.exe")
+        os.environ["BITCOINFUZZ"] = str(release_bin / "fuzz.exe")
         fuzz_cmd = [
             sys.executable,
-            os.path.join(build_dir, "test", "fuzz", "test_runner.py"),
+            str(build_dir / "test" / "fuzz" / "test_runner.py"),
             "--par",
             num_procs,
             "--loglevel",
             "DEBUG",
-            os.path.join(os.getcwd(), "qa-assets", "fuzz_corpora"),
+            str(Path.cwd() / "qa-assets" / "fuzz_corpora"),
         ]
         run(fuzz_cmd)
 

@@ -416,67 +416,25 @@ jobs:
           name: ${{ matrix.artifact-name }}-${{ github.run_id }}
 
       - name: Run bitcoind.exe
-        run: ./bin/bitcoind.exe -version
+        run: py -3 .github/ci-windows-cross.py print_version
 
       - *SET_UP_VS
 
       - name: Check executable manifests
-        shell: pwsh -Command "$PSVersionTable; $PSNativeCommandUseErrorActionPreference = $true; $ErrorActionPreference = 'Stop'; & '{0}'"
-        run: |
-          mt.exe -nologo -inputresource:bin\bitcoind.exe -out:bitcoind.manifest
-          Get-Content bitcoind.manifest
-
-          Get-ChildItem -Filter "bin\*.exe" | ForEach-Object {
-            $exeName = $_.Name
-
-            # Skip as they currently do not have manifests
-            if ($exeName -eq "fuzz.exe" -or $exeName -eq "bench_bitcoin.exe" -or $exeName -eq "test_kernel.exe") {
-              Write-Host "Skipping $exeName (no manifest present)"
-              return
-            }
-
-            Write-Host "Checking $exeName"
-            & mt.exe -nologo -inputresource:$_.FullName -validate_manifest
-          }
+        run: py -3 .github/ci-windows-cross.py check_manifests
 
       - name: Run unit tests
-        # Can't use ctest here like other jobs as we don't have a CMake build tree.
-        run: |
-          ./bin/test_bitcoin-qt.exe
-          ./bin/test_bitcoin.exe -l test_suite  # Intentionally run sequentially here, to catch test case failures caused by dirty global state from prior test cases.
-          ./src/secp256k1/bin/exhaustive_tests.exe
-          ./src/secp256k1/bin/noverify_tests.exe
-          ./src/secp256k1/bin/tests.exe
-          ./src/univalue/object.exe
-          ./src/univalue/unitester.exe
+        run: py -3 .github/ci-windows-cross.py run_unit_tests
 
-      - name: Adjust paths in test/config.ini
-        shell: pwsh
+      - name: Prepare Windows test environment
         run: |
-          (Get-Content "test/config.ini") -replace '(?<=^SRCDIR=).*', '${{ github.workspace }}' -replace '(?<=^BUILDDIR=).*', '${{ github.workspace }}' -replace '(?<=^RPCAUTH=).*', '${{ github.workspace }}/share/rpcauth/rpcauth.py' | Set-Content "test/config.ini"
-          Get-Content "test/config.ini"
-
-      - name: Set previous release directory
-        run: |
-          echo "PREVIOUS_RELEASES_DIR=${{ runner.temp }}/previous_releases" >> "$GITHUB_ENV"
-
-      - name: Get previous releases
-        run: ./test/get_previous_releases.py --target-dir $PREVIOUS_RELEASES_DIR
+          py -3 .github/ci-windows-cross.py prepare_tests
 
       - name: Run functional tests
         env:
-          TEST_RUNNER_EXTRA: ${{ github.event_name != 'pull_request' && '--extended' || '' }}
+          TEST_RUNNER_EXTRA: "--timeout-factor=${{ env.TEST_RUNNER_TIMEOUT_FACTOR }} ${{ case(github.event_name == 'pull_request', '', '--extended') }}"
         run: |
-          py -3 -m pip install pyzmq
-          py -3 test/functional/test_runner.py --jobs $NUMBER_OF_PROCESSORS --quiet --tmpdirprefix="$RUNNER_TEMP" --combinedlogslen=99999999 --timeout-factor=$TEST_RUNNER_TIMEOUT_FACTOR $TEST_RUNNER_EXTRA \
-            `# feature_unsupported_utxo_db.py fails on Windows because of emojis in the test data directory.` \
-            --exclude feature_unsupported_utxo_db.py \
-            `# See https://github.com/bitcoin/bitcoin/issues/31409.` \
-            --exclude wallet_multiwallet.py
-          # Run feature_unsupported_utxo_db sequentially in ASCII-only tmp dir,
-          # because it is excluded above due to lack of UTF-8 support in the
-          # ancient release.
-          py -3 test/functional/feature_unsupported_utxo_db.py --previous-releases --tmpdir="${RUNNER_TEMP}/test_feature_unsupported_utxo_db"
+          py -3 .github/ci-windows-cross.py run_functional_tests
 
   ci-matrix:
     name: ${{ matrix.name }}
