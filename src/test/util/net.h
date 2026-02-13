@@ -49,6 +49,8 @@ struct ConnmanTestMsg : public CConnman {
 
     void ResetAddrCache();
     void ResetMaxOutboundCycle();
+    /// Reset the internal state.
+    void Reset();
 
     std::vector<CNode*> TestNodes()
     {
