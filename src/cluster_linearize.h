@@ -865,6 +865,7 @@ private:
                         --pick;
                     }
                 }
+                Assume(false);
                 break;
             }
             pick -= count;
@@ -1031,6 +1032,7 @@ public:
     /** Make state topological. Can be called after constructing, or after LoadLinearization. */
     void MakeTopological() noexcept
     {
+        Assume(m_suboptimal_chunks.empty());
         for (auto tx : m_transaction_idxs) {
             auto& tx_data = m_tx_data[tx];
             if (tx_data.chunk_rep == tx) {
@@ -1074,6 +1076,7 @@ public:
     /** Initialize the data structure for optimization. It must be topological already. */
     void StartOptimizing() noexcept
     {
+        Assume(m_suboptimal_chunks.empty());
         // Mark chunks suboptimal.
         for (auto tx : m_transaction_idxs) {
             auto& tx_data = m_tx_data[tx];
@@ -1469,6 +1472,7 @@ public:
         //
         // Verify the chunks against the list of active dependencies
         //
+        SetType chunk_cover;
         for (auto tx_idx: m_depgraph.Positions()) {
             // Only process chunks for now.
             if (m_tx_data[tx_idx].chunk_rep == tx_idx) {
@@ -1478,6 +1482,8 @@ public:
                 for (auto chunk_tx : chunk_data.chunk_setinfo.transactions) {
                     assert(m_tx_data[chunk_tx].chunk_rep == tx_idx);
                 }
+                assert(!chunk_cover.Overlaps(chunk_data.chunk_setinfo.transactions));
+                chunk_cover |= chunk_data.chunk_setinfo.transactions;
                 // Verify the chunk's transaction set: it must contain the representative, and for
                 // every active dependency, if it contains the parent or child, it must contain
                 // both. It must have exactly N-1 active dependencies in it, guaranteeing it is
@@ -1504,6 +1510,8 @@ public:
                        m_depgraph.FeeRate(chunk_data.chunk_setinfo.transactions));
             }
         }
+        // Verify that together, the chunks cover all transactions.
+        assert(chunk_cover == m_depgraph.Positions());
 
         //
         // Verify other transaction data.
@@ -1539,17 +1547,23 @@ public:
             const auto& dep_data = m_dep_data[dep_idx];
             // Verify the top_info's transactions: it must contain the parent, and for every
             // active dependency, except dep_idx itself, if it contains the parent or child, it
-            // must contain both.
+            // must contain both. It must have exactly N-1 active dependencies in it, guaranteeing
+            // it is acyclic.
             SetType expected_top = SetType::Singleton(par_idx);
             while (true) {
                 auto old = expected_top;
+                size_t active_dep_count{0};
                 for (const auto& [par2_idx, chl2_idx, dep2_idx] : active_dependencies) {
                     if (dep2_idx != dep_idx && (expected_top[par2_idx] || expected_top[chl2_idx])) {
                         expected_top.Set(par2_idx);
                         expected_top.Set(chl2_idx);
+                        ++active_dep_count;
                     }
                 }
-                if (old == expected_top) break;
+                if (old == expected_top) {
+                    assert(expected_top.Count() == active_dep_count + 1);
+                    break;
+                }
             }
             assert(!expected_top[chl_idx]);
             assert(dep_data.top_setinfo.transactions == expected_top);
