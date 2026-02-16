@@ -1440,7 +1440,7 @@ public:
     uint64_t GetCost() const noexcept { return m_cost; }
 
     /** Verify internal consistency of the data structure. */
-    void SanityCheck(const DepGraph<SetType>& depgraph) const
+    void SanityCheck() const
     {
         //
         // Verify dependency parent/child information, and build list of (active) dependencies.
@@ -1448,8 +1448,8 @@ public:
         std::vector<std::pair<TxIdx, TxIdx>> expected_dependencies;
         std::vector<std::tuple<TxIdx, TxIdx, DepIdx>> all_dependencies;
         std::vector<std::tuple<TxIdx, TxIdx, DepIdx>> active_dependencies;
-        for (auto parent_idx : depgraph.Positions()) {
-            for (auto child_idx : depgraph.GetReducedChildren(parent_idx)) {
+        for (auto parent_idx : m_depgraph.Positions()) {
+            for (auto child_idx : m_depgraph.GetReducedChildren(parent_idx)) {
                 expected_dependencies.emplace_back(parent_idx, child_idx);
             }
         }
@@ -1473,7 +1473,7 @@ public:
         //
         // Verify the chunks against the list of active dependencies
         //
-        for (auto tx_idx: depgraph.Positions()) {
+        for (auto tx_idx: m_depgraph.Positions()) {
             // Only process chunks for now.
             if (m_tx_data[tx_idx].chunk_rep == tx_idx) {
                 const auto& chunk_data = m_tx_data[tx_idx];
@@ -1505,14 +1505,14 @@ public:
                 assert(chunk_data.chunk_setinfo.transactions == expected_chunk);
                 // Verify the chunk's feerate.
                 assert(chunk_data.chunk_setinfo.feerate ==
-                       depgraph.FeeRate(chunk_data.chunk_setinfo.transactions));
+                       m_depgraph.FeeRate(chunk_data.chunk_setinfo.transactions));
             }
         }
 
         //
         // Verify other transaction data.
         //
-        assert(m_transaction_idxs == depgraph.Positions());
+        assert(m_transaction_idxs == m_depgraph.Positions());
         for (auto tx_idx : m_transaction_idxs) {
             const auto& tx_data = m_tx_data[tx_idx];
             // Verify it has a valid chunk representative, and that chunk includes this
@@ -1520,8 +1520,8 @@ public:
             assert(m_tx_data[tx_data.chunk_rep].chunk_rep == tx_data.chunk_rep);
             assert(m_tx_data[tx_data.chunk_rep].chunk_setinfo.transactions[tx_idx]);
             // Verify parents/children.
-            assert(tx_data.parents == depgraph.GetReducedParents(tx_idx));
-            assert(tx_data.children == depgraph.GetReducedChildren(tx_idx));
+            assert(tx_data.parents == m_depgraph.GetReducedParents(tx_idx));
+            assert(tx_data.children == m_depgraph.GetReducedChildren(tx_idx));
             // Verify list of child dependencies.
             std::vector<DepIdx> expected_child_deps;
             for (const auto& [par_idx, chl_idx, dep_idx] : all_dependencies) {
@@ -1559,7 +1559,7 @@ public:
             assert(dep_data.top_setinfo.transactions == expected_top);
             // Verify the top_info's feerate.
             assert(dep_data.top_setinfo.feerate ==
-                   depgraph.FeeRate(dep_data.top_setinfo.transactions));
+                   m_depgraph.FeeRate(dep_data.top_setinfo.transactions));
         }
 
         //
