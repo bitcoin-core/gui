@@ -96,9 +96,6 @@ Int SettingTo(const common::SettingsValue&, Int);
 template <std::integral Int>
 std::optional<Int> SettingTo(const common::SettingsValue&);
 
-inline int64_t SettingToInt(const common::SettingsValue& value, int64_t nDefault) { return SettingTo<int64_t>(value, nDefault); }
-inline std::optional<int64_t> SettingToInt(const common::SettingsValue& value) { return SettingTo<int64_t>(value); }
-
 bool SettingToBool(const common::SettingsValue&, bool);
 std::optional<bool> SettingToBool(const common::SettingsValue&);
 
