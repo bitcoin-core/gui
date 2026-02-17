@@ -147,11 +147,10 @@ class BitcoinTestFramework(metaclass=BitcoinTestMetaClass):
         except subprocess.CalledProcessError as e:
             self.log.exception(f"Called Process failed with stdout='{e.stdout}'; stderr='{e.stderr}';")
             self.success = TestStatus.FAILED
-        except JSONRPCException as e:
-            self.log.exception(f"Failure during setup: error={e.error}, http_status={e.http_status}")
-            self.success = TestStatus.FAILED
         except BaseException:
-            self.log.exception("Unexpected exception")
+            # The `exception` log will add the exception info to the message.
+            # https://docs.python.org/3/library/logging.html#logging.exception
+            self.log.exception("Unexpected exception:")
             self.success = TestStatus.FAILED
         finally:
             exit_code = self.shutdown()
