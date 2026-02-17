@@ -845,14 +845,14 @@ private:
         auto& bottom_chunk = m_tx_data[bottom_rep];
         Assume(bottom_chunk.chunk_rep == bottom_rep);
         // Count the number of dependencies between bottom_chunk and top_chunk.
-        TxIdx num_deps{0};
+        unsigned num_deps{0};
         for (auto tx : top_chunk.chunk_setinfo.transactions) {
             auto& tx_data = m_tx_data[tx];
             num_deps += (tx_data.children & bottom_chunk.chunk_setinfo.transactions).Count();
         }
         if (num_deps == 0) return TxIdx(-1);
         // Uniformly randomly pick one of them and activate it.
-        TxIdx pick = m_rng.randrange(num_deps);
+        unsigned pick = m_rng.randrange(num_deps);
         for (auto tx : top_chunk.chunk_setinfo.transactions) {
             auto& tx_data = m_tx_data[tx];
             auto intersect = tx_data.children & bottom_chunk.chunk_setinfo.transactions;
