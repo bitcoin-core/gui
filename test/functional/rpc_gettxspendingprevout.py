@@ -116,6 +116,10 @@ class GetTxSpendingPrevoutTest(BitcoinTestFramework):
         result = self.nodes[2].gettxspendingprevout([{ 'txid' : confirmed_utxo['txid'], 'vout' : 0}, {'txid' : txidA, 'vout' : 1} ], return_spending_tx=True)
         assert_equal(result, [ {'txid' : confirmed_utxo['txid'], 'vout' : 0}, {'txid' : txidA, 'vout' : 1}])
 
+        # spending transaction is not found if we only search the mempool
+        result = self.nodes[0].gettxspendingprevout([ {'txid' : confirmed_utxo['txid'], 'vout' : 0}, {'txid' : txidA, 'vout' : 1} ], return_spending_tx=True, mempool_only=True)
+        assert_equal(result, [ {'txid' : confirmed_utxo['txid'], 'vout' : 0}, {'txid' : txidA, 'vout' : 1}])
+
         self.log.info("Check that our txospenderindex is updated when a reorg replaces a spending transaction")
         confirmed_utxo = self.wallet.get_utxo(mark_as_spent = False)
         tx1 = create_tx(utxos_to_spend=[confirmed_utxo], num_outputs=1)
