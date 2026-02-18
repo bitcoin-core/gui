@@ -919,7 +919,7 @@ FUZZ_TARGET(clusterlin_sfl)
         if (rng.randbits(4) == 0) {
             // Perform sanity checks from time to time (too computationally expensive to do after
             // every step).
-            sfl.SanityCheck(depgraph);
+            sfl.SanityCheck();
         }
         auto diagram = sfl.GetDiagram();
         if (rng.randbits(4) == 0) {
