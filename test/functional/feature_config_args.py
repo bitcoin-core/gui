@@ -319,7 +319,7 @@ class ConfArgsTest(BitcoinTestFramework):
 
         with self.nodes[0].assert_debug_log(expected_msgs=[
                 "Adding fixed seeds as 60 seconds have passed and addrman is empty",
-        ]):
+        ], timeout=2):
             self.nodes[0].setmocktime(start + 65)
         self.stop_node(0)
 
@@ -330,7 +330,7 @@ class ConfArgsTest(BitcoinTestFramework):
                 "Loaded 0 addresses from peers.dat",
                 "DNS seeding disabled",
                 "Adding fixed seeds as -dnsseed=0 (or IPv4/IPv6 connections are disabled via -onlynet) and neither -addnode nor -seednode are provided\n",
-        ]):
+        ], timeout=2):
             self.start_node(0, extra_args=['-dnsseed=0', '-fixedseeds=1'])
         self.stop_node(0)
         self.nodes[0].assert_start_raises_init_error(['-dnsseed=1', '-onlynet=i2p', '-i2psam=127.0.0.1:7656'], "Error: Incompatible options: -dnsseed=1 was explicitly specified, but -onlynet forbids connections to IPv4/IPv6")
@@ -361,7 +361,7 @@ class ConfArgsTest(BitcoinTestFramework):
             self.start_node(0, extra_args=['-dnsseed=0', '-fixedseeds=1', '-addnode=fakenodeaddr', f'-mocktime={start}', UNREACHABLE_PROXY_ARG])
         with self.nodes[0].assert_debug_log(expected_msgs=[
                 "Adding fixed seeds as 60 seconds have passed and addrman is empty",
-        ]):
+        ], timeout=2):
             self.nodes[0].setmocktime(start + 65)
         self.stop_node(0)
 

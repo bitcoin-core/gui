@@ -418,8 +418,12 @@ class NetTest(BitcoinTestFramework):
 
         self.log.info("Test sendmsgtopeer")
         self.log.debug("Send a valid message")
+        msg_bytes_before = node.getpeerinfo()[0]["bytesrecv_per_msg"]["pong"]
+
         with self.nodes[1].assert_debug_log(expected_msgs=["received: addr"]):
             node.sendmsgtopeer(peer_id=0, msg_type="addr", msg="FFFFFF")
+            node.ping()
+            self.wait_until(lambda: node.getpeerinfo()[0]["bytesrecv_per_msg"]["pong"] > msg_bytes_before)
 
         self.log.debug("Test error for sending to non-existing peer")
         assert_raises_rpc_error(-1, "Error: Could not send message to peer", node.sendmsgtopeer, peer_id=100, msg_type="addr", msg="FF")
