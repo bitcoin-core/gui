@@ -483,29 +483,33 @@ std::string SettingToString(const common::SettingsValue& value, const std::strin
     return SettingToString(value).value_or(strDefault);
 }
 
-int64_t ArgsManager::GetIntArg(const std::string& strArg, int64_t nDefault) const
+template <std::integral Int>
+Int ArgsManager::GetArg(const std::string& strArg, Int nDefault) const
 {
-    return GetIntArg(strArg).value_or(nDefault);
+    return GetArg<Int>(strArg).value_or(nDefault);
 }
 
-std::optional<int64_t> ArgsManager::GetIntArg(const std::string& strArg) const
+template <std::integral Int>
+std::optional<Int> ArgsManager::GetArg(const std::string& strArg) const
 {
     const common::SettingsValue value = GetSetting(strArg);
-    return SettingToInt(value);
+    return SettingTo<Int>(value);
 }
 
-std::optional<int64_t> SettingToInt(const common::SettingsValue& value)
+template <std::integral Int>
+std::optional<Int> SettingTo(const common::SettingsValue& value)
 {
     if (value.isNull()) return std::nullopt;
     if (value.isFalse()) return 0;
     if (value.isTrue()) return 1;
-    if (value.isNum()) return value.getInt<int64_t>();
-    return LocaleIndependentAtoi<int64_t>(value.get_str());
+    if (value.isNum()) return value.getInt<Int>();
+    return LocaleIndependentAtoi<Int>(value.get_str());
 }
 
-int64_t SettingToInt(const common::SettingsValue& value, int64_t nDefault)
+template <std::integral Int>
+Int SettingTo(const common::SettingsValue& value, Int nDefault)
 {
-    return SettingToInt(value).value_or(nDefault);
+    return SettingTo<Int>(value).value_or(nDefault);
 }
 
 bool ArgsManager::GetBoolArg(const std::string& strArg, bool fDefault) const
@@ -530,6 +534,23 @@ bool SettingToBool(const common::SettingsValue& value, bool fDefault)
 {
     return SettingToBool(value).value_or(fDefault);
 }
+
+#define INSTANTIATE_INT_TYPE(Type)                                                    \
+    template Type ArgsManager::GetArg<Type>(const std::string&, Type) const;          \
+    template std::optional<Type> ArgsManager::GetArg<Type>(const std::string&) const; \
+    template Type SettingTo<Type>(const common::SettingsValue&, Type);                \
+    template std::optional<Type> SettingTo<Type>(const common::SettingsValue&)
+
+INSTANTIATE_INT_TYPE(int8_t);
+INSTANTIATE_INT_TYPE(uint8_t);
+INSTANTIATE_INT_TYPE(int16_t);
+INSTANTIATE_INT_TYPE(uint16_t);
+INSTANTIATE_INT_TYPE(int32_t);
+INSTANTIATE_INT_TYPE(uint32_t);
+INSTANTIATE_INT_TYPE(int64_t);
+INSTANTIATE_INT_TYPE(uint64_t);
+
+#undef INSTANTIATE_INT_TYPE
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
