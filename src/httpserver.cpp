@@ -211,7 +211,7 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
             }
         }
     }
-    auto hreq{std::make_unique<HTTPRequest>(req, *static_cast<const util::SignalInterrupt*>(arg))};
+    auto hreq{std::make_shared<HTTPRequest>(req, *static_cast<const util::SignalInterrupt*>(arg))};
 
     // Early address-based allow check
     if (!ClientAllowed(hreq->GetPeer())) {
@@ -258,7 +258,7 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
             return;
         }
 
-        auto item = [req = std::move(hreq), in_path = std::move(path), fn = i->handler]() {
+        auto item = [req = hreq, in_path = std::move(path), fn = i->handler]() {
             std::string err_msg;
             try {
                 fn(req.get(), in_path);
@@ -276,7 +276,13 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
             req->WriteReply(HTTP_INTERNAL_SERVER_ERROR, err_msg);
         };
 
-        [[maybe_unused]] auto _{g_threadpool_http.Submit(std::move(item))};
+        if (auto res = g_threadpool_http.Submit(std::move(item)); !res.has_value()) {
+            Assume(hreq.use_count() == 1); // ensure request will be deleted
+            // Both SubmitError::Inactive and SubmitError::Interrupted mean shutdown
+            LogWarning("HTTP request rejected during server shutdown: '%s'", SubmitErrorString(res.error()));
+            hreq->WriteReply(HTTP_SERVICE_UNAVAILABLE, "Request rejected during server shutdown");
+            return;
+        }
     } else {
         hreq->WriteReply(HTTP_NOT_FOUND);
     }

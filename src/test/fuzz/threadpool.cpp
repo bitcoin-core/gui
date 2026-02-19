@@ -87,10 +87,10 @@ FUZZ_TARGET(threadpool, .init = setup_threadpool_test) EXCLUSIVE_LOCKS_REQUIRED(
         std::future<void> fut;
         if (will_throw) {
             expected_fail_tasks++;
-            fut = g_pool.Submit(ThrowTask{});
+            fut = *Assert(g_pool.Submit(ThrowTask{}));
         } else {
             expected_task_counter++;
-            fut = g_pool.Submit(CounterTask{task_counter});
+            fut = *Assert(g_pool.Submit(CounterTask{task_counter}));
         }
 
         // If caller wants to wait immediately, consume the future here (safe).
