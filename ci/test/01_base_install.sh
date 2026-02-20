@@ -22,11 +22,6 @@ if [ -n "$DPKG_ADD_ARCH" ]; then
 fi
 
 if [ -n "${APT_LLVM_V}" ]; then
-  # Temporarily work around Sequoia PGP policy deadline for legacy repositories.
-  # See https://github.com/llvm/llvm-project/issues/153385.
-  if [ -f /usr/share/apt/default-sequoia.config ]; then
-    sed -i 's/\(sha1\.second_preimage_resistance =\).*/\1 9999-01-01/' /usr/share/apt/default-sequoia.config
-  fi
   ${CI_RETRY_EXE} apt-get update
   ${CI_RETRY_EXE} apt-get install curl -y
   curl "https://apt.llvm.org/llvm-snapshot.gpg.key" | tee "/etc/apt/trusted.gpg.d/apt.llvm.org.asc"
