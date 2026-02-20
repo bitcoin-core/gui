@@ -2308,41 +2308,70 @@ bool AppInitMain(NodeContext& node, interfaces::BlockAndHeaderTipInfo* tip_info)
 
 bool StartIndexBackgroundSync(NodeContext& node)
 {
-    // Find the oldest block among all indexes.
-    // This block is used to verify that we have the required blocks' data stored on disk,
-    // starting from that point up to the current tip.
-    // indexes_start_block='nullptr' means "start from height 0".
-    std::optional<const CBlockIndex*> indexes_start_block;
-    std::string older_index_name;
     ChainstateManager& chainman = *Assert(node.chainman);
     const Chainstate& chainstate = WITH_LOCK(::cs_main, return chainman.ValidatedChainstate());
     const CChain& index_chain = chainstate.m_chain;
+    const int current_height = WITH_LOCK(::cs_main, return index_chain.Height());
 
-    for (auto index : node.indexes) {
-        const IndexSummary& summary = index->GetSummary();
-        if (summary.synced) continue;
+    // Skip checking data availability if we have not synced any blocks yet
+    if (current_height > 0) {
+        // Before starting index sync, verify that all required block data is available
+        // on disk from each index's current sync position up to the chain tip.
+        //
+        // This is done separately for undo and block data: First we verify block + undo
+        // data existence from tip down to the lowest height required by any index that
+        // needs undo data (e.g., coinstatsindex, blockfilterindex). Then, if any
+        // block-only index needs to sync from a lower height than previously covered,
+        // verify block data existence down to that lower height.
+        //
+        // This avoids checking undo data for blocks where no index requires it,
+        // though currently block and undo data availability are synchronized on disk
+        // under normal circumstances.
+        std::optional<const CBlockIndex*> block_start;
+        std::string block_start_name;
+        std::optional<const CBlockIndex*> undo_start;
+        std::string undo_start_name;
 
-        // Get the last common block between the index best block and the active chain
-        LOCK(::cs_main);
-        const CBlockIndex* pindex = chainman.m_blockman.LookupBlockIndex(summary.best_block_hash);
-        if (!index_chain.Contains(pindex)) {
-            pindex = index_chain.FindFork(pindex);
+        for (const auto& index : node.indexes) {
+            const IndexSummary& summary = index->GetSummary();
+            if (summary.synced) continue;
+
+            // Get the last common block between the index best block and the active chain
+            const CBlockIndex* pindex = nullptr;
+            {
+                LOCK(::cs_main);
+                pindex = chainman.m_blockman.LookupBlockIndex(summary.best_block_hash);
+                if (!index_chain.Contains(pindex)) {
+                    pindex = index_chain.FindFork(pindex);
+                }
+            }
+            if (!pindex) {
+                pindex = index_chain.Genesis();
+            }
+
+            bool need_undo = index->CustomOptions().connect_undo_data;
+            auto& op_start_index = need_undo ? undo_start : block_start;
+            auto& name_index = need_undo ? undo_start_name : block_start_name;
+
+            if (op_start_index && pindex->nHeight >= op_start_index.value()->nHeight) continue;
+            op_start_index = pindex;
+            name_index = summary.name;
         }
 
-        if (!indexes_start_block || !pindex || pindex->nHeight < indexes_start_block.value()->nHeight) {
-            indexes_start_block = pindex;
-            older_index_name = summary.name;
-            if (!pindex) break; // Starting from genesis so no need to look for earlier block.
+        // Verify all blocks needed to sync to current tip are present including undo data.
+        if (undo_start) {
+            LOCK(::cs_main);
+            if (!chainman.m_blockman.CheckBlockDataAvailability(*index_chain.Tip(), *Assert(undo_start.value()), BlockStatus{BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO})) {
+                return InitError(Untranslated(strprintf("%s best block of the index goes beyond pruned data (including undo data). Please disable the index or reindex (which will download the whole blockchain again)", undo_start_name)));
+            }
         }
-    };
 
-    // Verify all blocks needed to sync to current tip are present.
-    if (indexes_start_block) {
-        LOCK(::cs_main);
-        const CBlockIndex* start_block = *indexes_start_block;
-        if (!start_block) start_block = chainman.ActiveChain().Genesis();
-        if (!chainman.m_blockman.CheckBlockDataAvailability(*index_chain.Tip(), *Assert(start_block))) {
-            return InitError(Untranslated(strprintf("%s best block of the index goes beyond pruned data. Please disable the index or reindex (which will download the whole blockchain again)", older_index_name)));
+        // Verify all blocks needed to sync to current tip are present unless we already checked all of them above.
+        if (block_start && !(undo_start && undo_start.value()->nHeight <= block_start.value()->nHeight)) {
+            LOCK(::cs_main);
+            if (!chainman.m_blockman.CheckBlockDataAvailability(*index_chain.Tip(), *Assert(block_start.value()), BlockStatus{BLOCK_HAVE_DATA})) {
+                return InitError(Untranslated(strprintf("%s best block of the index goes beyond pruned data. Please disable the index or reindex (which will download the whole blockchain again)", block_start_name)));
+            }
         }
     }
 
