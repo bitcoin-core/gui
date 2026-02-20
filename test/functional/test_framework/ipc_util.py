@@ -12,7 +12,7 @@ from pathlib import Path
 import shutil
 from typing import Optional
 
-from test_framework.messages import CBlock, CTransaction
+from test_framework.messages import CBlock
 
 # Test may be skipped and not have capnp installed
 try:
@@ -108,7 +108,7 @@ async def make_capnp_init_ctx(self):
 
 async def mining_create_block_template(mining, stack, ctx, opts):
     """Call mining.createNewBlock() and return template, then call template.destroy() when stack exits."""
-    response = await mining.createNewBlock(opts)
+    response = await mining.createNewBlock(ctx, opts)
     if not response._has("result"):
         return None
     return await stack.enter_async_context(destroying(response.result, ctx))
@@ -127,14 +127,6 @@ async def mining_get_block(block_template, ctx):
     block = CBlock()
     block.deserialize(block_data)
     return block
-
-
-async def mining_get_coinbase_raw_tx(block_template, ctx):
-    assert block_template is not None
-    coinbase_data = BytesIO((await block_template.getCoinbaseRawTx(ctx)).result)
-    tx = CTransaction()
-    tx.deserialize(coinbase_data)
-    return tx
 
 
 async def mining_get_coinbase_tx(block_template, ctx) -> CoinbaseTxData:

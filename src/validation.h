@@ -1311,7 +1311,7 @@ public:
     void UpdateUncommittedBlockStructures(CBlock& block, const CBlockIndex* pindexPrev) const;
 
     /** Produce the necessary coinbase commitment for a block (modifies the hash, don't call for mined blocks). */
-    std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev) const;
+    void GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev) const;
 
     /** This is used by net_processing to report pre-synchronization progress of headers, as
      *  headers are not yet fed to validation during that time, but validation is (for now)

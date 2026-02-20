@@ -46,7 +46,6 @@ struct CBlockTemplate
     std::vector<CAmount> vTxFees;
     // Sigops per transaction, not including coinbase transaction (unlike CBlock::vtx).
     std::vector<int64_t> vTxSigOpsCost;
-    std::vector<unsigned char> vchCoinbaseCommitment;
     /* A vector of package fee rates, ordered by the sequence in which
      * packages are selected for inclusion in the block template.*/
     std::vector<FeePerVSize> m_package_feerates;
