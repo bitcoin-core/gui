@@ -10,6 +10,8 @@
 
 #include <qt/guiutil.h>
 
+#include <qt/networkstyle.h>
+
 #include <clientversion.h>
 #include <common/args.h>
 #include <init.h>
@@ -27,7 +29,7 @@
 #include <QVBoxLayout>
 
 /** "Help message" or "About" dialog box */
-HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
+HelpMessageDialog::HelpMessageDialog(QWidget* parent, bool about, const NetworkStyle* network_style) :
     QDialog(parent, GUIUtil::dialog_flags),
     ui(new Ui::HelpMessageDialog)
 {
@@ -37,8 +39,8 @@ HelpMessageDialog::HelpMessageDialog(QWidget *parent, bool about) :
 
     if (about)
     {
-        setWindowTitle(tr("About %1").arg(CLIENT_NAME));
-
+        this->setAboutWindowTitle(network_style);
+        this->setChainTypeIconOnAboutLogo(network_style);
         std::string licenseInfo = LicenseInfo();
         /// HTML-format the license message from the core
         QString licenseInfoHTML = QString::fromStdString(LicenseInfo());
@@ -135,6 +137,21 @@ void HelpMessageDialog::showOrPrint()
 void HelpMessageDialog::on_okButton_accepted()
 {
     close();
+}
+
+void HelpMessageDialog::setAboutWindowTitle(const NetworkStyle* network_style)
+{
+    QString aboutTitle = tr("About %1").arg(CLIENT_NAME);
+    if (network_style && Params().GetChainType() != ChainType::MAIN) {
+        aboutTitle.append(" " + network_style->getTitleAddText());
+    }
+    setWindowTitle(aboutTitle);
+}
+
+void HelpMessageDialog::setChainTypeIconOnAboutLogo(const NetworkStyle* network_style)
+{
+    const QSize requiredSize(1024, 1024);
+    if (network_style) ui->aboutLogo->setPixmap(network_style->getAppIcon().pixmap(requiredSize));
 }
 
 

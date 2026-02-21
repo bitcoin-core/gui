@@ -8,6 +8,7 @@
 #include <consensus/amount.h>
 #include <net.h>
 #include <netaddress.h>
+#include <qt/networkstyle.h>
 #include <util/check.h>
 #include <util/fs.h>
 
@@ -404,6 +405,11 @@ namespace GUIUtil
      * Shows a QDialog instance asynchronously, and deletes it on close.
      */
     void ShowModalDialogAsynchronously(QDialog* dialog);
+
+    void ShowMessageBox(const QString& message,
+                                QMessageBox::Icon box_icon,
+                                const NetworkStyle* network_style = nullptr,
+                                const QString& title = "");
 
     inline bool IsEscapeOrBack(int key)
     {
