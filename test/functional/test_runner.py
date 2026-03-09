@@ -90,6 +90,7 @@ EXTENDED_SCRIPTS = [
     'feature_pruning.py',
     'feature_dbcrash.py',
     'feature_index_prune.py',
+    'gui_wallet_send.py',
 ]
 
 # Special script to run each bench sanity check
