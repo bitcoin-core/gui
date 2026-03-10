@@ -5,128 +5,20 @@
 """End-to-end send transaction test via bitcoin-qt and the test bridge."""
 
 from decimal import Decimal
-import os
-import re
 
 from test_framework.qt import (
-    QtDriver,
-    bitcoin_qt_supports_test_automation,
-    find_bitcoin_qt_binary,
+    GUI_NODE_INDEX,
+    QtWidgetsTestFramework,
+    parse_display_amount,
 )
-from test_framework.test_framework import BitcoinTestFramework, SkipTest
-from test_framework.test_node import TestNode
 from test_framework.util import (
     assert_equal,
-    get_datadir_path,
 )
 
 
-GUI_NODE_INDEX = 2
-
-
-def parse_display_amount(text):
-    cleaned = re.sub(r"[^0-9.\-]", "", text)
-    return Decimal(cleaned) if cleaned else Decimal("0")
-
-
-class WalletSendGuiTest(BitcoinTestFramework):
+class WalletSendGuiTest(QtWidgetsTestFramework):
     def set_test_params(self):
-        self.num_nodes = 3
-        self.noban_tx_relay = True
-        self.supports_cli = False
-        self.uses_wallet = True
-        self.extra_args = [
-            ["-fallbackfee=0.0002", "-walletrbf=1"],
-            ["-fallbackfee=0.0002", "-walletrbf=1"],
-            ["-fallbackfee=0.0002", "-walletrbf=1"],
-        ]
-
-    def skip_test_if_missing_module(self):
-        self.skip_if_no_wallet()
-        try:
-            self.gui_binary = find_bitcoin_qt_binary(self.config)
-        except FileNotFoundError as e:
-            raise SkipTest(str(e))
-        if not bitcoin_qt_supports_test_automation(self.gui_binary):
-            raise SkipTest("bitcoin-qt was not built with -DENABLE_TEST_AUTOMATION=ON")
-
-    def setup_nodes(self):
-        self.socket_path = os.path.join(self.options.tmpdir, "qt_bridge.sock")
-        self.screenshot_dir = os.path.join(self.options.tmpdir, "qt_screenshots")
-        self.screenshot_index = 0
-
-        self.add_nodes(2, self.extra_args[:2])
-
-        gui_binaries = self.get_binaries()
-        gui_binaries.paths.bitcoind = self.gui_binary
-        gui_node = TestNode(
-            GUI_NODE_INDEX,
-            get_datadir_path(self.options.tmpdir, GUI_NODE_INDEX),
-            chain=self.chain,
-            rpchost=None,
-            timewait=self.rpc_timeout,
-            timeout_factor=self.options.timeout_factor,
-            binaries=gui_binaries,
-            coverage_dir=self.options.coveragedir,
-            cwd=self.options.tmpdir,
-            extra_args=self.extra_args[GUI_NODE_INDEX] + [f"-test-automation={self.socket_path}"],
-            use_cli=self.options.usecli,
-            start_perf=self.options.perf,
-            v2transport=self.options.v2transport,
-            uses_wallet=self.uses_wallet,
-        )
-        self.nodes.append(gui_node)
-
-        self.start_node(0)
-        self.start_node(1)
-        self.start_node(GUI_NODE_INDEX, env={"QT_QPA_PLATFORM": "offscreen"})
-
-        if self.uses_wallet:
-            self.import_deterministic_coinbase_privkeys()
-
-        if not self.setup_clean_chain:
-            for node in self.nodes:
-                assert_equal(node.getblockchaininfo()["blocks"], 199)
-            block_hash = self.generate(self.nodes[0], 1, sync_fun=self.no_op)[0]
-            block = self.nodes[0].getblock(blockhash=block_hash, verbosity=0)
-            for node in self.nodes:
-                node.submitblock(block)
-
-    def dump_gui_state(self, gui):
-        try:
-            self.log.info("GUI windows: %s", gui.list_windows())
-        except Exception as e:
-            self.log.info("Failed to list GUI windows: %s", e)
-        try:
-            active_window = gui.get_active_window()
-            self.log.info("Active GUI window: %s", active_window)
-            if active_window == "QMessageBox":
-                self.log.info("Active message box text: %s", gui.get_text("qt_msgbox_label", window=active_window))
-        except Exception as e:
-            self.log.info("Failed to inspect active GUI window: %s", e)
-        try:
-            self.log.info("Main window objects: %s", gui.list_objects(window="mainWindow"))
-        except Exception as e:
-            self.log.info("Failed to list main window objects: %s", e)
-        self.capture_screenshot(gui, "failure_active_window")
-        self.capture_screenshot(gui, "failure_main_window", window="mainWindow")
-
-    def capture_screenshot(self, gui, step_name, *, window=None):
-        os.makedirs(self.screenshot_dir, exist_ok=True)
-        self.screenshot_index += 1
-        safe_name = re.sub(r"[^a-z0-9_]+", "_", step_name.lower()).strip("_")
-        target_window = window
-        if target_window is None:
-            try:
-                target_window = gui.get_active_window()
-            except Exception:
-                target_window = "mainWindow"
-        path = os.path.join(self.screenshot_dir, f"{self.screenshot_index:02d}_{safe_name}.png")
-        try:
-            gui.save_screenshot(path, window=target_window)
-            self.log.info("Saved GUI screenshot %s (%s)", path, target_window)
-        except Exception as e:
-            self.log.info("Failed to save GUI screenshot %s: %s", path, e)
+        super().set_test_params()
 
     def run_test(self):
         gui_wallet = self.nodes[GUI_NODE_INDEX].get_wallet_rpc(self.default_wallet_name)
@@ -135,9 +27,9 @@ class WalletSendGuiTest(BitcoinTestFramework):
         amount_sats = int(amount * Decimal(100_000_000))
         recipient_address = recipient_wallet.getnewaddress()
 
-        gui = QtDriver(self.socket_path, timeout=60)
+        gui = self.create_gui_driver()
         try:
-            gui.wait_for_window("mainWindow", timeout_ms=60000)
+            self.wait_for_main_window(gui)
             gui.wait_for_property("sendCoinsAction", "enabled", window="mainWindow", value=True, timeout_ms=60000)
             self.capture_screenshot(gui, "main_window_ready", window="mainWindow")
 

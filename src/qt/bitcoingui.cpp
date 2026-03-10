@@ -320,14 +320,17 @@ void BitcoinGUI::createActions()
     optionsAction->setStatusTip(tr("Modify configuration options for %1").arg(CLIENT_NAME));
     optionsAction->setMenuRole(QAction::PreferencesRole);
     optionsAction->setEnabled(false);
+    optionsAction->setObjectName("optionsAction");
 
     encryptWalletAction = new QAction(tr("&Encrypt Wallet…"), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
     encryptWalletAction->setCheckable(true);
+    encryptWalletAction->setObjectName("encryptWalletAction");
     backupWalletAction = new QAction(tr("&Backup Wallet…"), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
     changePassphraseAction = new QAction(tr("&Change Passphrase…"), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
+    changePassphraseAction->setObjectName("changePassphraseAction");
     signMessageAction = new QAction(tr("Sign &message…"), this);
     signMessageAction->setStatusTip(tr("Sign messages with your Bitcoin addresses to prove you own them"));
     verifyMessageAction = new QAction(tr("&Verify message…"), this);
@@ -354,14 +357,17 @@ void BitcoinGUI::createActions()
     m_open_wallet_action = new QAction(tr("Open Wallet"), this);
     m_open_wallet_action->setEnabled(false);
     m_open_wallet_action->setStatusTip(tr("Open a wallet"));
+    m_open_wallet_action->setObjectName("openWalletAction");
     m_open_wallet_menu = new QMenu(this);
 
     m_close_wallet_action = new QAction(tr("Close Wallet…"), this);
     m_close_wallet_action->setStatusTip(tr("Close wallet"));
+    m_close_wallet_action->setObjectName("closeWalletAction");
 
     m_create_wallet_action = new QAction(tr("Create Wallet…"), this);
     m_create_wallet_action->setEnabled(false);
     m_create_wallet_action->setStatusTip(tr("Create a new wallet"));
+    m_create_wallet_action->setObjectName("createWalletAction");
 
     //: Name of the menu item that restores wallet from a backup file.
     m_restore_wallet_action = new QAction(tr("Restore Wallet…"), this);
@@ -385,6 +391,7 @@ void BitcoinGUI::createActions()
     m_mask_values_action->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M));
     m_mask_values_action->setStatusTip(tr("Mask the values in the Overview tab"));
     m_mask_values_action->setCheckable(true);
+    m_mask_values_action->setObjectName("maskValuesAction");
 
     connect(quitAction, &QAction::triggered, this, &BitcoinGUI::quitRequested);
     connect(aboutAction, &QAction::triggered, this, &BitcoinGUI::aboutClicked);

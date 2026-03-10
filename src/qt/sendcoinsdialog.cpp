@@ -408,6 +408,8 @@ void SendCoinsDialog::presentPSBT(PartiallySignedTransaction& psbtx)
     msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard);
     msgBox.setDefaultButton(QMessageBox::Discard);
     msgBox.setObjectName("psbt_copied_message");
+    msgBox.button(QMessageBox::Save)->setObjectName("psbtSaveButton");
+    msgBox.button(QMessageBox::Discard)->setObjectName("psbtDiscardButton");
     switch (msgBox.exec()) {
     case QMessageBox::Save: {
         QString selectedFilter;
