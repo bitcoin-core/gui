@@ -6,7 +6,7 @@
 
 from decimal import Decimal
 
-from test_framework.qt import GUI_NODE_INDEX, QtWidgetsTestFramework
+from test_framework.qt import QtWidgetsTestFramework
 from test_framework.util import assert_equal
 
 
