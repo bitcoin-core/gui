@@ -13,6 +13,7 @@
 
 #include <QKeyEvent>
 #include <QMessageBox>
+#include <QDialogButtonBox>
 #include <QPushButton>
 
 AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureString* passphrase_out) :
@@ -59,6 +60,8 @@ AskPassphraseDialog::AskPassphraseDialog(Mode _mode, QWidget *parent, SecureStri
             break;
     }
     textChanged();
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setObjectName("passphraseOkButton");
+    ui->buttonBox->button(QDialogButtonBox::Cancel)->setObjectName("passphraseCancelButton");
     connect(ui->toggleShowPasswordButton, &QPushButton::toggled, this, &AskPassphraseDialog::toggleShowPassword);
     connect(ui->passEdit1, &QLineEdit::textChanged, this, &AskPassphraseDialog::textChanged);
     connect(ui->passEdit2, &QLineEdit::textChanged, this, &AskPassphraseDialog::textChanged);
@@ -105,8 +108,11 @@ void AskPassphraseDialog::accept()
                                   tr("Confirm wallet encryption"),
                                   tr("Warning: If you encrypt your wallet and lose your passphrase, you will <b>LOSE ALL OF YOUR BITCOINS</b>!") + "<br><br>" + tr("Are you sure you wish to encrypt your wallet?"),
                                   QMessageBox::Cancel | QMessageBox::Yes, this);
+        msgBoxConfirm.setObjectName("encryptWalletConfirmDialog");
         msgBoxConfirm.button(QMessageBox::Yes)->setText(tr("Continue"));
         msgBoxConfirm.button(QMessageBox::Cancel)->setText(tr("Back"));
+        msgBoxConfirm.button(QMessageBox::Yes)->setObjectName("encryptWalletContinueButton");
+        msgBoxConfirm.button(QMessageBox::Cancel)->setObjectName("encryptWalletBackButton");
         msgBoxConfirm.setDefaultButton(QMessageBox::Cancel);
         QMessageBox::StandardButton retval = (QMessageBox::StandardButton)msgBoxConfirm.exec();
         if(retval == QMessageBox::Yes)
@@ -133,15 +139,21 @@ void AskPassphraseDialog::accept()
                 } else {
                     assert(model != nullptr);
                     if (model->setWalletEncrypted(newpass1)) {
-                        QMessageBox::warning(this, tr("Wallet encrypted"),
-                                             "<qt>" +
-                                             tr("Your wallet is now encrypted. ") + encryption_reminder +
-                                             "<br><br><b>" +
-                                             tr("IMPORTANT: Any previous backups you have made of your wallet file "
-                                             "should be replaced with the newly generated, encrypted wallet file. "
-                                             "For security reasons, previous backups of the unencrypted wallet file "
-                                             "will become useless as soon as you start using the new, encrypted wallet.") +
-                                             "</b></qt>");
+                        QMessageBox msgBoxEncrypted(QMessageBox::Warning,
+                                                    tr("Wallet encrypted"),
+                                                    "<qt>" +
+                                                    tr("Your wallet is now encrypted. ") + encryption_reminder +
+                                                    "<br><br><b>" +
+                                                    tr("IMPORTANT: Any previous backups you have made of your wallet file "
+                                                       "should be replaced with the newly generated, encrypted wallet file. "
+                                                       "For security reasons, previous backups of the unencrypted wallet file "
+                                                       "will become useless as soon as you start using the new, encrypted wallet.") +
+                                                    "</b></qt>",
+                                                    QMessageBox::Ok,
+                                                    this);
+                        msgBoxEncrypted.setObjectName("walletEncryptedDialog");
+                        msgBoxEncrypted.button(QMessageBox::Ok)->setObjectName("walletEncryptedOkButton");
+                        msgBoxEncrypted.exec();
                     } else {
                         QMessageBox::critical(this, tr("Wallet encryption failed"),
                                              tr("Wallet encryption failed due to an internal error. Your wallet was not encrypted."));
@@ -191,8 +203,14 @@ void AskPassphraseDialog::accept()
         {
             if(model->changePassphrase(oldpass, newpass1))
             {
-                QMessageBox::information(this, tr("Wallet encrypted"),
-                                     tr("Wallet passphrase was successfully changed."));
+                QMessageBox msgBoxChanged(QMessageBox::Information,
+                                          tr("Wallet encrypted"),
+                                          tr("Wallet passphrase was successfully changed."),
+                                          QMessageBox::Ok,
+                                          this);
+                msgBoxChanged.setObjectName("passphraseChangedDialog");
+                msgBoxChanged.button(QMessageBox::Ok)->setObjectName("passphraseChangedOkButton");
+                msgBoxChanged.exec();
                 QDialog::accept(); // Success
             }
             else
