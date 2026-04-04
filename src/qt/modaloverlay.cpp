@@ -10,6 +10,8 @@
 #include <chainparams.h>
 #include <qt/guiutil.h>
 
+#include <cmath>
+
 #include <QEasingCurve>
 #include <QPropertyAnimation>
 #include <QResizeEvent>
@@ -163,12 +165,18 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
 
 void ModalOverlay::UpdateHeaderSyncLabel() {
     int est_headers_left = bestHeaderDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
-    ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)…").arg(bestHeaderHeight).arg(QString::number(100.0 / (bestHeaderHeight + est_headers_left) * bestHeaderHeight, 'f', 1)));
+    double pct = 100.0 * bestHeaderHeight / (bestHeaderHeight + est_headers_left);
+    // Truncate to one decimal place to avoid displaying 100.0% when headers are still missing
+    pct = std::floor(pct * 10.0) / 10.0;
+    ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)…").arg(bestHeaderHeight).arg(QString::number(pct, 'f', 1)));
 }
 
 void ModalOverlay::UpdateHeaderPresyncLabel(int height, const QDateTime& blockDate) {
     int est_headers_left = blockDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
-    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)…").arg(height).arg(QString::number(100.0 / (height + est_headers_left) * height, 'f', 1)));
+    double pct = 100.0 * height / (height + est_headers_left);
+    // Truncate to one decimal place to avoid displaying 100.0% when headers are still missing
+    pct = std::floor(pct * 10.0) / 10.0;
+    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)…").arg(height).arg(QString::number(pct, 'f', 1)));
 }
 
 void ModalOverlay::toggleVisibility()
