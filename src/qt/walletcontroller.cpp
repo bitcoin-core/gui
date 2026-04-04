@@ -23,6 +23,7 @@
 #include <chrono>
 
 #include <QApplication>
+#include <QAbstractButton>
 #include <QMessageBox>
 #include <QMetaObject>
 #include <QMutexLocker>
@@ -90,11 +91,14 @@ void WalletController::removeWallet(WalletModel* wallet_model)
 void WalletController::closeWallet(WalletModel* wallet_model, QWidget* parent)
 {
     QMessageBox box(parent);
+    box.setObjectName("closeWalletConfirmDialog");
     box.setWindowTitle(tr("Close wallet"));
     box.setText(tr("Are you sure you wish to close the wallet <i>%1</i>?").arg(GUIUtil::HtmlEscape(wallet_model->getDisplayName())));
     box.setInformativeText(tr("Closing the wallet for too long can result in having to resync the entire chain if pruning is enabled."));
     box.setStandardButtons(QMessageBox::Yes|QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Yes);
+    box.button(QMessageBox::Yes)->setObjectName("closeWalletConfirmButton");
+    box.button(QMessageBox::Cancel)->setObjectName("closeWalletCancelButton");
     if (box.exec() != QMessageBox::Yes) return;
 
     removeWallet(wallet_model);
