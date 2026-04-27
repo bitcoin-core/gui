@@ -29,6 +29,9 @@
 #include <qt/optionsmodel.h>
 #include <qt/platformstyle.h>
 #include <qt/splashscreen.h>
+#ifdef ENABLE_TEST_AUTOMATION
+#include <qt/testbridge.h>
+#endif
 #include <qt/utilitydialog.h>
 #include <qt/winshutdownmonitor.h>
 #include <uint256.h>
@@ -262,6 +265,16 @@ void BitcoinApplication::createWindow(const NetworkStyle *networkStyle)
     window = new BitcoinGUI(node(), platformStyle, networkStyle, nullptr);
     connect(window, &BitcoinGUI::quitRequested, this, &BitcoinApplication::requestShutdown);
 
+#ifdef ENABLE_TEST_AUTOMATION
+    if (gArgs.IsArgSet("-test-automation")) {
+        QString socket_path = QString::fromStdString(gArgs.GetArg("-test-automation", ""));
+        if (socket_path.isEmpty()) {
+            socket_path = QString::fromStdString((gArgs.GetDataDirNet() / "test_bridge.sock").utf8string());
+        }
+        m_test_bridge = std::make_unique<TestBridge>(window, socket_path);
+    }
+#endif
+
     pollShutdownTimer = new QTimer(window);
     connect(pollShutdownTimer, &QTimer::timeout, [this]{
         if (!QApplication::activeModalWidget()) {
@@ -475,6 +488,9 @@ static void SetupUIArgs(ArgsManager& argsman)
     argsman.AddArg("-resetguisettings", "Reset all settings changed in the GUI", ArgsManager::ALLOW_ANY, OptionsCategory::GUI);
     argsman.AddArg("-splash", strprintf("Show splash screen on startup (default: %u)", DEFAULT_SPLASHSCREEN), ArgsManager::ALLOW_ANY, OptionsCategory::GUI);
     argsman.AddArg("-uiplatform", strprintf("Select platform to customize UI for (one of windows, macosx, other; default: %s)", BitcoinGUI::DEFAULT_UIPLATFORM), ArgsManager::ALLOW_ANY | ArgsManager::DEBUG_ONLY, OptionsCategory::GUI);
+#ifdef ENABLE_TEST_AUTOMATION
+    argsman.AddArg("-test-automation=<path>", "Enable test automation bridge on the given local socket path", ArgsManager::ALLOW_ANY, OptionsCategory::GUI);
+#endif
 }
 
 int GuiMain(int argc, char* argv[])
