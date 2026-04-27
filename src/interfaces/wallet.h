@@ -127,6 +127,9 @@ public:
     //! Save or remove receive request.
     virtual bool setAddressReceiveRequest(const CTxDestination& dest, const std::string& id, const std::string& value) = 0;
 
+    //! Whether the given output is a change
+    virtual bool isChange(const CTxOut& txout) const = 0;
+
     //! Display address on external signer
     virtual util::Result<void> displayAddress(const CTxDestination& dest) = 0;
 
@@ -168,7 +171,8 @@ public:
         std::vector<bilingual_str>& errors,
         CAmount& old_fee,
         CAmount& new_fee,
-        CMutableTransaction& mtx) = 0;
+        CMutableTransaction& mtx,
+        std::optional<uint32_t> reduce_output) = 0;
 
     //! Sign bump transaction.
     virtual bool signBumpTransaction(CMutableTransaction& mtx) = 0;

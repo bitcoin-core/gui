@@ -11,6 +11,7 @@
 #include <key_io.h>
 #include <qt/bitcoinamountfield.h>
 #include <qt/bitcoinunits.h>
+#include <qt/bumpfeechoosechangedialog.h>
 #include <qt/clientmodel.h>
 #include <qt/optionsmodel.h>
 #include <qt/overviewpage.h>
@@ -40,6 +41,7 @@
 #include <QClipboard>
 #include <QObject>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QTextEdit>
@@ -61,12 +63,41 @@ namespace
 //! Press "Yes" or "Cancel" buttons in modal send confirmation dialog.
 void ConfirmSend(QString* text = nullptr, QMessageBox::StandardButton confirm_type = QMessageBox::Yes)
 {
-    QTimer::singleShot(0, [text, confirm_type]() {
+    QTimer::singleShot(10ms, [text, confirm_type]() {
         for (QWidget* widget : QApplication::topLevelWidgets()) {
             if (widget->inherits("SendConfirmationDialog")) {
                 SendConfirmationDialog* dialog = qobject_cast<SendConfirmationDialog*>(widget);
                 if (text) *text = dialog->text();
                 QAbstractButton* button = dialog->button(confirm_type);
+                button->setEnabled(true);
+                button->click();
+            }
+        }
+    });
+}
+
+//! In the BumpfeeChooseChangeDialog, choose the radio button at the index, or use the default. Then Press "Yes" or "Cancel".
+void ChooseBumpfeeOutput(std::optional<uint32_t> index = std::nullopt, bool cancel = false)
+{
+    QTimer::singleShot(0, [index, cancel]() {
+        for (QWidget* widget : QApplication::topLevelWidgets()) {
+            if (widget->inherits("BumpfeeChooseChangeDialog")) {
+                BumpfeeChooseChangeDialog* dialog = qobject_cast<BumpfeeChooseChangeDialog*>(widget);
+
+                if (index.has_value()) {
+                    QString button_name;
+                    if (index.value() == 0) {
+                        button_name = QString("none_radioButton");
+                    } else {
+                        button_name = QString::number(index.value() - 1) + QString("_radioButton");
+                    }
+                    QRadioButton* button = dialog->findChild<QRadioButton*>(button_name);
+                    button->setEnabled(true);
+                    button->click();
+                }
+
+                QDialogButtonBox* button_box = dialog->findChild<QDialogButtonBox*>(QString("buttonBox"));
+                QAbstractButton* button = button_box->button(cancel ? QDialogButtonBox::Cancel : QDialogButtonBox::Ok);
                 button->setEnabled(true);
                 button->click();
             }
@@ -126,11 +157,12 @@ void BumpFee(TransactionView& view, const Txid& txid, bool expectDisabled, std::
     QCOMPARE(action->isEnabled(), !expectDisabled);
 
     action->setEnabled(true);
+    ChooseBumpfeeOutput();
     QString text;
     if (expectError.empty()) {
         ConfirmSend(&text, cancel ? QMessageBox::Cancel : QMessageBox::Yes);
     } else {
-        ConfirmMessage(&text, 0ms);
+        ConfirmMessage(&text, 10ms);
     }
     action->trigger();
     QVERIFY(text.indexOf(QString::fromStdString(expectError)) != -1);
