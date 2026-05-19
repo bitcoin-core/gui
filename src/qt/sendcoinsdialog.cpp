@@ -278,6 +278,8 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
     }
 
     // prepare transaction for getting txFee earlier
+    // Create unsigned transaction to support creating unsigned PSBTs.
+    // Signing is deferred until the user clicks "Send".
     m_current_transaction = std::make_unique<WalletModelTransaction>(recipients);
     WalletModel::SendCoinsReturn prepareStatus;
 
@@ -354,7 +356,7 @@ bool SendCoinsDialog::PrepareSendText(QString& question_string, QString& informa
 
         // append transaction size
         //: When reviewing a newly created PSBT (via Send flow), the transaction fee is shown, with "virtual size" of the transaction displayed for context
-        question_string.append(" (" + tr("%1 kvB", "PSBT transaction creation").arg((double)m_current_transaction->getTransactionSize() / 1000, 0, 'g', 3) + "): ");
+        question_string.append(" (" + tr("%1 kvB (unsigned)", "PSBT transaction creation").arg((double)m_current_transaction->getTransactionSize() / 1000, 0, 'g', 3) + "): ");
 
         // append transaction fee value
         question_string.append("<span style='color:#aa0000; font-weight:bold;'>");
@@ -512,6 +514,12 @@ void SendCoinsDialog::sendButtonClicked([[maybe_unused]] bool checked)
         presentPSBT(psbtx);
     } else {
         // "Send" clicked
+        WalletModel::UnlockContext ctx(model->requestUnlock());
+        if (!ctx.isValid()) {
+            fNewRecipientAllowed = true;
+            return;
+        }
+
         assert(!model->wallet().privateKeysDisabled() || model->wallet().hasExternalSigner());
         bool broadcast = true;
         if (model->wallet().hasExternalSigner()) {
@@ -536,6 +544,24 @@ void SendCoinsDialog::sendButtonClicked([[maybe_unused]] bool checked)
                 } else {
                     presentPSBT(psbtx);
                 }
+            }
+        } else {
+            // Sign the transaction now that the user has confirmed they want to send.
+            CMutableTransaction mtx = CMutableTransaction{*(m_current_transaction->getWtx())};
+            PartiallySignedTransaction psbtx(mtx);
+            bool complete = false;
+            // Fill and sign the PSBT
+            const auto err{model->wallet().fillPSBT(std::nullopt, /*sign=*/true, /*bip32derivs=*/false, /*n_signed=*/nullptr, psbtx, complete)};
+            if (err || !complete) {
+                Q_EMIT message(tr("Send Coins"), tr("Failed to sign transaction."),
+                    CClientUIInterface::MSG_ERROR);
+                send_failure = true;
+                broadcast = false;
+            } else {
+                // Extract the signed transaction
+                CHECK_NONFATAL(FinalizeAndExtractPSBT(psbtx, mtx));
+                const CTransactionRef tx = MakeTransactionRef(mtx);
+                m_current_transaction->setWtx(tx);
             }
         }
 
