@@ -408,6 +408,8 @@ void SendCoinsDialog::presentPSBT(PartiallySignedTransaction& psbtx)
     msgBox.setStandardButtons(QMessageBox::Save | QMessageBox::Discard);
     msgBox.setDefaultButton(QMessageBox::Discard);
     msgBox.setObjectName("psbt_copied_message");
+    msgBox.button(QMessageBox::Save)->setObjectName("psbtSaveButton");
+    msgBox.button(QMessageBox::Discard)->setObjectName("psbtDiscardButton");
     switch (msgBox.exec()) {
     case QMessageBox::Save: {
         QString selectedFilter;
@@ -589,6 +591,7 @@ void SendCoinsDialog::accept()
 SendCoinsEntry *SendCoinsDialog::addEntry()
 {
     SendCoinsEntry *entry = new SendCoinsEntry(platformStyle, this);
+    entry->setObjectName(QStringLiteral("sendCoinsEntry_%1").arg(ui->entries->count()));
     entry->setModel(model);
     ui->entries->addWidget(entry);
     connect(entry, &SendCoinsEntry::removeEntry, this, &SendCoinsDialog::removeEntry);
@@ -1052,6 +1055,7 @@ void SendCoinsDialog::coinControlUpdateLabels()
 SendConfirmationDialog::SendConfirmationDialog(const QString& title, const QString& text, const QString& informative_text, const QString& detailed_text, int _secDelay, bool enable_send, bool always_show_unsigned, QWidget* parent)
     : QMessageBox(parent), secDelay(_secDelay), m_enable_send(enable_send)
 {
+    setObjectName("sendConfirmationDialog");
     setIcon(QMessageBox::Question);
     setWindowTitle(title); // On macOS, the window title is ignored (as required by the macOS Guidelines).
     setText(text);
@@ -1061,10 +1065,14 @@ SendConfirmationDialog::SendConfirmationDialog(const QString& title, const QStri
     if (always_show_unsigned || !enable_send) addButton(QMessageBox::Save);
     setDefaultButton(QMessageBox::Cancel);
     yesButton = button(QMessageBox::Yes);
+    yesButton->setObjectName("sendConfirmButton");
     if (confirmButtonText.isEmpty()) {
         confirmButtonText = yesButton->text();
     }
     m_psbt_button = button(QMessageBox::Save);
+    if (m_psbt_button) {
+        m_psbt_button->setObjectName("createUnsignedButton");
+    }
     updateButtons();
     connect(&countDownTimer, &QTimer::timeout, this, &SendConfirmationDialog::countDown);
 }

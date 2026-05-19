@@ -10,6 +10,7 @@
 
 #include <qt/guiutil.h>
 
+#include <QDialogButtonBox>
 #include <QPushButton>
 
 CreateWalletDialog::CreateWalletDialog(QWidget* parent) :
@@ -19,6 +20,8 @@ CreateWalletDialog::CreateWalletDialog(QWidget* parent) :
     ui->setupUi(this);
     ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Create"));
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    ui->buttonBox->button(QDialogButtonBox::Ok)->setObjectName("createWalletOkButton");
+    ui->buttonBox->button(QDialogButtonBox::Cancel)->setObjectName("createWalletCancelButton");
     ui->wallet_name_line_edit->setFocus(Qt::ActiveWindowFocusReason);
 
     connect(ui->wallet_name_line_edit, &QLineEdit::textEdited, [this](const QString& text) {

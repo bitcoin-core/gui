@@ -35,12 +35,14 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
       platformStyle(_platformStyle)
 {
     assert(walletModel);
+    setObjectName("walletView");
 
     // Create tabs
     overviewPage = new OverviewPage(platformStyle);
     overviewPage->setWalletModel(walletModel);
 
     transactionsPage = new QWidget(this);
+    transactionsPage->setObjectName("TransactionsPage");
     QVBoxLayout *vbox = new QVBoxLayout();
     QHBoxLayout *hbox_buttons = new QHBoxLayout();
     transactionView = new TransactionView(platformStyle, this);
@@ -48,6 +50,7 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
 
     vbox->addWidget(transactionView);
     QPushButton *exportButton = new QPushButton(tr("&Export"), this);
+    exportButton->setObjectName("transactionsExportButton");
     exportButton->setToolTip(tr("Export the data in the current tab to a file"));
     if (platformStyle->getImagesOnButtons()) {
         exportButton->setIcon(platformStyle->SingleColorIcon(":/icons/export"));
@@ -64,9 +67,11 @@ WalletView::WalletView(WalletModel* wallet_model, const PlatformStyle* _platform
     sendCoinsPage->setModel(walletModel);
 
     usedSendingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::SendingTab, this);
+    usedSendingAddressesPage->setObjectName("UsedSendingAddressesPage");
     usedSendingAddressesPage->setModel(walletModel->getAddressTableModel());
 
     usedReceivingAddressesPage = new AddressBookPage(platformStyle, AddressBookPage::ForEditing, AddressBookPage::ReceivingTab, this);
+    usedReceivingAddressesPage->setObjectName("UsedReceivingAddressesPage");
     usedReceivingAddressesPage->setModel(walletModel->getAddressTableModel());
 
     addWidget(overviewPage);

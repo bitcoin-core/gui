@@ -130,6 +130,14 @@ add_library(bitcoinqt STATIC EXCLUDE_FROM_ALL
   ${BITCOIN_QRC}
   ${BITCOIN_LOCALE_QRC}
 )
+if(ENABLE_TEST_AUTOMATION)
+  target_sources(bitcoinqt
+    PRIVATE
+      testbridge.cpp
+      testbridge.h
+  )
+  target_compile_definitions(bitcoinqt PUBLIC ENABLE_TEST_AUTOMATION)
+endif()
 target_compile_definitions(bitcoinqt
   PUBLIC
     QT_NO_KEYWORDS
@@ -223,8 +231,11 @@ if(ENABLE_WALLET)
   target_link_libraries(bitcoinqt
     PRIVATE
       bitcoin_wallet
-      Qt6::Network
   )
+endif()
+
+if(ENABLE_WALLET OR ENABLE_TEST_AUTOMATION)
+  target_link_libraries(bitcoinqt PRIVATE Qt6::Network)
 endif()
 
 if(WITH_DBUS)

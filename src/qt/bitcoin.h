@@ -23,6 +23,7 @@ class OptionsModel;
 class PaymentServer;
 class PlatformStyle;
 class SplashScreen;
+class TestBridge;
 class WalletController;
 class WalletModel;
 namespace interfaces {
@@ -98,6 +99,9 @@ private:
 #ifdef ENABLE_WALLET
     PaymentServer* paymentServer{nullptr};
     WalletController* m_wallet_controller{nullptr};
+#endif
+#ifdef ENABLE_TEST_AUTOMATION
+    std::unique_ptr<TestBridge> m_test_bridge;
 #endif
     const PlatformStyle* platformStyle{nullptr};
     std::unique_ptr<QWidget> shutdownWindow;
