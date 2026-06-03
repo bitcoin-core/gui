@@ -183,6 +183,9 @@ private:
     /** Keep track of previous number of blocks, to detect progress */
     int prevBlocks = 0;
     int spinnerFrame = 0;
+    bool m_headers_presync_active{false};
+    int64_t m_headers_presync_height{0};
+    QDateTime m_headers_presync_block_date;
 
     const PlatformStyle *platformStyle;
     const NetworkStyle* const m_network_style;

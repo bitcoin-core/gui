@@ -1161,9 +1161,21 @@ void BitcoinGUI::setNumBlocks(int count, const QDateTime& blockDate, double nVer
     switch (blockSource) {
         case BlockSource::NETWORK:
             if (synctype == SyncType::HEADER_PRESYNC) {
+                m_headers_presync_active = true;
+                m_headers_presync_height = count;
+                m_headers_presync_block_date = blockDate;
                 updateHeadersPresyncProgressLabel(count, blockDate);
                 return;
-            } else if (synctype == SyncType::HEADER_SYNC) {
+            }
+            if (m_headers_presync_active) {
+                const int64_t headers_height{synctype == SyncType::HEADER_SYNC ? count : clientModel->getHeaderTipHeight()};
+                if (headers_height < m_headers_presync_height) {
+                    updateHeadersPresyncProgressLabel(m_headers_presync_height, m_headers_presync_block_date);
+                    return;
+                }
+                m_headers_presync_active = false;
+            }
+            if (synctype == SyncType::HEADER_SYNC) {
                 updateHeadersSyncProgressLabel();
                 return;
             }

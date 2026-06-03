@@ -85,18 +85,36 @@ bool ModalOverlay::event(QEvent* ev) {
 
 void ModalOverlay::setKnownBestHeight(int count, const QDateTime& blockDate, bool presync)
 {
+    if (presync) {
+        m_headers_presync_active = true;
+        m_headers_presync_height = count;
+        m_headers_presync_date = blockDate;
+        UpdateHeaderPresyncLabel(count, blockDate);
+        return;
+    }
+
+    if (m_headers_presync_active) {
+        if (count < m_headers_presync_height) {
+            UpdateHeaderPresyncLabel(m_headers_presync_height, m_headers_presync_date);
+            return;
+        }
+        m_headers_presync_active = false;
+    }
+
     if (!presync && count > bestHeaderHeight) {
         bestHeaderHeight = count;
         bestHeaderDate = blockDate;
         UpdateHeaderSyncLabel();
     }
-    if (presync) {
-        UpdateHeaderPresyncLabel(count, blockDate);
-    }
 }
 
 void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVerificationProgress)
 {
+    if (m_headers_presync_active) {
+        UpdateHeaderPresyncLabel(m_headers_presync_height, m_headers_presync_date);
+        return;
+    }
+
     QDateTime currentDate = QDateTime::currentDateTime();
 
     // keep a vector of samples of verification progress at height
@@ -163,12 +181,16 @@ void ModalOverlay::tipUpdate(int count, const QDateTime& blockDate, double nVeri
 
 void ModalOverlay::UpdateHeaderSyncLabel() {
     int est_headers_left = bestHeaderDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
+    ui->labelSyncDone->setText(tr("Progress"));
     ui->numberOfBlocksLeft->setText(tr("Unknown. Syncing Headers (%1, %2%)…").arg(bestHeaderHeight).arg(QString::number(100.0 / (bestHeaderHeight + est_headers_left) * bestHeaderHeight, 'f', 1)));
 }
 
 void ModalOverlay::UpdateHeaderPresyncLabel(int height, const QDateTime& blockDate) {
     int est_headers_left = blockDate.secsTo(QDateTime::currentDateTime()) / Params().GetConsensus().nPowTargetSpacing;
-    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)…").arg(height).arg(QString::number(100.0 / (height + est_headers_left) * height, 'f', 1)));
+    const QString progress{QString::number(100.0 / (height + est_headers_left) * height, 'f', 1)};
+    ui->labelSyncDone->setText(tr("Headers pre-sync progress"));
+    ui->percentageProgress->setText(progress + "%");
+    ui->numberOfBlocksLeft->setText(tr("Unknown. Pre-syncing Headers (%1, %2%)…").arg(height).arg(progress));
 }
 
 void ModalOverlay::toggleVisibility()

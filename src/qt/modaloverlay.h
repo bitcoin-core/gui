@@ -47,6 +47,9 @@ private:
     Ui::ModalOverlay *ui;
     int bestHeaderHeight{0}; // best known height (based on the headers)
     QDateTime bestHeaderDate;
+    bool m_headers_presync_active{false};
+    int m_headers_presync_height{0};
+    QDateTime m_headers_presync_date;
     QVector<QPair<qint64, double> > blockProcessTime;
     bool layerIsVisible{false};
     bool userClosed{false};
