@@ -245,6 +245,37 @@ public:
 
 };
 
+void TestCloseTransactionDialogs(TransactionView& transactionView, const Txid& txid)
+{
+    // Select a transaction row in the view.
+    QTableView* table = transactionView.findChild<QTableView*>("transactionView");
+    QModelIndex index = FindTx(*table->selectionModel()->model(), txid);
+    QVERIFY2(index.isValid(), "Could not find txid for dialog test");
+    table->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+
+    // Open the transaction details dialog.
+    bool invoked = QMetaObject::invokeMethod(&transactionView, "showDetails");
+    QVERIFY(invoked);
+
+    // Verify a TransactionDescDialog is now open.
+    int open_count = 0;
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        if (widget->inherits("TransactionDescDialog")) ++open_count;
+    }
+    QCOMPARE(open_count, 1);
+
+    // Simulate wallet switch: close open dialogs.
+    transactionView.closeOpenedDialogs();
+    qApp->processEvents();
+
+    // Verify the dialog is gone.
+    int closed_count = 0;
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+        if (widget->inherits("TransactionDescDialog")) ++closed_count;
+    }
+    QCOMPARE(closed_count, 0);
+}
+
 //! Simple qt wallet tests.
 //
 // Test widgets can be debugged interactively calling show() on them and
@@ -292,6 +323,9 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
     BumpFee(transactionView, txid2, /*expectDisabled=*/false, /*expectError=*/{}, /*cancel=*/true);
     BumpFee(transactionView, txid2, /*expectDisabled=*/false, /*expectError=*/{}, /*cancel=*/false);
     BumpFee(transactionView, txid2, /*expectDisabled=*/true, /*expectError=*/"already bumped", /*cancel=*/false);
+
+    // Verify transaction detail dialogs are closed when the wallet view is hidden (e.g. on wallet switch).
+    TestCloseTransactionDialogs(transactionView, txid1);
 
     // Check current balance on OverviewPage
     OverviewPage overviewPage(platformStyle.get());
