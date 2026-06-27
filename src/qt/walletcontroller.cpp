@@ -448,7 +448,10 @@ void MigrateWalletActivity::do_migrate(const std::string& name)
         if (dlg.exec() == QDialog::Rejected) return;
     }
 
-    showProgressDialog(tr("Migrate Wallet"), tr("Migrating Wallet <b>%1</b>…").arg(GUIUtil::HtmlEscape(name)));
+    showProgressDialog(tr("Migrate Wallet"),
+        tr("Migrating Wallet <b>%1</b>…<br><br>"
+           "A blockchain rescan will follow and may take a significant amount of time.")
+            .arg(GUIUtil::HtmlEscape(name)));
 
     QTimer::singleShot(0, worker(), [this, name, passphrase] {
         auto res{node().walletLoader().migrateWallet(name, passphrase)};
@@ -481,7 +484,9 @@ void MigrateWalletActivity::migrate(const std::string& name)
                 "If this wallet contains any solvable but not watched scripts, a different and new wallet will be created which contains those scripts.\n\n"
                 "The migration process will create a backup of the wallet before migrating. This backup file will be named "
                 "<wallet name>-<timestamp>.legacy.bak and can be found in the directory for this wallet. In the event of "
-                "an incorrect migration, the backup can be restored with the \"Restore Wallet\" functionality."));
+                "an incorrect migration, the backup can be restored with the \"Restore Wallet\" functionality.\n\n"
+                "After migration, the wallet will be rescanned for transactions. Depending on the size of the blockchain "
+                "and whether block filter indexes are available, this rescan may take a significant amount of time."));
     box.setStandardButtons(QMessageBox::Yes|QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Yes);
     if (box.exec() != QMessageBox::Yes) return;
@@ -502,7 +507,9 @@ void MigrateWalletActivity::restore_and_migrate(const fs::path& path, const std:
                 "If this wallet contains any solvable but not watched scripts, a different and new wallet will be created which contains those scripts.\n\n"
                 "The migration process will create a backup of the wallet before migrating. This backup file will be named "
                 "<wallet name>-<timestamp>.legacy.bak and can be found in the directory for this wallet. In the event of "
-                "an incorrect migration, the backup can be restored with the \"Restore Wallet\" functionality."));
+                "an incorrect migration, the backup can be restored with the \"Restore Wallet\" functionality.\n\n"
+                "After migration, the wallet will be rescanned for transactions. Depending on the size of the blockchain "
+                "and whether block filter indexes are available, this rescan may take a significant amount of time."));
     box.setStandardButtons(QMessageBox::Yes|QMessageBox::Cancel);
     box.setDefaultButton(QMessageBox::Yes);
     if (box.exec() != QMessageBox::Yes) return;
