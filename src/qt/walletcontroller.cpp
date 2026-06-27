@@ -375,6 +375,8 @@ LoadWalletsActivity::LoadWalletsActivity(WalletController* wallet_controller, QW
 
 void LoadWalletsActivity::load(bool show_loading_minimized)
 {
+    // No specific wallet name is shown here because multiple wallets may be
+    // loaded simultaneously when syncing the GUI with the node's wallet list.
     showProgressDialog(
         //: Title of progress window which is displayed when wallets are being loaded.
         tr("Load Wallets"),
