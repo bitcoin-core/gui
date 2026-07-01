@@ -414,6 +414,18 @@ void RPCExecutor::request(const QString &command, const QString& wallet_name)
             return;
         }
 
+        // Avoid passing a very large string to the Qt text widget. Appending
+        // many megabytes of HTML to QTextEdit causes the UI thread to hang
+        // while the document is re-laid-out. Direct the user to bitcoin-cli
+        // for commands whose output exceeds the display limit.
+        if (result.size() > 1_MiB) {
+            Q_EMIT reply(RPCConsole::CMD_REPLY,
+                QString("Response too large to display (%1 bytes). "
+                        "Use bitcoin-cli to retrieve the full result.")
+                    .arg(result.size()));
+            return;
+        }
+
         Q_EMIT reply(RPCConsole::CMD_REPLY, QString::fromStdString(result));
     }
     catch (UniValue& objError)
