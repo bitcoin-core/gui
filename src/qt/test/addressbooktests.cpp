@@ -9,8 +9,10 @@
 #include <interfaces/chain.h>
 #include <interfaces/node.h>
 #include <qt/addressbookpage.h>
+#include <qt/addresstablemodel.h>
 #include <qt/clientmodel.h>
 #include <qt/editaddressdialog.h>
+#include <qt/signverifymessagedialog.h>
 #include <qt/optionsmodel.h>
 #include <qt/platformstyle.h>
 #include <qt/qvalidatedlineedit.h>
@@ -208,6 +210,67 @@ void TestAddAddressesToSendBook(interfaces::Node& node)
     QCOMPARE(table_view->model()->rowCount(), 3);
 }
 
+/**
+ * Regression test for the stale shared model bug: clicking the address book
+ * button in SignVerifyMessageDialog previously called
+ * WalletModel::refresh(pk_hash_only=true), which replaced the shared
+ * addressTableModel pointer with a new filtered instance. Any other view
+ * (e.g. the Receiving Addresses window) holding that pointer was left stale
+ * and would not reflect addresses added after the picker was opened.
+ *
+ * Directly invokes on_addressBookButton_SM_clicked() — the exact trigger of
+ * the bug — and verifies the shared addressTableModel pointer is unchanged.
+ */
+void TestAddressTableModelStability(interfaces::Node& node)
+{
+    TestChain100Setup test;
+    auto wallet_loader = interfaces::MakeWalletLoader(*test.m_node.chain, *Assert(test.m_node.args));
+    test.m_node.wallet_loader = wallet_loader.get();
+    node.setContext(&test.m_node);
+
+    const std::shared_ptr<CWallet> wallet = std::make_shared<CWallet>(
+        node.context()->chain.get(), "", CreateMockableWalletDatabase());
+    {
+        LOCK(wallet->cs_wallet);
+        wallet->SetWalletFlag(WALLET_FLAG_DESCRIPTORS);
+        wallet->SetupDescriptorScriptPubKeyMans();
+        wallet->SetAddressBook(PKHash{GenerateRandomKey().GetPubKey()}, "addr1", wallet::AddressPurpose::RECEIVE);
+    }
+
+    std::unique_ptr<const PlatformStyle> platformStyle(PlatformStyle::instantiate("other"));
+    OptionsModel optionsModel(node);
+    bilingual_str error;
+    QVERIFY(optionsModel.Init(error));
+    ClientModel clientModel(node, &optionsModel);
+    WalletContext& context = *node.walletLoader().context();
+    AddWallet(context, wallet);
+    WalletModel walletModel(interfaces::MakeWallet(context, wallet), clientModel, platformStyle.get());
+    RemoveWallet(context, wallet, /*load_on_start=*/std::nullopt);
+
+    // Store the shared model pointer — this is what Receiving Addresses holds
+    AddressTableModel* initial_model = walletModel.getAddressTableModel();
+    QVERIFY(initial_model != nullptr);
+    QCOMPARE(initial_model->rowCount({}), 1);
+
+    SignVerifyMessageDialog svd(platformStyle.get(), nullptr);
+    svd.setModel(&walletModel);
+
+    // Close the address book picker as soon as it opens — it uses exec() so
+    // the timer fires inside that modal event loop
+    QTimer::singleShot(0, []() {
+        for (QWidget* widget : QApplication::topLevelWidgets()) {
+            if (auto* page = qobject_cast<AddressBookPage*>(widget)) page->reject();
+        }
+    });
+
+    // Invoke the exact slot that previously called model->refresh(pk_hash_only=true)
+    QMetaObject::invokeMethod(&svd, "on_addressBookButton_SM_clicked");
+
+    // The shared model pointer must be unchanged — Receiving Addresses is not stale
+    QCOMPARE(walletModel.getAddressTableModel(), initial_model);
+    QCOMPARE(initial_model->rowCount({}), 1);
+}
+
 } // namespace
 
 void AddressBookTests::addressBookTests()
@@ -224,4 +287,5 @@ void AddressBookTests::addressBookTests()
     }
 #endif
     TestAddAddressesToSendBook(m_node);
+    TestAddressTableModelStability(m_node);
 }
