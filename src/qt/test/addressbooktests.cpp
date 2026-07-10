@@ -20,6 +20,7 @@
 
 #include <key.h>
 #include <key_io.h>
+#include <script/descriptor.h>
 #include <wallet/wallet.h>
 #include <wallet/test/util.h>
 #include <walletinitinterface.h>
@@ -38,6 +39,7 @@ using wallet::CreateMockableWalletDatabase;
 using wallet::RemoveWallet;
 using wallet::WALLET_FLAG_DESCRIPTORS;
 using wallet::WalletContext;
+using wallet::WalletDescriptor;
 
 namespace
 {
@@ -211,6 +213,86 @@ void TestAddAddressesToSendBook(interfaces::Node& node)
 }
 
 /**
+ * Test that CanSignMessageRole correctly filters the sign-message address picker:
+ * - watch-only PKHash addresses (no private key) → not signable
+ * - bech32 addresses (not PKHash) → not signable
+ * - spendable PKHash addresses (private key imported) → signable
+ * Also verifies AddressBookPage::AddressFilter::Signable shows only signable addresses.
+ */
+void TestSignableAddressFilter(interfaces::Node& node)
+{
+    TestChain100Setup test;
+    auto wallet_loader = interfaces::MakeWalletLoader(*test.m_node.chain, *Assert(test.m_node.args));
+    test.m_node.wallet_loader = wallet_loader.get();
+    node.setContext(&test.m_node);
+
+    const std::shared_ptr<CWallet> wallet = std::make_shared<CWallet>(
+        node.context()->chain.get(), "", CreateMockableWalletDatabase());
+
+    {
+        LOCK(wallet->cs_wallet);
+        wallet->SetWalletFlag(WALLET_FLAG_DESCRIPTORS);
+        wallet->SetupDescriptorScriptPubKeyMans();
+
+        // (a) Watch-only PKHash: address in book but no private key → not signable
+        const PKHash watchonly_dest{GenerateRandomKey().GetPubKey()};
+        wallet->SetAddressBook(watchonly_dest, "watchonly", wallet::AddressPurpose::RECEIVE);
+
+        // (b) Bech32 (P2WPKH): not a PKHash destination → not signable
+        const WitnessV0KeyHash bech32_dest{GenerateRandomKey().GetPubKey()};
+        wallet->SetAddressBook(bech32_dest, "bech32", wallet::AddressPurpose::RECEIVE);
+
+        // (c) Spendable PKHash: private key imported via pkh() descriptor → signable
+        CKey legacy_key;
+        legacy_key.MakeNewKey(true);
+        FlatSigningProvider legacy_provider;
+        std::string legacy_err;
+        auto legacy_descs = Parse("pkh(" + EncodeSecret(legacy_key) + ")", legacy_provider, legacy_err, /*require_checksum=*/false);
+        assert(!legacy_descs.empty());
+        WalletDescriptor legacy_w_desc(std::move(legacy_descs[0]), /*creation_time=*/0, /*range_start=*/0, /*range_end=*/1, /*next_index=*/1);
+        QVERIFY(wallet->AddWalletDescriptor(legacy_w_desc, legacy_provider, "", /*internal=*/false));
+        const PKHash legacy_dest{legacy_key.GetPubKey()};
+        wallet->SetAddressBook(legacy_dest, "legacy", wallet::AddressPurpose::RECEIVE);
+    }
+
+    std::unique_ptr<const PlatformStyle> platformStyle(PlatformStyle::instantiate("other"));
+    OptionsModel optionsModel(node);
+    bilingual_str error;
+    QVERIFY(optionsModel.Init(error));
+    ClientModel clientModel(node, &optionsModel);
+    WalletContext& context = *node.walletLoader().context();
+    AddWallet(context, wallet);
+    WalletModel walletModel(interfaces::MakeWallet(context, wallet), clientModel, platformStyle.get());
+    RemoveWallet(context, wallet, /*load_on_start=*/std::nullopt);
+    AddressTableModel* addrModel = walletModel.getAddressTableModel();
+    QVERIFY(addrModel);
+
+    // Only the spendable PKHash should report CanSignMessageRole=true
+    int signable_count = 0;
+    for (int i = 0; i < addrModel->rowCount({}); ++i) {
+        if (addrModel->data(addrModel->index(i, AddressTableModel::Address, {}),
+                            AddressTableModel::CanSignMessageRole).toBool()) {
+            ++signable_count;
+        }
+    }
+    QCOMPARE(signable_count, 1);
+
+    // AddressFilter::Signable must show only the spendable PKHash; no filter shows all
+    AddressBookPage page_all{platformStyle.get(), AddressBookPage::ForSelection, AddressBookPage::ReceivingTab};
+    page_all.setModel(addrModel);
+    AddressBookPage page_signable{platformStyle.get(), AddressBookPage::ForSelection, AddressBookPage::ReceivingTab,
+                                  nullptr, AddressBookPage::AddressFilter::Signable};
+    page_signable.setModel(addrModel);
+
+    auto* table_all      = page_all.findChild<QTableView*>("tableView");
+    auto* table_signable = page_signable.findChild<QTableView*>("tableView");
+    QVERIFY(table_all != nullptr);
+    QVERIFY(table_signable != nullptr);
+    QCOMPARE(table_signable->model()->rowCount(), 1);
+    QVERIFY(table_all->model()->rowCount() >= 3);
+}
+
+/**
  * Regression test for the stale shared model bug: clicking the address book
  * button in SignVerifyMessageDialog previously called
  * WalletModel::refresh(pk_hash_only=true), which replaced the shared
@@ -288,4 +370,5 @@ void AddressBookTests::addressBookTests()
 #endif
     TestAddAddressesToSendBook(m_node);
     TestAddressTableModelStability(m_node);
+    TestSignableAddressFilter(m_node);
 }
