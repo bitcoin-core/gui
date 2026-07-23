@@ -106,6 +106,7 @@ private Q_SLOTS:
     void openThirdPartyTxUrl(QString url);
     void abandonTx();
     void bumpFee(bool checked);
+    bool detailsAlreadyShown(const QModelIndex &idx);
 
 Q_SIGNALS:
     void doubleClicked(const QModelIndex&);
