@@ -131,6 +131,8 @@ bool Intro::showIfNeeded(bool& did_show_intro, int64_t& prune_MiB)
        or show a picking dialog */
     if(!gArgs.GetArg("-datadir", "").empty())
         return true;
+    if(!gArgs.GetArg("-blocksdir", "").empty())
+        return true;
     /* 1) Default data directory for operating system */
     QString dataDir = GUIUtil::getDefaultDataDirectory();
     /* 2) Allow QSettings to override default dir */
