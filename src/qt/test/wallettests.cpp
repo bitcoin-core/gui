@@ -62,13 +62,16 @@ namespace
 void ConfirmSend(QString* text = nullptr, QMessageBox::StandardButton confirm_type = QMessageBox::Yes)
 {
     QTimer::singleShot(0, [text, confirm_type]() {
-        for (QWidget* widget : QApplication::topLevelWidgets()) {
-            if (widget->inherits("SendConfirmationDialog")) {
-                SendConfirmationDialog* dialog = qobject_cast<SendConfirmationDialog*>(widget);
-                if (text) *text = dialog->text();
-                QAbstractButton* button = dialog->button(confirm_type);
-                button->setEnabled(true);
-                button->click();
+        while (true) {
+            for (QWidget* widget : QApplication::topLevelWidgets()) {
+                if (widget->inherits("SendConfirmationDialog")) {
+                    SendConfirmationDialog* dialog = qobject_cast<SendConfirmationDialog*>(widget);
+                    if (text) *text = dialog->text();
+                    QAbstractButton* button = dialog->button(confirm_type);
+                    button->setEnabled(true);
+                    button->click();
+                    return;
+                }
             }
         }
     });
