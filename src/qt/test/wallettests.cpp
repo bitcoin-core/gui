@@ -59,18 +59,23 @@ using wallet::WalletRescanReserver;
 namespace
 {
 //! Press "Yes" or "Cancel" buttons in modal send confirmation dialog.
+//! If the dialog is not yet visible, reschedule to catch it in the next event loop iteration.
 void ConfirmSend(QString* text = nullptr, QMessageBox::StandardButton confirm_type = QMessageBox::Yes)
 {
     QTimer::singleShot(0, [text, confirm_type]() {
         for (QWidget* widget : QApplication::topLevelWidgets()) {
-            if (widget->inherits("SendConfirmationDialog")) {
+            if (widget->inherits("SendConfirmationDialog") && widget->isVisible()) {
                 SendConfirmationDialog* dialog = qobject_cast<SendConfirmationDialog*>(widget);
                 if (text) *text = dialog->text();
                 QAbstractButton* button = dialog->button(confirm_type);
                 button->setEnabled(true);
                 button->click();
+                return;
             }
         }
+        // Dialog not found yet. Retry with a short delay so we fire in the next
+        // event loop rather than spinning in the current one.
+        QTimer::singleShot(10, [text, confirm_type]() { ConfirmSend(text, confirm_type); });
     });
 }
 
