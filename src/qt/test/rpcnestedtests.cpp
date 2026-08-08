@@ -9,6 +9,7 @@
 #include <qt/rpcconsole.h>
 #include <rpc/server.h>
 #include <test/util/setup_common.h>
+#include <util/byte_units.h>
 #include <univalue.h>
 
 #include <QTest>
@@ -34,8 +35,27 @@ static RPCMethod rpcNestedTest_rpc()
     };
 }
 
+// Returns a hex string larger than the RPCExecutor display limit (1 MiB) to
+// exercise the large-output path. RPCExecuteCommandLine returns the full
+// result; the truncation for display is enforced by RPCExecutor::request().
+static RPCMethod rpcLargeOutput_rpc()
+{
+    return RPCMethod{
+        "rpcLargeOutput",
+        "return a string larger than 1 MiB",
+        {},
+        RPCResult{RPCResult::Type::STR_HEX, "", ""},
+        RPCExamples{""},
+        [](const RPCMethod& self, const JSONRPCRequest& request) -> UniValue {
+            // 1 MiB + 1 byte of hex characters
+            return UniValue{std::string(1_MiB + 1, 'a')};
+        },
+    };
+}
+
 static const CRPCCommand vRPCCommands[] = {
     {"rpcNestedTest", &rpcNestedTest_rpc},
+    {"rpcLargeOutput", &rpcLargeOutput_rpc},
 };
 
 void RPCNestedTests::rpcNestedTests()
@@ -139,4 +159,10 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY_EXCEPTION_THROWN(RPCConsole::RPCExecuteCommandLine(m_node, result, "rpcNestedTest abc,,abc"), std::runtime_error); //don't tolerate empty arguments when using ,
     QVERIFY_EXCEPTION_THROWN(RPCConsole::RPCExecuteCommandLine(m_node, result, "rpcNestedTest(abc,,abc)"), std::runtime_error); //don't tolerate empty arguments when using ,
     QVERIFY_EXCEPTION_THROWN(RPCConsole::RPCExecuteCommandLine(m_node, result, "rpcNestedTest(abc,,)"), std::runtime_error); //don't tolerate empty arguments when using ,
+
+    // Verify that RPCExecuteCommandLine returns the full result for large
+    // outputs. The size guard lives in RPCExecutor::request() and only affects
+    // what is rendered in the console widget, not the underlying RPC call.
+    RPCConsole::RPCExecuteCommandLine(m_node, result, "rpcLargeOutput");
+    QVERIFY(result.size() > 1_MiB);
 }
