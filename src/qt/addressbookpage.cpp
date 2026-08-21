@@ -20,11 +20,13 @@
 class AddressBookSortFilterProxyModel final : public QSortFilterProxyModel
 {
     const QString m_type;
+    const AddressBookPage::AddressFilter m_address_filter;
 
 public:
-    AddressBookSortFilterProxyModel(const QString& type, QObject* parent)
+    AddressBookSortFilterProxyModel(const QString& type, AddressBookPage::AddressFilter address_filter, QObject* parent)
         : QSortFilterProxyModel(parent)
         , m_type(type)
+        , m_address_filter(address_filter)
     {
         setDynamicSortFilter(true);
         setFilterCaseSensitivity(Qt::CaseInsensitive);
@@ -42,6 +44,10 @@ protected:
         }
 
         auto address = model->index(row, AddressTableModel::Address, parent);
+        if (m_address_filter == AddressBookPage::AddressFilter::Signable &&
+            !model->data(address, AddressTableModel::CanSignMessageRole).toBool()) {
+            return false;
+        }
 
         const auto pattern = filterRegularExpression();
         return (model->data(address).toString().contains(pattern) ||
@@ -49,11 +55,12 @@ protected:
     }
 };
 
-AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent) :
+AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode, Tabs _tab, QWidget *parent, AddressFilter _address_filter) :
     QDialog(parent, GUIUtil::dialog_flags),
     ui(new Ui::AddressBookPage),
     mode(_mode),
-    tab(_tab)
+    tab(_tab),
+    address_filter(_address_filter)
 {
     ui->setupUi(this);
 
@@ -73,7 +80,11 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         switch(tab)
         {
         case SendingTab: setWindowTitle(tr("Choose the address to send coins to")); break;
-        case ReceivingTab: setWindowTitle(tr("Choose the address to receive coins with")); break;
+        case ReceivingTab:
+            setWindowTitle(address_filter == AddressFilter::Signable ?
+                tr("Choose the address to sign with") :
+                tr("Choose the address to receive coins with"));
+            break;
         }
         connect(ui->tableView, &QTableView::doubleClicked, this, &QDialog::accept);
         ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -89,7 +100,9 @@ AddressBookPage::AddressBookPage(const PlatformStyle *platformStyle, Mode _mode,
         ui->newAddress->setVisible(true);
         break;
     case ReceivingTab:
-        ui->labelExplanation->setText(tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses.\nSigning is only possible with addresses of the type 'legacy'."));
+        ui->labelExplanation->setText(address_filter == AddressFilter::Signable ?
+            tr("These are your Bitcoin addresses that can be used for message signing.") :
+            tr("These are your Bitcoin addresses for receiving payments. Use the 'Create new receiving address' button in the receive tab to create new addresses."));
         ui->deleteAddress->setVisible(false);
         ui->newAddress->setVisible(false);
         break;
@@ -123,7 +136,7 @@ void AddressBookPage::setModel(AddressTableModel *_model)
         return;
 
     auto type = tab == ReceivingTab ? AddressTableModel::Receive : AddressTableModel::Send;
-    proxyModel = new AddressBookSortFilterProxyModel(type, this);
+    proxyModel = new AddressBookSortFilterProxyModel(type, address_filter, this);
     proxyModel->setSourceModel(_model);
 
     connect(ui->searchLineEdit, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterWildcard);
