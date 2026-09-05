@@ -297,7 +297,21 @@ void TestGUI(interfaces::Node& node, const std::shared_ptr<CWallet>& wallet)
     OverviewPage overviewPage(platformStyle.get());
     overviewPage.setWalletModel(&walletModel);
     walletModel.pollBalanceChanged(); // Manual balance polling update
-    CompareBalance(walletModel, walletModel.wallet().getBalance(), overviewPage.findChild<QLabel*>("labelBalance"));
+    CompareBalance(walletModel, walletModel.wallet().getBalances().balance, overviewPage.findChild<QLabel*>("labelBalance"));
+
+    // Test non-mempool balance display
+    overviewPage.show();
+    interfaces::WalletBalances nonmempool_balances;
+    nonmempool_balances.balance = walletModel.wallet().getBalances().balance;
+    nonmempool_balances.nonmempool_balance = -50000;
+    overviewPage.setBalance(nonmempool_balances);
+    QVERIFY(overviewPage.findChild<QLabel*>("labelNonMempool")->isVisible());
+    QVERIFY(overviewPage.findChild<QLabel*>("labelNonMempoolText")->isVisible());
+    CompareBalance(walletModel, -50000, overviewPage.findChild<QLabel*>("labelNonMempool"));
+    nonmempool_balances.nonmempool_balance = 0;
+    overviewPage.setBalance(nonmempool_balances);
+    QVERIFY(!overviewPage.findChild<QLabel*>("labelNonMempool")->isVisible());
+    QVERIFY(!overviewPage.findChild<QLabel*>("labelNonMempoolText")->isVisible());
 
     // Check Request Payment button
     ReceiveCoinsDialog receiveCoinsDialog(platformStyle.get());
