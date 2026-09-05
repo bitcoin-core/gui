@@ -275,7 +275,13 @@ void Intro::startThread()
 void Intro::checkPath(const QString &dataDir)
 {
     mutex.lock();
-    pathToCheck = dataDir;
+
+    if (gArgs.IsArgSet("-blocksdir")) {
+        pathToCheck = GUIUtil::PathToQString(gArgs.GetBlocksDirPath());
+    } else {
+        pathToCheck = dataDir;
+    }
+
     if(!signalled)
     {
         signalled = true;
