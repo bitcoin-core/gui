@@ -144,8 +144,6 @@ public:
 
     bool isMultiwallet() const;
 
-    void refresh(bool pk_hash_only = false);
-
     uint256 getLastBlockProcessed() const;
 
     // Retrieve the cached wallet balance
