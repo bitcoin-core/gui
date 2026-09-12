@@ -8,6 +8,8 @@
 #include <QDialog>
 #include <QWidget>
 
+class NetworkStyle;
+
 QT_BEGIN_NAMESPACE
 class QMainWindow;
 QT_END_NAMESPACE
@@ -22,7 +24,7 @@ class HelpMessageDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit HelpMessageDialog(QWidget *parent, bool about);
+    explicit HelpMessageDialog(QWidget* parent, bool about, const NetworkStyle* network_style = nullptr);
     ~HelpMessageDialog();
 
     void printToConsole();
@@ -31,6 +33,8 @@ public:
 private:
     Ui::HelpMessageDialog *ui;
     QString text;
+    void setAboutWindowTitle(const NetworkStyle* network_style = nullptr);
+    void setChainTypeIconOnAboutLogo(const NetworkStyle* network_style = nullptr);
 
 private Q_SLOTS:
     void on_okButton_accepted();
