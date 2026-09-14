@@ -79,6 +79,8 @@ add_library(bitcoinqt STATIC EXCLUDE_FROM_ALL
   bitcoingui.h
   bitcoinunits.cpp
   bitcoinunits.h
+  bumpfeechoosechangedialog.cpp
+  bumpfeechoosechangedialog.h
   clientmodel.cpp
   clientmodel.h
   csvmodelwriter.cpp
