@@ -284,3 +284,8 @@ void WalletView::disableTransactionView(bool disable)
 {
     transactionView->setDisabled(disable);
 }
+
+void WalletView::closeTransactionDialogs()
+{
+    transactionView->closeOpenedDialogs();
+}
