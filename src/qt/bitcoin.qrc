@@ -39,6 +39,10 @@
         <file alias="fontbigger">res/icons/fontbigger.png</file>
         <file alias="fontsmaller">res/icons/fontsmaller.png</file>
         <file alias="prompticon">res/icons/chevron.png</file>
+        <file alias="spin_up">res/icons/spin-up.png</file>
+        <file alias="spin_up@2x">res/icons/spin-up@2x.png</file>
+        <file alias="spin_down">res/icons/spin-down.png</file>
+        <file alias="spin_down@2x">res/icons/spin-down@2x.png</file>
         <file alias="transaction_abandoned">res/icons/transaction_abandoned.png</file>
         <file alias="hd_enabled">res/icons/hd_enabled.png</file>
         <file alias="hd_disabled">res/icons/hd_disabled.png</file>

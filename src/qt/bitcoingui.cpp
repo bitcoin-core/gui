@@ -55,6 +55,9 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QMimeData>
+#ifdef Q_OS_MACOS
+#include <QOperatingSystemVersion>
+#endif
 #include <QProgressDialog>
 #include <QScreen>
 #include <QSettings>
@@ -147,6 +150,17 @@ BitcoinGUI::BitcoinGUI(interfaces::Node& node, const PlatformStyle *_platformSty
 
     // Create the toolbars
     createToolBars();
+
+#ifdef Q_OS_MACOS
+    const QOperatingSystemVersion macos_26{QOperatingSystemVersion::MacOS, 26};
+    if (QOperatingSystemVersion::current() >= macos_26) {
+        setUnifiedTitleAndToolBarOnMac(true);
+        if (appToolBar) {
+            appToolBar->setFloatable(false);
+            appToolBar->setAllowedAreas(Qt::TopToolBarArea);
+        }
+    }
+#endif
 
     // Create system tray icon and notification
     if (QSystemTrayIcon::isSystemTrayAvailable()) {
