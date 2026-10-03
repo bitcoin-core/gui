@@ -98,6 +98,7 @@ void WalletFrame::setCurrentWallet(WalletModel* wallet_model)
         QSizePolicy sp = view_about_to_hide->sizePolicy();
         sp.setHorizontalPolicy(QSizePolicy::Ignored);
         view_about_to_hide->setSizePolicy(sp);
+        view_about_to_hide->closeTransactionDialogs();
     }
 
     WalletView *walletView = mapWalletViews.value(wallet_model);
