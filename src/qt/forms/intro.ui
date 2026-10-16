@@ -247,6 +247,9 @@
        <property name="suffix">
         <string> GB</string>
        </property>
+       <property name="stepType">
+        <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+       </property>
       </widget>
      </item>
      <item>
