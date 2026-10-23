@@ -39,6 +39,10 @@
 #include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
+#ifdef Q_OS_MACOS
+#include <QOperatingSystemVersion>
+#include <QTabBar>
+#endif
 #include <QScreen>
 #include <QScrollBar>
 #include <QSettings>
@@ -71,6 +75,35 @@ const struct {
 
 namespace {
 
+#ifdef Q_OS_MACOS
+constexpr auto MACOS_26_TAB_STYLE{R"(
+QTabBar {
+    background-color: palette(button);
+    border: 1px solid palette(mid);
+    border-radius: 7px;
+}
+
+QTabBar::tab {
+    background-color: transparent;
+    color: palette(button-text);
+    border: 0;
+    margin: 0;
+    padding: 3px 12px;
+}
+
+QTabBar::tab:hover {
+    background-color: palette(midlight);
+    border-radius: 6px;
+}
+
+QTabBar::tab:selected {
+    background-color: palette(highlight);
+    color: palette(highlighted-text);
+    border-radius: 6px;
+}
+)"};
+#endif
+
 // don't add private key handling cmd's to the history
 const QStringList historyFilter = QStringList()
     << "createwallet"
@@ -82,7 +115,7 @@ const QStringList historyFilter = QStringList()
     << "walletpassphrasechange"
     << "encryptwallet";
 
-}
+} // namespace
 
 /* Object for executing console RPC commands in a separate thread.
 */
@@ -447,6 +480,13 @@ RPCConsole::RPCConsole(interfaces::Node& node, const PlatformStyle *_platformSty
     platformStyle(_platformStyle)
 {
     ui->setupUi(this);
+#ifdef Q_OS_MACOS
+    const QOperatingSystemVersion macos_26{QOperatingSystemVersion::MacOS, 26};
+    if (QOperatingSystemVersion::current() >= macos_26) {
+        QTabBar* const tab_bar = ui->tabWidget->tabBar();
+        tab_bar->setStyleSheet(QString::fromLatin1(MACOS_26_TAB_STYLE));
+    }
+#endif
     QSettings settings;
 #ifdef ENABLE_WALLET
     if (WalletModel::isWalletEnabled()) {
