@@ -251,7 +251,7 @@ bool BitcoinApplication::createOptionsModel(bool resetSettings)
             error.translated += tr("Settings file %1 might be corrupt or invalid.").arg(QString::fromStdString(quoted_path)).toStdString();
         }
         InitError(error);
-        QMessageBox::critical(nullptr, CLIENT_NAME, QString::fromStdString(error.translated));
+        GUIUtil::ShowMessageBox(QString::fromStdString(error.translated), static_cast<QMessageBox::Icon>(QMessageBox::Critical));
         return false;
     }
     return true;
@@ -432,21 +432,25 @@ void BitcoinApplication::initializeResult(bool success, interfaces::BlockAndHead
 
 void BitcoinApplication::handleRunawayException(const QString &message)
 {
-    QMessageBox::critical(
-        nullptr, tr("Runaway exception"),
-        tr("A fatal error occurred. %1 can no longer continue safely and will quit.").arg(CLIENT_NAME) +
-        QLatin1String("<br><br>") + GUIUtil::MakeHtmlLink(message, CLIENT_BUGREPORT));
+    const QString qMessage = tr("A fatal error occurred. %1 can no longer continue safely and will quit.").arg(CLIENT_NAME) +
+                QLatin1String("<br><br>") + GUIUtil::MakeHtmlLink(message, CLIENT_BUGREPORT);
+    GUIUtil::ShowMessageBox(/*message=*/qMessage,
+                /*box_icon=*/static_cast<QMessageBox::Icon>(QMessageBox::Critical),
+                /*network_style=*/nullptr,
+                /*title=*/tr("Runaway exception"));
     ::exit(EXIT_FAILURE);
 }
 
 void BitcoinApplication::handleNonFatalException(const QString& message)
 {
     assert(QThread::currentThread() == thread());
-    QMessageBox::warning(
-        nullptr, tr("Internal error"),
-        tr("An internal error occurred. %1 will attempt to continue safely. This is "
-           "an unexpected bug which can be reported as described below.").arg(CLIENT_NAME) +
-        QLatin1String("<br><br>") + GUIUtil::MakeHtmlLink(message, CLIENT_BUGREPORT));
+    const QString qMessage = tr("An internal error occurred. %1 will attempt to continue safely. This is "
+                "an unexpected bug which can be reported as described below.").arg(CLIENT_NAME) +
+                QLatin1String("<br><br>") + GUIUtil::MakeHtmlLink(message, CLIENT_BUGREPORT);
+    GUIUtil::ShowMessageBox(/*message=*/qMessage,
+                /*box_icon=*/static_cast<QMessageBox::Icon>(QMessageBox::Warning),
+                /*network_style=*/nullptr,
+                /*title=*/tr("Internal error"));
 }
 
 WId BitcoinApplication::getMainWinId() const
@@ -510,11 +514,11 @@ int GuiMain(int argc, char* argv[])
     SetupUIArgs(gArgs);
     std::string error;
     if (!gArgs.ParseParameters(argc, argv, error)) {
-        InitError(Untranslated(strprintf("Error parsing command line arguments: %s", error)));
+        const std::string message = tfm::format("Error parsing command line arguments: %s", error);
+        // message cannot be translated because translations have not been initialized
+        InitError(Untranslated(message));
         // Create a message box, because the gui has neither been created nor has subscribed to core signals
-        QMessageBox::critical(nullptr, CLIENT_NAME,
-            // message cannot be translated because translations have not been initialized
-            QString::fromStdString("Error parsing command line arguments: %1.").arg(QString::fromStdString(error)));
+        GUIUtil::ShowMessageBox(QString::fromStdString(message), static_cast<QMessageBox::Icon>(QMessageBox::Critical));
         return EXIT_FAILURE;
     }
 
@@ -531,17 +535,17 @@ int GuiMain(int argc, char* argv[])
         }
 #endif
         if (payment_server_token_seen && arg.startsWith("-")) {
-            InitError(Untranslated(strprintf("Options ('%s') cannot follow a BIP-21 payment URI", argv[i])));
-            QMessageBox::critical(nullptr, CLIENT_NAME,
-                                  // message cannot be translated because translations have not been initialized
-                                  QString::fromStdString("Options ('%1') cannot follow a BIP-21 payment URI").arg(QString::fromStdString(argv[i])));
+            const std::string message = tfm::format("Options ('%s') cannot follow a BIP-21 payment URI", argv[i]);
+            // message cannot be translated because translations have not been initialized
+            InitError(Untranslated(message));
+            GUIUtil::ShowMessageBox(QString::fromStdString(message), static_cast<QMessageBox::Icon>(QMessageBox::Critical));
             return EXIT_FAILURE;
         }
         if (invalid_token) {
-            InitError(Untranslated(strprintf("Command line contains unexpected token '%s', see bitcoin-qt -h for a list of options.", argv[i])));
-            QMessageBox::critical(nullptr, CLIENT_NAME,
-                                  // message cannot be translated because translations have not been initialized
-                                  QString::fromStdString("Command line contains unexpected token '%1', see bitcoin-qt -h for a list of options.").arg(QString::fromStdString(argv[i])));
+            const std::string message = tfm::format("Command line contains unexpected token '%s', see bitcoin-qt -h for a list of options.", argv[i]);
+            // message cannot be translated because translations have not been initialized
+            InitError(Untranslated(message));
+            GUIUtil::ShowMessageBox(QString::fromStdString(message), static_cast<QMessageBox::Icon>(QMessageBox::Critical));
             return EXIT_FAILURE;
         }
     }
@@ -564,7 +568,7 @@ int GuiMain(int argc, char* argv[])
     // Show help message immediately after parsing command-line options (for "-lang") and setting locale,
     // but before showing splash screen.
     if (HelpRequested(gArgs) || gArgs.GetBoolArg("-version", false)) {
-        HelpMessageDialog help(nullptr, gArgs.GetBoolArg("-version", false));
+        HelpMessageDialog help(/*parent=*/nullptr, /*about=*/gArgs.GetBoolArg("-version", false));
         help.showOrPrint();
         return EXIT_SUCCESS;
     }
@@ -594,7 +598,9 @@ int GuiMain(int argc, char* argv[])
         } else if (error->status != common::ConfigStatus::ABORTED) {
             // Show a generic message in other cases, and no additional error
             // message in the case of a read error if the user decided to abort.
-            QMessageBox::critical(nullptr, CLIENT_NAME, QObject::tr("Error: %1").arg(QString::fromStdString(error->message.translated)));
+            GUIUtil::ShowMessageBox(
+                QObject::tr("Error: %1").arg(QString::fromStdString(error->message.translated)),
+                static_cast<QMessageBox::Icon>(QMessageBox::Critical));
         }
         return EXIT_FAILURE;
     }
