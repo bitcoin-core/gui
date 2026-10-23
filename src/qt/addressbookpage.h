@@ -38,7 +38,12 @@ public:
         ForEditing  /**< Open address book for editing */
     };
 
-    explicit AddressBookPage(const PlatformStyle *platformStyle, Mode mode, Tabs tab, QWidget *parent = nullptr);
+    enum class AddressFilter {
+        ShowAll,
+        Signable, /**< Show only addresses that can sign messages */
+    };
+
+    explicit AddressBookPage(const PlatformStyle *platformStyle, Mode mode, Tabs tab, QWidget *parent = nullptr, AddressFilter address_filter = AddressFilter::ShowAll);
     ~AddressBookPage();
 
     void setModel(AddressTableModel *model);
@@ -52,6 +57,7 @@ private:
     AddressTableModel* model{nullptr};
     Mode mode;
     Tabs tab;
+    AddressFilter address_filter;
     QString returnValue;
     AddressBookSortFilterProxyModel *proxyModel;
     QMenu *contextMenu;
