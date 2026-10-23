@@ -35,6 +35,7 @@
 #include <QPoint>
 #include <QScrollBar>
 #include <QSettings>
+#include <QString>
 #include <QTableView>
 #include <QTimer>
 #include <QUrl>
@@ -497,13 +498,15 @@ void TransactionView::showDetails()
     QModelIndexList selection = transactionView->selectionModel()->selectedRows();
     if(!selection.isEmpty())
     {
-        TransactionDescDialog *dlg = new TransactionDescDialog(selection.at(0));
-        dlg->setAttribute(Qt::WA_DeleteOnClose);
-        m_opened_dialogs.append(dlg);
-        connect(dlg, &QObject::destroyed, [this, dlg] {
-            m_opened_dialogs.removeOne(dlg);
-        });
-        dlg->show();
+        if(!detailsAlreadyShown(selection.at(0))) {
+            TransactionDescDialog *dlg = new TransactionDescDialog(selection.at(0));
+            dlg->setAttribute(Qt::WA_DeleteOnClose);
+            m_opened_dialogs.append(dlg);
+            connect(dlg, &QObject::destroyed, [this, dlg] {
+                m_opened_dialogs.removeOne(dlg);
+            });
+            dlg->show();
+        }
     }
 }
 
@@ -624,4 +627,15 @@ void TransactionView::closeOpenedDialogs()
         dlg->close();
     }
     m_opened_dialogs.clear();
+}
+
+bool TransactionView::detailsAlreadyShown(const QModelIndex &idx)
+{
+    for (TransactionDescDialog* dlg : m_opened_dialogs) {
+        if (dlg->getTransactionId() == idx.data(TransactionTableModel::TxHashRole).toString()) {
+            GUIUtil::bringToFront(dlg);
+            return true;
+        }
+    }
+    return false;
 }
