@@ -48,12 +48,23 @@
 #include <chrono>
 #include <memory>
 
+#ifdef Q_OS_MACOS
+#include <QAbstractSpinBox>
+#endif
 #include <QApplication>
 #include <QDebug>
+#include <QEvent>
 #include <QLatin1String>
 #include <QLibraryInfo>
+#ifdef Q_OS_MACOS
+#include <QLineEdit>
+#endif
 #include <QLocale>
 #include <QMessageBox>
+#include <QObject>
+#ifdef Q_OS_MACOS
+#include <QOperatingSystemVersion>
+#endif
 #include <QSettings>
 #include <QThread>
 #include <QTimer>
@@ -71,6 +82,99 @@ Q_DECLARE_METATYPE(wallet::AddressPurpose)
 #endif // ENABLE_WALLET
 
 using util::MakeUnorderedList;
+
+#ifdef Q_OS_MACOS
+namespace {
+constexpr auto MACOS_26_TEXT_FIELD_PROPERTY{"macos26RoundedTextField"};
+constexpr auto MACOS_26_TEXT_FIELD_STYLE{R"(
+QLineEdit[macos26RoundedTextField="true"] {
+    background-color: palette(base);
+    border: 1px solid palette(mid);
+    border-radius: 7px;
+    padding: 2px 7px;
+}
+
+QLineEdit[macos26RoundedTextField="true"]:focus {
+    border-color: palette(highlight);
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"] {
+    background-color: palette(base);
+    border: 1px solid palette(mid);
+    border-radius: 7px;
+    padding: 2px 18px 2px 7px;
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]:focus {
+    border-color: palette(highlight);
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::up-button,
+QAbstractSpinBox[macos26RoundedTextField="true"]::down-button {
+    subcontrol-origin: border;
+    width: 18px;
+    border: 0;
+    background-color: transparent;
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 7px;
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 7px;
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::up-button:hover,
+QAbstractSpinBox[macos26RoundedTextField="true"]::down-button:hover {
+    background-color: palette(midlight);
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::up-button:pressed,
+QAbstractSpinBox[macos26RoundedTextField="true"]::down-button:pressed {
+    background-color: palette(mid);
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::up-arrow {
+    image: url(:/icons/spin_up);
+    width: 8px;
+    height: 5px;
+}
+
+QAbstractSpinBox[macos26RoundedTextField="true"]::down-arrow {
+    image: url(:/icons/spin_down);
+    width: 8px;
+    height: 5px;
+}
+
+)"};
+
+class MacOS26TextFieldStyleFilter final : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(QObject* object, QEvent* event) override
+    {
+        if (event->type() == QEvent::Polish) {
+            if (auto* line_edit = qobject_cast<QLineEdit*>(object)) {
+                line_edit->setAttribute(Qt::WA_MacShowFocusRect, false);
+                if (!qobject_cast<QAbstractSpinBox*>(line_edit->parentWidget())) {
+                    line_edit->setProperty(MACOS_26_TEXT_FIELD_PROPERTY, true);
+                }
+            } else if (auto* spin_box = qobject_cast<QAbstractSpinBox*>(object)) {
+                spin_box->setAttribute(Qt::WA_MacShowFocusRect, false);
+                spin_box->setProperty(MACOS_26_TEXT_FIELD_PROPERTY, true);
+            }
+        }
+        return QObject::eventFilter(object, event);
+    }
+};
+} // namespace
+#endif
 
 static void RegisterMetaTypes()
 {
@@ -203,6 +307,13 @@ BitcoinApplication::BitcoinApplication()
     // Qt runs setlocale(LC_ALL, "") on initialization.
     RegisterMetaTypes();
     setQuitOnLastWindowClosed(false);
+#ifdef Q_OS_MACOS
+    const QOperatingSystemVersion macos_26{QOperatingSystemVersion::MacOS, 26};
+    if (QOperatingSystemVersion::current() >= macos_26) {
+        installEventFilter(new MacOS26TextFieldStyleFilter(this));
+        setStyleSheet(QString::fromLatin1(MACOS_26_TEXT_FIELD_STYLE) + styleSheet());
+    }
+#endif
 }
 
 void BitcoinApplication::setupPlatformStyle()
