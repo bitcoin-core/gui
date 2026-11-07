@@ -93,9 +93,6 @@ QString BitcoinUnits::format(Unit unit, const CAmount& nIn, bool fPlus, Separato
     qint64 n_abs = (n > 0 ? n : -n);
     qint64 quotient = n_abs / coin;
     QString quotient_str = QString::number(quotient);
-    if (justify) {
-        quotient_str = quotient_str.rightJustified(MAX_DIGITS_BTC - num_decimals, ' ');
-    }
 
     // Use SI-style thin space separators as these are locale independent and can't be
     // confused with the decimal marker.
@@ -109,6 +106,13 @@ QString BitcoinUnits::format(Unit unit, const CAmount& nIn, bool fPlus, Separato
         quotient_str.insert(0, '-');
     else if (fPlus && n > 0)
         quotient_str.insert(0, '+');
+
+    // Right-justify after the sign is prepended, so that the sign stays
+    // adjacent to the most significant digit rather than being separated
+    // from it by the justification padding.
+    if (justify) {
+        quotient_str = quotient_str.rightJustified(MAX_DIGITS_BTC - num_decimals, ' ');
+    }
 
     if (num_decimals > 0) {
         qint64 remainder = n_abs % coin;
@@ -142,7 +146,6 @@ QString BitcoinUnits::formatHtmlWithUnit(Unit unit, const CAmount& amount, bool 
 
 QString BitcoinUnits::formatWithPrivacy(Unit unit, const CAmount& amount, SeparatorStyle separators, bool privacy)
 {
-    assert(amount >= 0);
     QString value;
     if (privacy) {
         value = format(unit, 0, false, separators, true).replace('0', '#');
