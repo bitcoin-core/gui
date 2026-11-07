@@ -63,7 +63,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="pruneSize"/>
+          <widget class="QSpinBox" name="pruneSize">
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="pruneSizeUnitLabel">
@@ -119,7 +123,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="databaseCache"/>
+          <widget class="QSpinBox" name="databaseCache">
+           <property name="stepType">
+            <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="databaseCacheUnitLabel">
