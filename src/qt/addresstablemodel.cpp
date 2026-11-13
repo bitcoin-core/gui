@@ -229,6 +229,11 @@ QVariant AddressTableModel::data(const QModelIndex &index, int role) const
             return {};
         } // no default case, so the compiler can warn about missing cases
         assert(false);
+    } else if (role == CanSignMessageRole) {
+        const auto destination{DecodeDestination(rec->address.toStdString())};
+        return std::holds_alternative<PKHash>(destination) &&
+               !walletModel->wallet().privateKeysDisabled() &&
+               walletModel->wallet().isSpendable(destination);
     }
     return QVariant();
 }
