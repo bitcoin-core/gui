@@ -77,6 +77,8 @@ const QStringList historyFilter = QStringList()
     << "addhdkey"
     << "createwallet"
     << "createwalletdescriptor"
+    << "descriptorprocesspsbt"
+    << "importdescriptors"
     << "migratewallet"
     << "signmessagewithprivkey"
     << "signrawtransactionwithkey"
