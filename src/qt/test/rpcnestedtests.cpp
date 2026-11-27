@@ -91,6 +91,10 @@ void RPCNestedTests::rpcNestedTests()
     QVERIFY(filtered == "createwallet(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "createwalletdescriptor abc", false, &filtered);
     QVERIFY(filtered == "createwalletdescriptor(…)");
+    RPCConsole::RPCParseCommandLine(nullptr, result, "descriptorprocesspsbt abc [\"def\"]", /*fExecute=*/false, &filtered);
+    QVERIFY(filtered == "descriptorprocesspsbt(…)");
+    RPCConsole::RPCParseCommandLine(nullptr, result, "importdescriptors '[{\"desc\":\"abc\",\"timestamp\":\"now\"}]'", /*fExecute=*/false, &filtered);
+    QVERIFY(filtered == "importdescriptors(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "migratewallet abc abc", false, &filtered);
     QVERIFY(filtered == "migratewallet(…)");
     RPCConsole::RPCParseCommandLine(nullptr, result, "signmessagewithprivkey abc", false, &filtered);
